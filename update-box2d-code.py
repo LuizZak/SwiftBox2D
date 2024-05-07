@@ -19,7 +19,9 @@ from utils.cli.console_color import ConsoleColor
 # List of glob patterns to remove from the Box2D folders after code is initially
 # cloned.
 rmFilePatterns: list[str] = [
+    "**/CMakeLists.txt",
     "**/*.natvis",
+    "**/*.h.in",
 ]
 
 
@@ -115,6 +117,7 @@ def remove_files_with_pattern(base_folder: Path, patterns: list[str]):
             if not str(final_path).startswith(str(base_folder.resolve())):
                 continue
 
+            print(f"{ConsoleColor.RED('rm')} {final_path}")
             os.remove(final_path)
 
 
@@ -132,7 +135,6 @@ def clone_box2d(tag_or_branch: str | None, base_folder: Path) -> Path:
     box2d_clone_path = str(path(base_folder, "box2d").absolute())
 
     clone_repo(tag_or_branch, BOX2D_REPO, box2d_clone_path)
-    remove_files_with_pattern(Path(box2d_clone_path), rmFilePatterns)
 
     return Path(box2d_clone_path)
 
@@ -155,10 +157,17 @@ def copy_repo_files(source_files: Path, target_path: Path):
     shutil.copytree(source_files, target_path)
 
 
-def copy_box2d_files(clone_path: Path, target_path: Path):
+def copy_box2d_files(src_path: Path, target_path: Path):
     print_stage_name("Copying over Box2D files...")
 
-    copy_repo_files(clone_path.joinpath("src"), target_path)
+    copy_repo_files(src_path, target_path)
+
+def copy_dependency_files(clone_path: Path, target_path: Path):
+    print_stage_name("Copying over Box2D dependency files...")
+    
+    simde_path = clone_path.joinpath("extern", "simde")
+
+    shutil.copytree(simde_path, target_path, dirs_exist_ok=True)
 
 
 def update_code(
@@ -177,11 +186,15 @@ def update_code(
 
     # Clone
     box2d_clone_path = clone_box2d(box2d_tag_or_branch, temp_path)
+    src_path = box2d_clone_path.joinpath("src")
     
-    return 0
+    print_stage_name("Removing extraneous files...")
+    remove_files_with_pattern(box2d_clone_path, rmFilePatterns)
 
     # Copy files
-    copy_box2d_files(box2d_clone_path, BOX2D_TARGET_PATH)
+    copy_box2d_files(src_path, BOX2D_TARGET_PATH)
+    # Copy simde from <box2d cloned repo>/extern/simde
+    copy_dependency_files(box2d_clone_path, BOX2D_TARGET_PATH)
 
     print(ConsoleColor.GREEN("Success!"))
 

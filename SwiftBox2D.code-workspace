@@ -185,7 +185,8 @@
         },
         "files.associations": {
             "iterator": "cpp",
-            "xutility": "cpp"
+            "xutility": "cpp",
+            "float.h": "c"
         },
     },
     "extensions": {

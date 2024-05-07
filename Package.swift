@@ -11,7 +11,10 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "box2d"
+            name: "box2d",
+            cSettings: [
+                .unsafeFlags(["-Wpsabi"])
+            ]
         ),
         .target(
             name: "SwiftBox2D",
