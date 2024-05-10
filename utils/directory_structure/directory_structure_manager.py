@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 from typing import List, Iterable
 
+from utils.data.generator_config import GeneratorConfig
 from utils.data.swift_decls import SwiftDecl
 from utils.data.swift_file import SwiftFile
 
@@ -12,9 +13,19 @@ class DirectoryStructureManager:
     """
     A class that is used to manage nested directory structures for generated types.
     """
+    globalFileSuffix: str
+    """
+    A file suffix to append to all Swift files generated.
+    This is added before the .swift file extension.
+    """
 
-    def __init__(self, base_path: Path):
+    def __init__(self, base_path: Path, globalFileSuffix: str | None = None):
         self.base_path = base_path
+        self.globalFileSuffix = globalFileSuffix if globalFileSuffix is not None else ""
+    
+    @classmethod
+    def from_config(cls, config: GeneratorConfig.FileGeneration):
+        return cls(Path.absolute(Path(config.targetPath)), config.globalFileSuffix)
 
     def path_matchers(self) -> list[DirectoryStructureEntry]:
         return list()
@@ -76,7 +87,7 @@ class DirectoryStructureManager:
                     f"Expected suggested paths to contain only alphanumeric values for file {file_name}, found {component} (full: {longest_path})"
                 )
 
-        return dir_path.joinpath(*longest_path)
+        return dir_path.joinpath(*map(self.escape_path_component, longest_path))
 
     def file_for_decl(self, decl: SwiftDecl) -> Path:
         file_name = self.file_name_for_decl(decl)
@@ -84,4 +95,13 @@ class DirectoryStructureManager:
         return self.folder_for_file(file_name).joinpath(file_name)
 
     def file_name_for_decl(self, decl: SwiftDecl) -> str:
-        return f"{decl.name.to_string()}.swift"
+        return self.escape_path_component(f"{decl.name.to_string()}{self.globalFileSuffix}.swift")
+    
+    def escape_path_component(self, pathComponent: str) -> str:
+        """
+        Removes/replaces any character in a path component (such as a folder name
+        or file name), restricting the character selection to the ones that match
+        the regex: `[\\w_. -]`, replacing any such character with `_`.
+        """
+
+        return re.sub(r"[^\w_. -]", "_", pathComponent)

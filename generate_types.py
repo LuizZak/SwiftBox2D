@@ -8,15 +8,20 @@ from pathlib import Path
 from typing import Iterable
 
 from pycparser import c_ast
+from utils.cli.cli_printing import print_stage_name
 from utils.cli.console_color import ConsoleColor
-from utils.converters.base_word_capitalizer import PatternCapitalizer, WordCapitalizer
 from utils.converters.default_symbol_name_formatter import DefaultSymbolNameFormatter
+from utils.converters.swift_type_mapper import SwiftTypeMapper
 from utils.converters.symbol_name_formatter import SymbolNameFormatter
+from utils.cutils.cutils import declarationFromType
+from utils.data.generator_config import GeneratorConfig
 from utils.data.swift_decl_lookup import SwiftDeclLookup
 from utils.data.swift_decls import (
     CDeclKind,
+    SwiftAccessLevel,
     SwiftDecl,
     SwiftExtensionDecl,
+    SwiftMemberFunctionDecl,
     SwiftMemberVarDecl,
 )
 from utils.data.swift_file import SwiftFile
@@ -27,7 +32,7 @@ from utils.directory_structure.directory_structure_manager import (
 from utils.doccomment.doccomment_block import DoccommentBlock
 from utils.doccomment.doccomment_formatter import DoccommentFormatter
 from utils.generator.known_conformance_generators import get_conformance_generator
-from utils.generator.swift_decl_generator import SwiftDeclGenerator
+from utils.generator.swift_decl_generator import SwiftDeclGenerator, coord_to_location
 from utils.generator.symbol_generator_filter import SymbolGeneratorFilter
 from utils.generator.symbol_name_generator import SymbolNameGenerator
 from utils.data.compound_symbol_name import ComponentCase, CompoundSymbolName
@@ -41,87 +46,174 @@ from utils.generator.type_generator import (
 )
 from utils.paths import paths
 
-FILE_NAME = "blend2d.h"
+CONFIG = """
+{
+    "declarations": {
+        "prefixes": ["b2"],
+        "functionsToMethods": [
+            { "cPrefix": "b2World_", "swiftType": "B2World", "param0": { "swiftName": "id", "type": "b2WorldId" } },
+            { "cPrefix": "b2Body_", "swiftType": "B2Body", "param0": { "swiftName": "id", "type": "b2BodyId" } },
+            { "cPrefix": "b2Joint_", "swiftType": "B2Joint", "param0": { "swiftName": "id", "type": "b2JointId" } },
+            { "cPrefix": "b2Shape_", "swiftType": "B2Shape", "param0": { "swiftName": "id", "type": "b2ShapeId" } },
+            { "cPrefix": "b2Chain_", "swiftType": "B2Chain", "param0": { "swiftName": "id", "type": "b2ChainId" } }
+        ],
+        "structConformances": [
+            { "cName": "b2Vec2", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
+            { "cName": "b2Circle", "conformances": ["Equatable", "Hashable"] }
+        ]
+    },
+    "symbolFormatting": {
+        "capitalizeTerms": ["AABB"],
+        "patternsToSplit": [],
+        "snakeCaseAfterTerms": []
+    },
+    "docComments": {
+        "collect": true
+    },
+    "fileGeneration": {
+        "targetPath": "Sources/SwiftBox2D/Generated",
+        "globalFileSuffix": "+Ext",
+        "imports": ["box2d"]
+    }
+}
+"""
 
-BLEND2D_PREFIXES = [
-    "BL",
+
+class MemberMethodGenerator:
+    methodPrefix: str
+    classToMap: CompoundSymbolName
+    firstArgumentMember: str
+    firstArgumentType: str
+
+    def __init__(self, methodPrefix: str, classToMap: CompoundSymbolName | str, firstArgumentMember: str, firstArgumentType: str):
+        self.methodPrefix = methodPrefix
+        if isinstance(classToMap, CompoundSymbolName):
+            self.classToMap = classToMap
+        else:
+            self.classToMap = CompoundSymbolName.from_pascal_case(classToMap)
+        self.firstArgumentMember = firstArgumentMember
+        self.firstArgumentType = firstArgumentType
+
+    def transform(
+        self,
+        typeMapper: SwiftTypeMapper,
+        node: c_ast.FuncDecl,
+        fName: CompoundSymbolName,
+        context: c_ast.FileAST
+    ) -> SwiftMemberFunctionDecl | None:
+
+        if len(node.args.params) < 1:
+            return None
+        
+        arguments: list[SwiftMemberFunctionDecl.ARG_TYPE] = list(map(
+            lambda p: (None, declarationFromType(p.type)[0], typeMapper.mapToSwiftType(p.type, context).to_string()),
+            node.args.params[1:]
+        ))
+        cCallArgs = [self.firstArgumentMember] + list(map(lambda a: a[1], arguments))
+
+        return SwiftMemberFunctionDecl(
+            c_kind=CDeclKind.FUNC,
+            name=fName,
+            original_name=CompoundSymbolName.from_pascal_case(node.type.declname),
+            arguments=arguments,
+            return_type=typeMapper.mapToSwiftType(node.type.type, context).to_string(),
+            origin=coord_to_location(node.coord),
+            original_node=node,
+            doccomment=None,
+            body=[
+                f"{node.type.declname}({', '.join(cCallArgs)})"
+            ]
+        )
+
+
+# MARK: Config
+
+FILE_NAME = "box2d.h"
+
+BOX2D_PREFIXES = [
+    "b2",
 ]
 """
-List of prefixes from Blend2D declarations to convert
+List of prefixes from Box2D declarations to convert
 
 Will also be used as a list of terms to remove the prefix of in final declaration names.
 """
 
 STRUCT_CONFORMANCES: list[tuple[str, list[str]]] = [
-    #
-    ("BLBitSetSegment", ["Equatable"]),
-    ("BLRange", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    # Color
-    ("BLRgba", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLRgba32", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLRgba64", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    # Font
-    ("BLFontFaceInfo", ["Equatable", "CustomStringConvertible"]),
-    ("BLFontFeatureItem", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLFontMatrix", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLFontQueryProperties", ["Equatable", "CustomStringConvertible"]),
-    ("BLFontVariationItem", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    # Geometry
-    ("BLArc", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLBox", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLBoxI", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLCircle", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLEllipse", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLLine", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLPoint", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLPointI", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLRect", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLRectI", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLRoundRect", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLSize", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLSizeI", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLTriangle", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLMatrix2D", ["Equatable", "Hashable"]),
-    # Glyph
-    ("BLGlyphInfo", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLGlyphPlacement", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    # Gradient
-    ("BLGradientStop", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLLinearGradientValues", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLRadialGradientValues", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    ("BLConicGradientValues", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    # Image
-    ("BLImageInfo", ["Equatable", "Hashable", "CustomStringConvertible"]),
-    # Text
-    ("BLTextMetrics", ["Equatable", "Hashable", "CustomStringConvertible"]),
+    # ("SomeStruct", ["Conformance1", "Conformance2", ...])
+    ("b2Circle", ["Equatable", "Hashable"]),
+    ("b2Vec2", ["Equatable", "Hashable", "CustomStringConvertible"]),
 ]
 """
 List of pattern matching to apply to C struct declarations along with a list of
 conformances that should be appended, in case the struct matches the pattern.
 """
 
+# List of member method generators.
+METHOD_MAPPERS: list[MemberMethodGenerator] = [
+    MemberMethodGenerator("b2World", "B2World", "id", "b2WorldId"),
+    MemberMethodGenerator("b2Body", "B2Body", "id", "b2BodyId"),
+    MemberMethodGenerator("b2Joint", "B2Joint", "id", "b2JointId"),
+    MemberMethodGenerator("b2Shape", "B2Shape", "id", "b2ShapeId"),
+    MemberMethodGenerator("b2Chain", "B2Chain", "id", "b2ChainId"),
+]
 
-class Blend2DDeclGenerator(SwiftDeclGenerator):
+# MARK: Definitions
+
+class Box2DDeclGenerator(SwiftDeclGenerator):
     # Lists declarations that where parsed and matched with an entry in STRUCT_CONFORMANCES.
     foundDecls: list[str] = []
+    typeMapper = SwiftTypeMapper()
 
-    def generate_enum(self, node: c_ast.Enum) -> SwiftExtensionDecl | None:
-        decl = super().generate_enum(node)
+    def generate_funcDecl(self, node: c_ast.FuncDecl, context: c_ast.FileAST) -> SwiftDecl | None:
+        funcName: str = node.type.declname
+        if "_" not in funcName:
+            return None
+        (l, r) = funcName.split("_")
+        transformer = self.mapTarget(l, node.args)
+        if transformer is None:
+            return None
+        if not isinstance(node.type, c_ast.TypeDecl):
+            return None
+
+        fName = self.symbol_name_generator.generate_funcDecl_name(r)
+
+        method = transformer.transform(self.typeMapper, node, fName, context)
+        if method is None:
+            return None
+
+        return SwiftExtensionDecl(
+            name=transformer.classToMap,
+            original_name=None,
+            origin=coord_to_location(node.coord),
+            original_node=node,
+            c_kind=CDeclKind.STRUCT,
+            doccomment=None,
+            members=[
+                method
+            ],
+            conformances=[],
+            access_level=SwiftAccessLevel.INTERNAL
+        )
+    
+    def mapTarget(self, lead: str, args: c_ast.ParamList) -> MemberMethodGenerator | None:
+        if len(args.params) < 1:
+            return None
+        
+        for map in METHOD_MAPPERS:
+            if map.methodPrefix == lead:
+                return map
+        return None
+
+    def generate_enum(self, node: c_ast.Enum, context: c_ast.FileAST) -> SwiftExtensionDecl | None:
+        decl = super().generate_enum(node, context)
         if decl is None:
             return decl
 
-        # Append 'OptionSet' conformance to some enum declarations
-        if (
-            decl.name.endswith("Flags")
-            or decl.name.to_string() == "BLRuntimeCpuFeatures"
-            or decl.name.to_string() == "BLImageCodecFeatures"
-        ):
-            decl.conformances.append("OptionSet")
-
         return decl
 
-    def generate_struct(self, node: c_ast.Struct) -> SwiftExtensionDecl | None:
-        decl = super().generate_struct(node)
+    def generate_struct(self, node: c_ast.Struct, context: c_ast.FileAST) -> SwiftExtensionDecl | None:
+        decl = super().generate_struct(node, context)
 
         if conformances := self.propose_conformances(decl):
             decl.conformances.extend(conformances)
@@ -162,47 +254,44 @@ class Blend2DDeclGenerator(SwiftDeclGenerator):
         return result
 
 
-class Blend2DSymbolFilter(SymbolGeneratorFilter):
+class Box2DSymbolFilter(SymbolGeneratorFilter):
+    
     def should_gen_enum_extension(
         self, node: c_ast.Enum, decl: SwiftExtensionDecl
     ) -> bool:
-        if decl.c_kind == CDeclKind.ENUM:
-            if (
-                decl.name.to_string() == "BLObjectInfoBits"
-                or decl.name.to_string() == "BLObjectInfoShift"
-            ):
-                return False
-
-        return super().should_gen_enum_extension(node, decl)
+        return False
 
     def should_gen_enum_var_member(
         self, node: c_ast.Enumerator, decl: SwiftMemberVarDecl
     ) -> bool:
-        return (
-            decl.c_kind == CDeclKind.ENUM_CASE
-            and decl.name.to_string().lower().find("forceuint") == -1
-        )
+        return False
+
+    def should_gen_struct_extension(
+        self, node: c_ast.Struct, decl: SwiftExtensionDecl
+    ) -> bool:
+        if node.name is None:
+            return False
+        for conformance in STRUCT_CONFORMANCES:
+            if node.name == conformance[0]:
+                return True
+        return False
+    
+    def should_gen_funcDecl(
+        self, node: c_ast.FuncDecl, decl: SwiftDecl
+    ) -> bool:
+        return True
 
 
-class Blend2DNameGenerator(SymbolNameGenerator):
+class Box2DNameGenerator(SymbolNameGenerator):
     formatter: SymbolNameFormatter
 
-    def __init__(self):
-        self.formatter = DefaultSymbolNameFormatter(
-            capitalizers=[
-                # Scalar type specifiers in geometry names
-                PatternCapitalizer(re.compile(r"rect(i|d)", flags=re.IGNORECASE)),
-                PatternCapitalizer(re.compile(r"box(i|d)$", flags=re.IGNORECASE)),
-                PatternCapitalizer(re.compile(r"polyline(i|d)$", flags=re.IGNORECASE)),
-                PatternCapitalizer(re.compile(r"polygon(i|d)$", flags=re.IGNORECASE)),
-                # PNG tags
-                WordCapitalizer("IHDR"),
-                WordCapitalizer("IDAT"),
-                WordCapitalizer("IEND"),
-                WordCapitalizer("PLTE"),
-                WordCapitalizer("TRNS"),
-            ],
-            terms_to_snake_case_after=["x86"],
+    def __init__(self, formatter: DefaultSymbolNameFormatter):
+        self.formatter = formatter
+    
+    @classmethod
+    def from_config(cls, config: GeneratorConfig):
+        return Box2DNameGenerator(
+            formatter=DefaultSymbolNameFormatter.from_config(config.formatter)
         )
 
     def format_enum_case_name(self, name: CompoundSymbolName) -> CompoundSymbolName:
@@ -231,7 +320,7 @@ class Blend2DNameGenerator(SymbolNameGenerator):
     ) -> CompoundSymbolName:
         name = CompoundSymbolName.from_snake_case(case_name)
 
-        orig_enum_name = CompoundSymbolName.from_pascal_case(enum_original_name)
+        orig_enum_name = CompoundSymbolName.from_snake_case(enum_original_name)
 
         (new_name, prefix) = name.removing_common(orig_enum_name, case_sensitive=False)
         new_name = new_name.camel_cased()
@@ -257,11 +346,14 @@ class Blend2DNameGenerator(SymbolNameGenerator):
 
     def generate_original_struct_name(self, name: str) -> CompoundSymbolName:
         return self.generate(name)
+    
+    def generate_funcDecl_name(self, name: str) -> CompoundSymbolName:
+        return self.formatter.format(self.generate(name).camel_cased())
 
 
-class Blend2DDoccommentFormatter(DoccommentFormatter):
+class Box2DDoccommentFormatter(DoccommentFormatter):
     """
-    Formats doc comments from Blend2D to be more Swifty, including renaming \
+    Formats doc comments from Box2D to be more Swifty, including renaming \
     referenced C symbol names to the converted Swift names.
     """
 
@@ -311,26 +403,20 @@ class Blend2DDoccommentFormatter(DoccommentFormatter):
 
         # Remove '\ingroup*' lines
         lines = filter(lambda c: not c.startswith("\\ingroup"), lines)
+
         # Reword '\note' to '- note'
         lines = map(lambda c: c.replace("\\note", "- note:"), lines)
-
         # Replace "\ref <symbol>" with "`<symbol>`"
         lines = map(self.replace_refs, lines)
-
         # Convert C symbol references to Swift symbols
         lines = map(lambda c: self.convert_refs(c, lookup), lines)
 
         return super().format_doccomment(comment.with_lines(lines), decl, lookup)
 
 
-class Blend2DDirectoryStructureManager(DirectoryStructureManager):
+class Box2DDirectoryStructureManager(DirectoryStructureManager):
     def file_name_for_decl(self, decl: SwiftDecl) -> str:
-        # For struct conformances, append a "+Ext.swift" to the suffix of the
-        # filename
-        if decl.c_kind == CDeclKind.STRUCT and isinstance(decl, SwiftExtensionDecl) and len(decl.conformances) > 0:
-            return f"{decl.name.to_string()}+Ext.swift"
-
-        return super().file_name_for_decl(decl)
+        return f"{decl.name.to_string()}+Ext.swift"
 
     def make_declaration_files(self, decls: Iterable[SwiftDecl]) -> list[SwiftFile]:
         result = super().make_declaration_files(decls)
@@ -349,99 +435,30 @@ class Blend2DDirectoryStructureManager(DirectoryStructureManager):
         # Matches are made against full file names, with no directory information,
         # e.g.: "BLContext.swift", "BLFillRule.swift", "BLResultCode.swift", etc.
         return [
-            # C
-            (
-                ["Context"],
-                [
-                    re.compile(r"^BLContext.+"),
-                    "BLGradientQuality.swift",
-                    "BLPatternQuality.swift",
-                    "BLRenderingQuality.swift",
-                    "BLFillRule.swift",
-                    "BLClipMode.swift",
-                    "BLCompOp.swift",
-                    "BLFlattenMode.swift",
-                ],
-            ),
-            # F
-            (["File"], re.compile(r"^BLFile.+")),
-            # G
-            (
-                ["Gradient"],
-                [
-                    re.compile(r"^BLGradient.+"),
-                    "BLLinearGradientValues+Ext.swift",
-                    "BLRadialGradientValues+Ext.swift",
-                    "BLConicGradientValues+Ext.swift",
-                ]
-            ),
-            (
-                ["Geometry"],
-                [
-                    "BLGeometryDirection.swift",
-                    "BLGeometryType.swift",
-                    "BLArc+Ext.swift",
-                    "BLBox+Ext.swift",
-                    "BLBoxI+Ext.swift",
-                    "BLCircle+Ext.swift",
-                    "BLEllipse+Ext.swift",
-                    "BLLine+Ext.swift",
-                    "BLMatrix2D+Ext.swift",
-                    "BLPoint+Ext.swift",
-                    "BLPointI+Ext.swift",
-                    "BLRect+Ext.swift",
-                    "BLRectI+Ext.swift",
-                    "BLRoundRect+Ext.swift",
-                    "BLSize+Ext.swift",
-                    "BLSizeI+Ext.swift",
-                    "BLTriangle+Ext.swift",
-                ],
-            ),
-            (
-                ["Geometry", "Matrix"],
-                [
-                    re.compile(r"^BLMatrix.+"),
-                    re.compile(r"^BLTransform.+")
-                ],
-            ),
-            (
-                ["Geometry", "Path"],
-                [
-                    re.compile(r"^BLPath.+"),
-                    "BLHitTest.swift",
-                    "BLOffsetMode.swift",
-                ],
-            ),
-            # I
-            (["Image"], re.compile(r"^BLImage.+")),
-            # R
-            (
-                ["Runtime"],
-                [
-                    re.compile(r"^BLRuntime.+"),
-                    "BLObjectType.swift",
-                ],
-            ),
-            # S
-            (["Stroke"], re.compile(r"^BLStroke.+")),
-            # T
-            (["Text"], re.compile(r"^BLText.+")),
-            (
-                ["Text", "Font"],
-                [
-                    re.compile(r"^BLFont.+"),
-                    "BLOrientation.swift",
-                ],
-            ),
-            (["Text", "Glyph"], re.compile(r"^BLGlyph.+")),
+            # Ex:
+            # (
+            #     ["Folder"],
+            #     [
+            #         re.compile(r"^SomePrefix.+"),
+            #         "AFileName.swift",
+            #         ...
+            #     ]
+            # ),
         ]
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Generates .swift files for Blend2D enum and struct declarations."
+        description="Generates .swift files for Box2D enum and struct declarations."
     )
 
+    parser.add_argument(
+        "-c",
+        "--config_path",
+        type=Path,
+        default=Path("generate_types.json"),
+        help="Path to .json file containing the configuration for the type generation."
+    )
     parser.add_argument(
         "--stdout",
         action="store_true",
@@ -465,7 +482,7 @@ def main() -> int:
     swift_target_path = (
         args.path
         if args.path is not None
-        else paths.srcroot_path("Sources", "SwiftBlend2D", "Generated")
+        else paths.srcroot_path("Sources", "SwiftBox2D", "Generated")
     )
     if not swift_target_path.exists() or not swift_target_path.is_dir():
         print(f"Error: No target directory with name '{swift_target_path}' found.")
@@ -480,24 +497,25 @@ def main() -> int:
     else:
         target = DeclFileGeneratorDiskTarget(destination_path, rm_folder=True)
 
-    symbol_filter = Blend2DSymbolFilter()
-    symbol_name_generator = Blend2DNameGenerator()
-    decl_generator = Blend2DDeclGenerator(
-        prefixes=BLEND2D_PREFIXES,
+    config = GeneratorConfig.from_json_file(args.config_path)
+    print_stage_name(f"Loaded config from {ConsoleColor.CYAN(args.config_path)}")
+
+    symbol_filter = Box2DSymbolFilter()
+    symbol_name_generator = Box2DNameGenerator.from_config(config)
+    decl_generator = Box2DDeclGenerator(
+        prefixes=config.declarations.prefixes,
         symbol_filter=symbol_filter,
         symbol_name_generator=symbol_name_generator,
     )
-    request = TypeGeneratorRequest(
+    request = TypeGeneratorRequest.from_config(
+        config=config,
         header_file=input_path,
-        destination=destination_path,
-        prefixes=BLEND2D_PREFIXES,
         target=target,
-        includes=["blend2d"],
         swift_decl_generator=decl_generator,
         symbol_filter=symbol_filter,
         symbol_name_generator=symbol_name_generator,
-        doccomment_formatter=Blend2DDoccommentFormatter(),
-        directory_manager=Blend2DDirectoryStructureManager(destination_path),
+        doccomment_formatter=Box2DDoccommentFormatter(),
+        directory_manager=Box2DDirectoryStructureManager.from_config(config.fileGeneration),
     )
 
     generate_types(request)

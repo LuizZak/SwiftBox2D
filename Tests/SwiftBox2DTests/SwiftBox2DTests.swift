@@ -2,11 +2,10 @@ import XCTest
 @testable import SwiftBox2D
 
 final class SwiftBox2DTests: XCTestCase {
-    func testExample() throws {
-        // XCTest Documentation
-        // https://developer.apple.com/documentation/xctest
-
-        // Defining Test Cases and Test Methods
-        // https://developer.apple.com/documentation/xctest/defining_test_cases_and_test_methods
+    func testWorldStep() throws {
+        let step: Float = 1.0 / 60
+        let world = B2World()
+        
+        world.step(step)
     }
 }

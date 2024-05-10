@@ -69,7 +69,6 @@ class ComponentCase(Enum):
 
         return self
 
-
 _pascal_case_matcher = re.compile(r'.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)')
 
 @dataclass(repr=False)
@@ -351,6 +350,13 @@ class CompoundSymbolName(Sequence, Hashable):
         )
 
         return CompoundSymbolName(list(components))
+    
+    @classmethod
+    def from_camel_case(cls, string: str) -> "CompoundSymbolName":
+        """
+        Alias for from_pascal_case.
+        """
+        return cls.from_pascal_case(string)
 
     @classmethod
     def from_pascal_case(cls, string: str) -> "CompoundSymbolName":
@@ -364,10 +370,20 @@ class CompoundSymbolName(Sequence, Hashable):
             CompoundSymbolName.Component(string=Case, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
             CompoundSymbolName.Component(string=String, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY)
         ])
+        >>> CompoundSymbolName.from_pascal_case("aPascalCaseString")
+        CompoundSymbolName(components=[
+            CompoundSymbolName.Component(string=a, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Pascal, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Case, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=String, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY)
+        ])
         """
         return cls.from_string_list(*_pascal_case_matcher.findall(string))
 
     def copy(self) -> "CompoundSymbolName":
+        """
+        Performs a deep copy of this CompoundSymbolName and its components.
+        """
         return CompoundSymbolName(
             components=list(map(lambda c: c.copy(), self.components))
         )
@@ -458,6 +474,51 @@ class CompoundSymbolName(Sequence, Hashable):
             copy[i] = mapper(i, comp)
         
         return copy
+    
+    def split(self, predicate: Callable[[int, "CompoundSymbolName.Component"], bool], include_separator: bool = False) -> list["CompoundSymbolName"]:
+        """
+        Splits this CompoundSymbolName across components based on a predicate that receives the component and its index
+        on the component list.
+
+        If include_separator is True, the separator components are included in the resulting list, otherwise they are
+        omitted.
+
+        >>> CompoundSymbolName.from_snake_case('a_symbol_name').split(lambda i,c: c.string == 'symbol')
+        [CompoundSymbolName(components=[
+            CompoundSymbolName.Component(string=a, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY)
+        ]), CompoundSymbolName(components=[
+            CompoundSymbolName.Component(string=name, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY)
+        ])]
+        >>> CompoundSymbolName.from_snake_case('a_symbol_name').split(lambda i,c: c.string == 'symbol', include_separator=True)
+        [CompoundSymbolName(components=[
+            CompoundSymbolName.Component(string=a, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY)
+        ]), CompoundSymbolName(components=[
+            CompoundSymbolName.Component(string=symbol, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY)
+        ]), CompoundSymbolName(components=[
+            CompoundSymbolName.Component(string=name, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY)
+        ])]
+        """
+        current: CompoundSymbolName | None = None
+        result = list()
+
+        for i, comp in enumerate(self):
+            if predicate(i, comp):
+                if current is not None:
+                    result.append(current)
+                    current = None
+
+                if include_separator:
+                    result.append(CompoundSymbolName([comp.copy()]))
+            else:
+                if current is None:
+                    current = CompoundSymbolName([comp.copy()])
+                else:
+                    current.components.append(comp.copy())
+        
+        if current is not None:
+            result.append(current)
+
+        return result
 
     def lower(self, force=False) -> "CompoundSymbolName":
         """
@@ -688,6 +749,18 @@ class CompoundSymbolName(Sequence, Hashable):
             result.append(new_comp)
 
         return CompoundSymbolName(components=result)
+    
+    def appending(self, other: "CompoundSymbolName") -> "CompoundSymbolName":
+        """
+        Returns the result of appending all the components of `other` onto `self`.
+        Component properties are maintained on the resulting copy.
+
+        >>> CompoundSymbolName.from_string_list('a', 'symbol', 'name').appending(CompoundSymbolName.from_string_list('another', 'name')).camel_cased().to_string()
+        'aSymbolNameAnotherName'
+        """
+        copy = self.copy()
+        copy.components.extend(other.copy().components)
+        return copy
 
     def to_string(self) -> str:
         return "".join(

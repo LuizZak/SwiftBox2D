@@ -1,6 +1,7 @@
-from typing import TextIO
+from typing import Callable, Iterable, TextIO, TypeVar
 from contextlib import contextmanager
 
+T = TypeVar("T")
 
 class SyntaxStream:
     def __init__(self, destination: TextIO):
@@ -30,6 +31,35 @@ class SyntaxStream:
 
     def unindent(self):
         self.indent_depth -= 1
+    
+    def with_separator(self, sep: str, items: Iterable[T], writer: Callable[["SyntaxStream", T], None]):
+        """
+        Returns a callable that receives a SyntaxStream, and from the second item
+        onwards also prepends the stream with `sep` automatically.
+
+        ```python
+        listElements = [<item 1>, <item 2>, <item 3>]
+        stream.with_separator(
+            " & ",
+            listElements,
+            lambda stream, item: item.write(stream)
+        )
+        ```
+
+        Produces the stream:
+
+        ```
+        <item 1> & <item 2> & <item 3>
+        ```
+        """
+        count = 0
+        for item in items:
+            if count > 0:
+                self.write(sep)
+            
+            writer(self, item)
+
+            count += 1
 
     @contextmanager
     def block(self, line: str):

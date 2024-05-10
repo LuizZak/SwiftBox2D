@@ -130,6 +130,7 @@ class DoccommentLookup:
         self.doccomment_patterns = [
             "//!<",
             "//!",
+            "///",
             "/**",
         ]
     

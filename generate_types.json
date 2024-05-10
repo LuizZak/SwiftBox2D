@@ -1,0 +1,29 @@
+{
+    "declarations": {
+        "prefixes": ["b2"],
+        "functionsToMethods": [
+            { "cPrefix": "b2World_", "swiftType": "B2World", "param0": { "swiftName": "id", "type": "b2WorldId" } },
+            { "cPrefix": "b2Body_", "swiftType": "B2Body", "param0": { "swiftName": "id", "type": "b2BodyId" } },
+            { "cPrefix": "b2Joint_", "swiftType": "B2Joint", "param0": { "swiftName": "id", "type": "b2JointId" } },
+            { "cPrefix": "b2Shape_", "swiftType": "B2Shape", "param0": { "swiftName": "id", "type": "b2ShapeId" } },
+            { "cPrefix": "b2Chain_", "swiftType": "B2Chain", "param0": { "swiftName": "id", "type": "b2ChainId" } }
+        ],
+        "structConformances": [
+            { "cName": "b2Vec2", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
+            { "cName": "b2Circle", "conformances": ["Equatable", "Hashable"] }
+        ]
+    },
+    "symbolFormatting": {
+        "capitalizeTerms": ["AABB"],
+        "patternsToSplit": [],
+        "snakeCaseAfterTerms": []
+    },
+    "docComments": {
+        "collect": true
+    },
+    "fileGeneration": {
+        "targetPath": "Sources/SwiftBox2D/Generated",
+        "globalFileSuffix": "+Ext",
+        "imports": ["box2d"]
+    }
+}

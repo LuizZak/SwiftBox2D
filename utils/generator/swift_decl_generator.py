@@ -5,6 +5,7 @@ from utils.data.compound_symbol_name import CompoundSymbolName
 from utils.data.swift_decls import (
     CDeclKind,
     SourceLocation,
+    SwiftAccessLevel,
     SwiftDecl,
     SwiftExtensionDecl,
     SwiftMemberVarDecl,
@@ -14,6 +15,8 @@ from utils.generator.symbol_name_generator import SymbolNameGenerator
 
 
 # Visitor / declaration collection
+def coord_to_location(coord) -> SourceLocation:
+    return SourceLocation(Path(coord.file), coord.line, coord.column)
 
 
 class SwiftDeclGenerator:
@@ -27,9 +30,6 @@ class SwiftDeclGenerator:
         self.symbol_filter = symbol_filter
         self.symbol_name_generator = symbol_name_generator
 
-    def coord_to_location(self, coord) -> SourceLocation:
-        return SourceLocation(Path(coord.file), coord.line, coord.column)
-
     # Enum
 
     def generate_enum_case(
@@ -37,6 +37,7 @@ class SwiftDeclGenerator:
         enum_name: CompoundSymbolName,
         enum_original_name: str,
         node: c_ast.Enumerator,
+        context: c_ast.FileAST
     ) -> SwiftMemberVarDecl | None:
 
         value = self.symbol_name_generator.generate_original_enum_case(node.name).to_string()
@@ -46,7 +47,7 @@ class SwiftDeclGenerator:
                 enum_name, enum_original_name, node.name
             ),
             self.symbol_name_generator.generate_original_enum_case(node.name),
-            self.coord_to_location(node.coord),
+            coord_to_location(node.coord),
             original_node=node,
             c_kind=CDeclKind.ENUM_CASE,
             doccomment=None,
@@ -54,13 +55,13 @@ class SwiftDeclGenerator:
             initial_value=value
         )
 
-    def generate_enum(self, node: c_ast.Enum) -> SwiftExtensionDecl | None:
+    def generate_enum(self, node: c_ast.Enum, context: c_ast.FileAST) -> SwiftExtensionDecl | None:
         enum_name = self.symbol_name_generator.generate_enum_name(node.name)
 
         members = []
         if node.values is not None:
             for case_node in node.values:
-                case_decl = self.generate_enum_case(enum_name, node.name, case_node)
+                case_decl = self.generate_enum_case(enum_name, node.name, case_node, context)
                 if case_decl is None:
                     continue
 
@@ -70,55 +71,71 @@ class SwiftDeclGenerator:
         return SwiftExtensionDecl(
             enum_name,
             self.symbol_name_generator.generate_original_enum_name(node.name),
-            self.coord_to_location(node.coord),
+            coord_to_location(node.coord),
             original_node=node,
             c_kind=CDeclKind.ENUM,
             doccomment=None,
             members=list(members),
             conformances=[],
+            access_level=SwiftAccessLevel.PUBLIC
         )
 
     # Struct
 
-    def generate_struct(self, node: c_ast.Struct) -> SwiftExtensionDecl | None:
+    def generate_struct(self, node: c_ast.Struct, context: c_ast.FileAST) -> SwiftExtensionDecl | None:
         struct_name = self.symbol_name_generator.generate_struct_name(node.name)
 
         return SwiftExtensionDecl(
             struct_name,
             self.symbol_name_generator.generate_original_enum_name(node.name),
-            self.coord_to_location(node.coord),
+            coord_to_location(node.coord),
             original_node=node,
             c_kind=CDeclKind.STRUCT,
             doccomment=None,
             members=[],
             conformances=[],
+            access_level=SwiftAccessLevel.PUBLIC
         )
     
+    # Function
+
+    def generate_funcDecl(self, node: c_ast.FuncDecl, context: c_ast.FileAST) -> SwiftDecl | None:
+        return None
+
     #
 
-    def generate(self, node: c_ast.Node) -> SwiftDecl | None:
+    def generate(self, node: c_ast.Node, context: c_ast.FileAST) -> SwiftDecl | None:
         match node:
             case c_ast.Enum():
-                decl = self.generate_enum(node)
+                decl = self.generate_enum(node, context)
                 if decl is None:
                     return None
 
                 if self.symbol_filter.should_gen_enum_extension(node, decl):
                     return decl
+                
             case c_ast.Struct():
-                decl = self.generate_struct(node)
+                decl = self.generate_struct(node, context)
                 if decl is None:
                     return None
 
                 if self.symbol_filter.should_gen_struct_extension(node, decl):
                     return decl
+                
+            case c_ast.FuncDecl():
+                fDecl = self.generate_funcDecl(node, context)
+                if fDecl is None:
+                    return None
+
+                if self.symbol_filter.should_gen_funcDecl(node, fDecl):
+                    return fDecl
         
         return None
 
-    def generate_from_list(self, nodes: list[c_ast.Node]) -> list[SwiftDecl]:
+    def generate_from_list(self, nodes: list[c_ast.Node], context: c_ast.FileAST) -> list[SwiftDecl]:
         result = []
         for node in nodes:
-            decl = self.generate(node)
+            decl = self.generate(node, context)
             if decl is not None:
                 result.append(decl)
 

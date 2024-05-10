@@ -1,12 +1,13 @@
 import re
 
-from typing import Tuple
+from typing import Iterable, Tuple
 
 from utils.collection.collection_utils import flatten
 from utils.converters.base_word_capitalizer import BaseWordCapitalizer
 from utils.converters.symbol_name_formatter import SymbolNameFormatter
 from utils.data.compound_symbol_name import CompoundSymbolName
 from utils.data.compound_symbol_name import ComponentCase
+from utils.data.generator_config import GeneratorConfig
 
 
 class DefaultSymbolNameFormatter(SymbolNameFormatter):
@@ -30,7 +31,7 @@ class DefaultSymbolNameFormatter(SymbolNameFormatter):
     would be an entry like:
     `re.compile(r"(Color)(Management)", flags=re.IGNORECASE)`
 
-    - NOTE: Regex are applied recursively to split segments, so simple regex that have a single capture group will lead to recursion errors.
+    - NOTE: Regex are applied recursively to split segments, so a simple regex that has a single capture group will lead to recursion errors.
     """
 
     terms_to_snake_case_after: list[str]
@@ -44,9 +45,9 @@ class DefaultSymbolNameFormatter(SymbolNameFormatter):
 
     def __init__(
         self,
-        capitalizers: list[BaseWordCapitalizer] = None,
-        words_to_split: list[re.Pattern] | None = None,
-        terms_to_snake_case_after: list[str] | None = None,
+        capitalizers: Iterable[BaseWordCapitalizer] = None,
+        words_to_split: Iterable[re.Pattern] | None = None,
+        terms_to_snake_case_after: Iterable[str] | None = None,
     ):
         if capitalizers is None:
             capitalizers = []
@@ -55,9 +56,22 @@ class DefaultSymbolNameFormatter(SymbolNameFormatter):
         if terms_to_snake_case_after is None:
             terms_to_snake_case_after = []
 
-        self.capitalizers = capitalizers
-        self.words_to_split = words_to_split
-        self.terms_to_snake_case_after = terms_to_snake_case_after
+        self.capitalizers = list(capitalizers)
+        self.words_to_split = list(words_to_split)
+        self.terms_to_snake_case_after = list(terms_to_snake_case_after)
+    
+    @classmethod
+    def from_config(cls, config: GeneratorConfig.NameFormatter):
+        def splitterPattern(pattern: str):
+            regex = re.compile(pattern, flags=re.IGNORECASE)
+            assert regex.groups > 1, "Found formatter pattern to split that has a single group; this leads to recursion errors"
+            return regex
+
+        capitalizers = map(BaseWordCapitalizer.from_string, config.capitalizeTerms)
+        splitterPatterns = map(splitterPattern, config.patternsToSplit)
+        snakeCaseTerms = config.snakeCaseAfterTerms
+
+        return cls(capitalizers, splitterPatterns, snakeCaseTerms)
 
     def format(self, name: CompoundSymbolName) -> CompoundSymbolName:
         # Split/capitalize

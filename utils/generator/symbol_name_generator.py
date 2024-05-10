@@ -18,3 +18,6 @@ class SymbolNameGenerator:
 
     def generate_original_enum_case(self, case_name: str) -> CompoundSymbolName:
         raise NotImplementedError()
+    
+    def generate_funcDecl_name(self, name: str) -> CompoundSymbolName:
+        raise NotImplementedError()

@@ -1,6 +1,7 @@
 from pycparser import c_ast
 
 from utils.data.swift_decls import (
+    SwiftDecl,
     SwiftExtensionDecl,
     SwiftMemberDecl,
     SwiftMemberVarDecl,
@@ -8,6 +9,11 @@ from utils.data.swift_decls import (
 
 
 class SymbolGeneratorFilter:
+    """
+    Class responsible for selecting which C symbols get converted into Swift symbol
+    declarations.
+    """
+
     def should_gen_enum_extension(
         self, node: c_ast.Enum, decl: SwiftExtensionDecl
     ) -> bool:
@@ -27,3 +33,8 @@ class SymbolGeneratorFilter:
         self, node: c_ast.Struct, decl: SwiftExtensionDecl
     ) -> bool:
         return not decl.is_empty()
+    
+    def should_gen_funcDecl(
+        self, node: c_ast.FuncDecl, decl: SwiftDecl
+    ) -> bool:
+        return True

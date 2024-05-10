@@ -73,28 +73,10 @@
             {
                 "type": "lldb",
                 "request": "launch",
-                "name": "Debug SwiftBox2DSample",
-                "program": "${workspaceFolder}/.build/debug/SwiftBox2DSample",
-                "args": [],
-                "cwd": "${workspaceFolder:SwiftBox2D}",
-                "preLaunchTask": "swift: Build Debug SwiftBox2DSample"
-            },
-            {
-                "type": "lldb",
-                "request": "launch",
-                "name": "Release SwiftBox2DSample",
-                "program": "${workspaceFolder}/.build/release/SwiftBox2DSample",
-                "args": [],
-                "cwd": "${workspaceFolder:SwiftBox2D}",
-                "preLaunchTask": "swift: Build Release SwiftBox2DSample"
-            },
-            {
-                "type": "lldb",
-                "request": "launch",
                 "name": "Test SwiftBox2D",
                 "program": "./.build/debug/SwiftBox2DPackageTests.xctest",
                 "cwd": "${workspaceFolder:SwiftBox2D}",
-                "preLaunchTask": "swift: Build All"
+                "preLaunchTask": "Build (debug)"
             }
         ]
     },
@@ -149,8 +131,12 @@
         "ShortcutMenuBar.userButton03Command": "workbench.action.tasks.runTask|Update Box2D",
         "ShortcutMenuBar.userButton04Command": "workbench.action.tasks.runTask|Generate Swift Types",
         "cSpell.words": [
+            "AABB",
             "asmjit",
             "backticked",
+            "cutils",
+            "declname",
+            "desugared",
             "doccomment",
             "doccomments",
             "msvc",

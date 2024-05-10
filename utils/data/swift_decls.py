@@ -26,6 +26,23 @@ class CDeclKind(Enum):
     "A C-style enum value declaration."
     STRUCT = 3
     "A C-style struct declaration."
+    FUNC = 4
+    "A C-style function declaration."
+
+
+class SwiftAccessLevel(Enum):
+    """
+    Represents an access level for a Swift declaration.
+    """
+
+    PRIVATE = 1
+    FILEPRIVATE = 2
+    INTERNAL = 3
+    PUBLIC = 4
+    OPEN = 5
+
+    def write(self, stream: SyntaxStream):
+        stream.write(self.name.lower())
 
 
 @dataclass
@@ -150,8 +167,9 @@ class SwiftMemberFunctionDecl(SwiftMemberDecl):
     """
     A Swift function member declaration.
     """
+    ARG_TYPE = tuple[str | None, str, str]
 
-    arguments: list[tuple[str | None, str, str]] = field(default_factory=lambda: [])
+    arguments: list[ARG_TYPE] = field(default_factory=lambda: [])
     "List of function arguments, as (label, name, type)."
 
     return_type: str | None = None
@@ -177,6 +195,8 @@ class SwiftMemberFunctionDecl(SwiftMemberDecl):
             result = ""
             if arg[0] is not None:
                 result += f"{arg[0]} "
+            else:
+                result += "_ "
             result += f"{arg[1]}: "
             result += arg[2]
             return result
@@ -185,7 +205,7 @@ class SwiftMemberFunctionDecl(SwiftMemberDecl):
         stream.write(", ".join(map(arg_str, self.arguments)))
         stream.write(") ")
 
-        if self.return_type is not None:
+        if self.return_type is not None and self.return_type != "Void":
             stream.write(f"-> {self.return_type} ")
 
         self.write_body(stream)
@@ -225,6 +245,7 @@ class SwiftMemberFunctionDecl(SwiftMemberDecl):
 
 @dataclass
 class SwiftExtensionDecl(SwiftDecl):
+    access_level: SwiftAccessLevel
     members: List[SwiftMemberDecl]
     conformances: list[str]
 
@@ -234,6 +255,7 @@ class SwiftExtensionDecl(SwiftDecl):
         name = self.name.to_string()
 
         if self.original_name is not None and name != self.original_name.to_string():
+            self.access_level.write(stream)
             stream.line(f"typealias {name} = {self.original_name.to_string()}")
             stream.line()
 
@@ -247,7 +269,8 @@ class SwiftExtensionDecl(SwiftDecl):
 
         # Only emit members extension if members are present
         if len(self.members) > 0:
-            member_decl = f"public extension {name}"
+            self.access_level.write(stream)
+            member_decl = f" extension {name}"
 
             if len(self.members) == 0:
                 stream.line(member_decl + " { }")
@@ -263,13 +286,14 @@ class SwiftExtensionDecl(SwiftDecl):
     def copy(self):
         return SwiftExtensionDecl(
             name=self.name.copy(),
-            original_name=self.original_name.copy(),
+            original_name=self.original_name.copy() if self.original_name is not None else None,
             origin=self.origin,
             original_node=self.original_node,
             c_kind=self.c_kind,
             doccomment=self.doccomment,
             members=list(map(lambda c: c.copy(), self.members)),
             conformances=self.conformances,
+            access_level=self.access_level
         )
 
     def accept(self, visitor: SwiftDeclVisitor) -> SwiftDeclVisitResult:

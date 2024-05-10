@@ -16,6 +16,7 @@ from utils.cli.cli_printing import print_stage_name
 from utils.cli.console_color import ConsoleColor
 
 from utils.converters.syntax_stream import SyntaxStream
+from utils.data.generator_config import GeneratorConfig
 from utils.data.swift_decl_lookup import SwiftDeclLookup
 from utils.data.swift_decl_visitor import SwiftDeclVisitor
 from utils.doccomment.doccomment_formatter import DoccommentFormatter
@@ -91,7 +92,7 @@ class SwiftDeclMerger:
                 decl_original = decl.original_name.to_string() if decl.original_name is not None else "<none>"
 
                 raise BaseException(
-                    f"Found two symbols that share the same name but are of different types: {existing_name} (type: {type(existing)}) (originally: {existing_original}) and {decl_name} (type: {type(decl)}) (originally: {decl_original})"
+                    f"Found two symbols that share the same name but are of different types or access levels: {existing_name} (type: {type(existing)}) (originally: {existing_original}) and {decl_name} (type: {type(decl)}) (originally: {decl_original})"
                 )
 
             else:
@@ -103,9 +104,11 @@ class SwiftDeclMerger:
         self, decl1: SwiftDecl, decl2: SwiftDecl
     ) -> SwiftExtensionDecl | None:
 
-        if isinstance(decl1, SwiftExtensionDecl) and isinstance(
-            decl2, SwiftExtensionDecl
-        ):
+        if isinstance(decl1, SwiftExtensionDecl) and isinstance(decl2, SwiftExtensionDecl):
+            # Don't merge different access levels
+            if decl1.access_level != decl2.access_level:
+                return None
+            
             node = self.choose_nodes(decl1.original_node, decl2.original_node)
 
             return SwiftExtensionDecl(
@@ -117,6 +120,7 @@ class SwiftDeclMerger:
                 c_kind=decl1.c_kind,
                 doccomment=decl1.doccomment,
                 conformances=list(set(decl1.conformances + decl2.conformances)),
+                access_level=decl1.access_level
             )
 
         return None
@@ -179,6 +183,7 @@ class DeclFileGeneratorStdoutTarget(DeclGeneratorTarget):
     @contextmanager
     def create_stream(self, path: Path) -> Generator:
         stream = SyntaxStream(sys.stdout)
+        stream.write_then_line(f"[Create file at: {ConsoleColor.CYAN(path.resolve())}]")
         yield stream
 
 
@@ -244,6 +249,20 @@ class DeclCollectorVisitor(c_ast.NodeVisitor):
     def visit_Enum(self, node: c_ast.Enum):
         if node.name is not None and self.should_include(node.name):
             self.decls.append(node)
+    
+    def visit_FuncDecl(self, node: c_ast.FuncDecl):
+        ident = self.identifier_from_type(node.type)
+        if ident is None:
+            return
+        
+        if ident is not None and self.should_include(ident):
+            self.decls.append(node)
+    
+    def identifier_from_type(self, decl: c_ast.Decl) -> str | None:
+        if not isinstance(decl, c_ast.TypeDecl):
+            return None
+        
+        return decl.declname
 
 
 class SwiftDoccommentFormatterVisitor(SwiftDeclVisitor):
@@ -266,11 +285,43 @@ class TypeGeneratorRequest:
     prefixes: list[str]
     target: DeclGeneratorTarget
     includes: list[str]
-    swift_decl_generator: SwiftDeclGenerator | None
     symbol_filter: SymbolGeneratorFilter
     symbol_name_generator: SymbolNameGenerator
-    doccomment_formatter: DoccommentFormatter | None
-    directory_manager: DirectoryStructureManager | None
+    swift_decl_generator: SwiftDeclGenerator | None = None
+    doccomment_formatter: DoccommentFormatter | None = None
+    directory_manager: DirectoryStructureManager | None = None
+    decl_collector: DeclCollectorVisitor | None = None
+
+    @classmethod
+    def from_config(
+        cls,
+        config: GeneratorConfig,
+        header_file: Path,
+        target: DeclGeneratorTarget,
+        symbol_filter: SymbolGeneratorFilter,
+        symbol_name_generator: SymbolNameGenerator,
+        swift_decl_generator: SwiftDeclGenerator | None = None,
+        doccomment_formatter: DoccommentFormatter | None = None,
+        directory_manager: DirectoryStructureManager | None = None,
+        decl_collector: DeclCollectorVisitor | None = None,
+    ):
+        destination = Path.absolute(Path(config.fileGeneration.targetPath))
+        prefixes = config.declarations.prefixes
+        includes = config.fileGeneration.imports
+
+        return cls(
+            header_file=header_file,
+            destination=destination,
+            prefixes=prefixes,
+            target=target,
+            includes=includes,
+            symbol_filter=symbol_filter,
+            symbol_name_generator=symbol_name_generator,
+            swift_decl_generator=swift_decl_generator,
+            doccomment_formatter=doccomment_formatter,
+            directory_manager=directory_manager,
+            decl_collector=decl_collector,
+        )
 
 
 def generate_types(request: TypeGeneratorRequest) -> int:
@@ -292,7 +343,11 @@ def generate_types(request: TypeGeneratorRequest) -> int:
 
     print_stage_name("Collecting Swift type candidates...")
 
-    visitor = DeclCollectorVisitor(prefixes=request.prefixes)
+    visitor: DeclCollectorVisitor
+    if request.decl_collector is not None:
+        visitor = request.decl_collector
+    else:
+        visitor = DeclCollectorVisitor(prefixes=request.prefixes)
     visitor.visit(ast)
 
     if request.swift_decl_generator is not None:
@@ -304,7 +359,7 @@ def generate_types(request: TypeGeneratorRequest) -> int:
             symbol_name_generator=request.symbol_name_generator,
         )
 
-    swift_decls = converter.generate_from_list(visitor.decls)
+    swift_decls = converter.generate_from_list(visitor.decls, ast)
 
     print(f"Found {ConsoleColor.CYAN(len(swift_decls))} potential declarations")
 
