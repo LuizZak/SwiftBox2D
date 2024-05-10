@@ -11,7 +11,13 @@
         "structConformances": [
             { "cName": "b2Vec2", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
             { "cName": "b2Circle", "conformances": ["Equatable", "Hashable"] }
-        ]
+        ],
+        "filters": {
+            "enums": [],
+            "enumMembers": [],
+            "structs": [],
+            "methods": ["\\."]
+        }
     },
     "symbolFormatting": {
         "capitalizeTerms": ["AABB"],

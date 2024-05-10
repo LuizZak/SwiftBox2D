@@ -415,9 +415,6 @@ class Box2DDoccommentFormatter(DoccommentFormatter):
 
 
 class Box2DDirectoryStructureManager(DirectoryStructureManager):
-    def file_name_for_decl(self, decl: SwiftDecl) -> str:
-        return f"{decl.name.to_string()}+Ext.swift"
-
     def make_declaration_files(self, decls: Iterable[SwiftDecl]) -> list[SwiftFile]:
         result = super().make_declaration_files(decls)
         for file in result:
@@ -454,10 +451,13 @@ def main() -> int:
 
     parser.add_argument(
         "-c",
-        "--config_path",
+        "--config_file",
         type=Path,
         default=Path("generate_types.json"),
-        help="Path to .json file containing the configuration for the type generation."
+        help="""
+        Path to JSON file containing the configuration for the type generation.
+        If not provided, defaults to 'generate_types.json'.
+        """
     )
     parser.add_argument(
         "--stdout",
@@ -476,7 +476,7 @@ def main() -> int:
 
     input_path = paths.scripts_path(FILE_NAME)
     if not input_path.exists() or not input_path.is_file():
-        print("Error: Expected path to an existing header file within utils\\.")
+        print("Error: Expected path to an existing header file within utils/.")
         return 1
 
     swift_target_path = (
@@ -489,6 +489,8 @@ def main() -> int:
         return 1
 
     destination_path = swift_target_path
+    
+    config = GeneratorConfig.from_json_file(args.config_file)
 
     target: DeclGeneratorTarget
 
@@ -497,10 +499,9 @@ def main() -> int:
     else:
         target = DeclFileGeneratorDiskTarget(destination_path, rm_folder=True)
 
-    config = GeneratorConfig.from_json_file(args.config_path)
-    print_stage_name(f"Loaded config from {ConsoleColor.CYAN(args.config_path)}")
+    print_stage_name(f"Loaded config from {ConsoleColor.CYAN(args.config_file)}")
 
-    symbol_filter = Box2DSymbolFilter()
+    symbol_filter = SymbolGeneratorFilter.from_config(config.declarations.filters)
     symbol_name_generator = Box2DNameGenerator.from_config(config)
     decl_generator = Box2DDeclGenerator(
         prefixes=config.declarations.prefixes,

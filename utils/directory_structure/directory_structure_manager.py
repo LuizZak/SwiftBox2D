@@ -13,14 +13,18 @@ class DirectoryStructureManager:
     """
     A class that is used to manage nested directory structures for generated types.
     """
+    
+    basePath: Path
+    "Base path to generate files to."
+
     globalFileSuffix: str
     """
     A file suffix to append to all Swift files generated.
     This is added before the .swift file extension.
     """
 
-    def __init__(self, base_path: Path, globalFileSuffix: str | None = None):
-        self.base_path = base_path
+    def __init__(self, basePath: Path, globalFileSuffix: str | None = None):
+        self.basePath = basePath
         self.globalFileSuffix = globalFileSuffix if globalFileSuffix is not None else ""
     
     @classmethod
@@ -71,7 +75,7 @@ class DirectoryStructureManager:
 
             return False
 
-        dir_path = self.base_path
+        dir_path = self.basePath
         longest_path: List[str] = []
 
         for (path, pat) in self.path_matchers():
@@ -101,7 +105,7 @@ class DirectoryStructureManager:
         """
         Removes/replaces any character in a path component (such as a folder name
         or file name), restricting the character selection to the ones that match
-        the regex: `[\\w_. -]`, replacing any such character with `_`.
+        the regex: `[\\w_. -+]`, replacing any such character with `_`.
         """
 
-        return re.sub(r"[^\w_. -]", "_", pathComponent)
+        return re.sub(r"[^\w_. -+]", "_", pathComponent)

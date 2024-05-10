@@ -32,14 +32,32 @@ class GeneratorConfig:
         prefixes: list[str]
         functionsToMethods: list["FunctionToMethodMapper"]
         structConformances: list["StructConformanceEntry"]
+        filters: "Filters"
 
         @classmethod
         def from_json(cls, json: dict):
             return cls(
                 prefixes=json["prefixes"],
                 structConformances=list(map(lambda v: cls.StructConformanceEntry.from_json(v), json["structConformances"])) if json["structConformances"] is not None else [],
-                functionsToMethods=list(map(lambda v: cls.FunctionToMethodMapper.from_json(v), json["functionsToMethods"])) if json["functionsToMethods"] is not None else []
+                functionsToMethods=list(map(lambda v: cls.FunctionToMethodMapper.from_json(v), json["functionsToMethods"])) if json["functionsToMethods"] is not None else [],
+                filters=cls.Filters.from_json(json["filters"])
             )
+        
+        @dataclass
+        class Filters:
+            enums: list[str]
+            enumMembers: list[str]
+            structs: list[str]
+            methods: list[str]
+
+            @classmethod
+            def from_json(cls, json: dict):
+                return cls(
+                    enums=json["enums"],
+                    enumMembers=json["enumMembers"],
+                    structs=json["structs"],
+                    methods=json["methods"],
+                )
         
         @dataclass
         class FunctionToMethodMapper:
@@ -104,7 +122,13 @@ if __name__ == "__main__":
             "structConformances": [
                 { "cName": "b2Vec2", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
                 { "cName": "b2Circle", "conformances": ["Equatable", "Hashable"] }
-            ]
+            ],
+            "filters": {
+                "enums": [],
+                "enumMembers": [],
+                "structs": [],
+                "methods": ["\\."]
+            }
         },
         "symbolFormatting": {
             "capitalizeTerms": ["AABB"],
