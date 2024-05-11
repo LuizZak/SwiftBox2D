@@ -13,7 +13,7 @@ class _PreCachingVisitor(SwiftDeclVisitor):
 
     def generic_visit(self, decl: SwiftDecl) -> SwiftDeclVisitResult:
         if decl.original_name is not None:
-            c_name = decl.original_name.to_string()
+            c_name = decl.original_name
 
             # Create fully-qualified member name
             fully_qualified = ".".join(

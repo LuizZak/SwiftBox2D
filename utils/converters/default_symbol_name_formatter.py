@@ -11,6 +11,9 @@ from utils.data.generator_config import GeneratorConfig
 
 
 class DefaultSymbolNameFormatter(SymbolNameFormatter):
+    symbolCase: GeneratorConfig.Declarations.SymbolCasing
+    "Default symbol casing to use when first formatting symbol names, before extra capitalization work is done."
+
     capitalizers: list[BaseWordCapitalizer]
     """
     Capitalizers for words that are contained within terms.
@@ -45,6 +48,7 @@ class DefaultSymbolNameFormatter(SymbolNameFormatter):
 
     def __init__(
         self,
+        symbolCase: GeneratorConfig.Declarations.SymbolCasing,
         capitalizers: Iterable[BaseWordCapitalizer] = None,
         words_to_split: Iterable[re.Pattern] | None = None,
         terms_to_snake_case_after: Iterable[str] | None = None,
@@ -55,13 +59,14 @@ class DefaultSymbolNameFormatter(SymbolNameFormatter):
             words_to_split = []
         if terms_to_snake_case_after is None:
             terms_to_snake_case_after = []
-
+        
+        self.symbolCase = symbolCase
         self.capitalizers = list(capitalizers)
         self.words_to_split = list(words_to_split)
         self.terms_to_snake_case_after = list(terms_to_snake_case_after)
     
     @classmethod
-    def from_config(cls, config: GeneratorConfig.NameFormatter):
+    def from_config(cls, config: GeneratorConfig.Declarations.NameFormatter):
         def splitterPattern(pattern: str):
             regex = re.compile(pattern, flags=re.IGNORECASE)
             assert regex.groups > 1, "Found formatter pattern to split that has a single group; this leads to recursion errors"
@@ -71,9 +76,17 @@ class DefaultSymbolNameFormatter(SymbolNameFormatter):
         splitterPatterns = map(splitterPattern, config.patternsToSplit)
         snakeCaseTerms = config.snakeCaseAfterTerms
 
-        return cls(capitalizers, splitterPatterns, snakeCaseTerms)
+        return cls(
+            config.symbolCasing,
+            capitalizers,
+            splitterPatterns,
+            snakeCaseTerms
+        )
 
     def format(self, name: CompoundSymbolName) -> CompoundSymbolName:
+        # Initial capitalization
+        name = self.pre_capitalization(name)
+
         # Split/capitalize
         components = flatten(map(self.split_and_capitalize, name.components))
 
@@ -87,6 +100,18 @@ class DefaultSymbolNameFormatter(SymbolNameFormatter):
         components = self.snake_case(components)
 
         return CompoundSymbolName(components)
+
+    def pre_capitalization(self, name: CompoundSymbolName) -> CompoundSymbolName:
+        e = GeneratorConfig.Declarations.SymbolCasing
+        match self.symbolCase:
+            case e.SNAKE_CASE:
+                return name.lower_snake_cased()
+            case e.PASCAL_CASE:
+                return name.pascal_cased()
+            case e.CAMEL_CASE:
+                return name.camel_cased()
+            case _:
+                raise ValueError(f"Unknown symbol capitalization {self.symbolCase}")
 
     def split_and_capitalize(
         self, component: CompoundSymbolName.Component

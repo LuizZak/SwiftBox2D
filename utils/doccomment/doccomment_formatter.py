@@ -1,4 +1,5 @@
 from typing import Any, Callable, Sequence, TypeVar
+from utils.data.generator_config import GeneratorConfig
 from utils.data.swift_decl_lookup import SwiftDeclLookup
 from utils.data.swift_decls import SwiftDecl
 from utils.doccomment.doccomment_block import DoccommentBlock
@@ -7,6 +8,10 @@ from utils.doccomment.doccomment_block import DoccommentBlock
 class DoccommentFormatter:
     T = TypeVar("T")
     DOC_T = TypeVar("DOC_T", DoccommentBlock, str)
+
+    @classmethod
+    def from_config(cls, config: GeneratorConfig.DocComments):
+        return cls()
 
     def format_doccomment(
         self,

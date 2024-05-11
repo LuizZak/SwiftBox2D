@@ -21,26 +21,31 @@ class SymbolGeneratorFilter:
     enumMemberFilters: list["DeclarationFilter"] = []
     structFilters: list["DeclarationFilter"] = []
     methodFilters: list["DeclarationFilter"] = []
+    implicit: list[str] = []
+    "List of implicit typename filters that indicate a typename should be allowed, if no denying filters match the typename."
 
     @classmethod
-    def from_config(cls, config: GeneratorConfig.Declarations.Filters):
+    def from_config(cls, config: GeneratorConfig.Declarations):
         instance = cls()
         instance.enumFilters.extend(map(
             SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
-            config.enums
+            config.filters.enums
         ))
         instance.enumMemberFilters.extend(map(
             SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
-            config.enumMembers
+            config.filters.enumMembers
         ))
         instance.structFilters.extend(map(
             SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
-            config.structs
+            config.filters.structs
         ))
         instance.methodFilters.extend(map(
             SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
-            config.methods
+            config.filters.methods
         ))
+        instance.implicit.extend(
+            map(lambda c: c.cName, config.conformances)
+        )
             
         return instance
 
@@ -74,11 +79,21 @@ class SymbolGeneratorFilter:
     def should_gen_funcDecl(
         self, node: c_ast.FuncDecl, decl: SwiftDecl
     ) -> bool:
+        # An extension method generation?
+        if isinstance(decl, SwiftExtensionDecl) and len(decl.members) > 0:
+            return self.apply_filters(self.methodFilters, node, decl.members[0])
         
         return self.apply_filters(self.methodFilters, node, decl)
     
     def apply_filters(self, filters: Iterable["DeclarationFilter"], node: c_ast.Node, decl: SwiftDecl):
         result = SymbolGeneratorFilter.DeclarationFilterResult.NEITHER
+
+        # Verify implicit filters
+        if decl.original_name is not None:
+            original_name = decl.original_name
+            if original_name in self.implicit:
+                result = SymbolGeneratorFilter.DeclarationFilterResult.ACCEPT
+
         for filter in filters:
             result = result.combine(
                 filter.filter_decl(node, decl)
@@ -114,9 +129,9 @@ class SymbolGeneratorFilter:
         def combine(self, other: "SymbolGeneratorFilter.DeclarationFilterResult"):
             cls = SymbolGeneratorFilter.DeclarationFilterResult
             match (self, other):
-                case (cls.REJECT, _), (_, cls.REJECT):
+                case (cls.REJECT, _) | (_, cls.REJECT):
                     return cls.REJECT
-                case (cls.ACCEPT, _), (_, cls.ACCEPT):
+                case (cls.ACCEPT, _) | (_, cls.ACCEPT):
                     return cls.ACCEPT
                 case (cls.NEITHER, cls.NEITHER):
                     return cls.NEITHER
@@ -157,7 +172,7 @@ class SymbolGeneratorFilter:
             if decl.original_name is None:
                 return self.neutralResult
             
-            if self.pattern.match(decl.original_name.to_string()) is not None:
+            if self.pattern.match(decl.original_name) is not None:
                 return SymbolGeneratorFilter.DeclarationFilterResult.ACCEPT
             
             return self.neutralResult

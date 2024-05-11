@@ -1,6 +1,18 @@
 {
     "declarations": {
         "prefixes": ["b2"],
+        "symbolCasing": {
+            "enums": "camelCase",
+            "enumMembers": "snakeCase",
+            "structs": "camelCase",
+            "functions": "camelCase"
+        },
+        "swiftSymbolFormatting": {
+            "symbolCasing": "camelCase",
+            "capitalizeTerms": ["AABB"],
+            "patternsToSplit": [],
+            "snakeCaseAfterTerms": []
+        },
         "functionsToMethods": [
             { "cPrefix": "b2World_", "swiftType": "B2World", "param0": { "swiftName": "id", "type": "b2WorldId" } },
             { "cPrefix": "b2Body_", "swiftType": "B2Body", "param0": { "swiftName": "id", "type": "b2BodyId" } },
@@ -8,21 +20,16 @@
             { "cPrefix": "b2Shape_", "swiftType": "B2Shape", "param0": { "swiftName": "id", "type": "b2ShapeId" } },
             { "cPrefix": "b2Chain_", "swiftType": "B2Chain", "param0": { "swiftName": "id", "type": "b2ChainId" } }
         ],
-        "structConformances": [
+        "conformances": [
             { "cName": "b2Vec2", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
             { "cName": "b2Circle", "conformances": ["Equatable", "Hashable"] }
         ],
         "filters": {
             "enums": [],
             "enumMembers": [],
-            "structs": [],
-            "methods": ["\\."]
+            "structs": ["."],
+            "methods": ["."]
         }
-    },
-    "symbolFormatting": {
-        "capitalizeTerms": ["AABB"],
-        "patternsToSplit": [],
-        "snakeCaseAfterTerms": []
     },
     "docComments": {
         "collect": true

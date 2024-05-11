@@ -88,8 +88,8 @@ class SwiftDeclMerger:
                     continue
 
                 existing_name = existing.name.to_string()
-                existing_original = existing.original_name.to_string() if existing.original_name is not None else "<none>"
-                decl_original = decl.original_name.to_string() if decl.original_name is not None else "<none>"
+                existing_original = existing.original_name if existing.original_name is not None else "<none>"
+                decl_original = decl.original_name if decl.original_name is not None else "<none>"
 
                 raise BaseException(
                     f"Found two symbols that share the same name but are of different types or access levels: {existing_name} (type: {type(existing)}) (originally: {existing_original}) and {decl_name} (type: {type(decl)}) (originally: {decl_original})"
@@ -298,8 +298,8 @@ class TypeGeneratorRequest:
         config: GeneratorConfig,
         header_file: Path,
         target: DeclGeneratorTarget,
-        symbol_filter: SymbolGeneratorFilter,
-        symbol_name_generator: SymbolNameGenerator,
+        symbol_filter: SymbolGeneratorFilter | None = None,
+        symbol_name_generator: SymbolNameGenerator | None = None,
         swift_decl_generator: SwiftDeclGenerator | None = None,
         doccomment_formatter: DoccommentFormatter | None = None,
         directory_manager: DirectoryStructureManager | None = None,
@@ -315,11 +315,11 @@ class TypeGeneratorRequest:
             prefixes=prefixes,
             target=target,
             includes=includes,
-            symbol_filter=symbol_filter,
-            symbol_name_generator=symbol_name_generator,
-            swift_decl_generator=swift_decl_generator,
+            symbol_filter=symbol_filter if symbol_filter is not None else SymbolGeneratorFilter.from_config(config.declarations),
+            symbol_name_generator=symbol_name_generator if symbol_name_generator is not None else SymbolNameGenerator.from_config(config.declarations),
+            swift_decl_generator=swift_decl_generator if swift_decl_generator is not None else SwiftDeclGenerator.from_config(config.declarations),
             doccomment_formatter=doccomment_formatter,
-            directory_manager=directory_manager,
+            directory_manager=directory_manager if directory_manager is not None else DirectoryStructureManager.from_config(config.fileGeneration),
             decl_collector=decl_collector,
         )
 
@@ -357,6 +357,8 @@ def generate_types(request: TypeGeneratorRequest) -> int:
             prefixes=request.prefixes,
             symbol_filter=request.symbol_filter,
             symbol_name_generator=request.symbol_name_generator,
+            conformances=[],
+            methodMappers=[]
         )
 
     swift_decls = converter.generate_from_list(visitor.decls, ast)
@@ -400,6 +402,14 @@ def generate_types(request: TypeGeneratorRequest) -> int:
         verbose=True,
     )
     generator.generate()
+
+    # Warn about entries in type protocol conformance entries that where not matched
+    # against a type
+    for conformance in converter.conformances:
+        if conformance.satisfied:
+            continue
+
+        print(f"{ConsoleColor.YELLOW('WARNING')}: Declaration {ConsoleColor.CYAN(conformance.symbolName)} listed in configuration was not matched by any generated declaration!")
 
     print(ConsoleColor.GREEN("Success!"))
 

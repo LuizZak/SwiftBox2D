@@ -55,7 +55,7 @@ class SourceLocation(object):
 @dataclass
 class SwiftDecl(object):
     name: CompoundSymbolName
-    original_name: CompoundSymbolName | None
+    original_name: str | None
     origin: SourceLocation | None
 
     original_node: c_ast.Node | None
@@ -141,7 +141,7 @@ class SwiftMemberVarDecl(SwiftMemberDecl):
     def copy(self):
         return SwiftMemberVarDecl(
             name=self.name.copy(),
-            original_name=self.original_name.copy(),
+            original_name=self.original_name,
             original_node=self.original_node,
             origin=self.origin,
             c_kind=self.c_kind,
@@ -222,7 +222,7 @@ class SwiftMemberFunctionDecl(SwiftMemberDecl):
     def copy(self):
         return SwiftMemberFunctionDecl(
             name=self.name.copy(),
-            original_name=self.original_name.copy(),
+            original_name=self.original_name,
             original_node=self.original_node,
             origin=self.origin,
             c_kind=self.c_kind,
@@ -254,9 +254,9 @@ class SwiftExtensionDecl(SwiftDecl):
 
         name = self.name.to_string()
 
-        if self.original_name is not None and name != self.original_name.to_string():
+        if self.original_name is not None and name != self.original_name:
             self.access_level.write(stream)
-            stream.line(f"typealias {name} = {self.original_name.to_string()}")
+            stream.line(f"typealias {name} = {self.original_name}")
             stream.line()
 
         # Emit conformances, with no access control specifier so the code compiles
@@ -286,7 +286,7 @@ class SwiftExtensionDecl(SwiftDecl):
     def copy(self):
         return SwiftExtensionDecl(
             name=self.name.copy(),
-            original_name=self.original_name.copy() if self.original_name is not None else None,
+            original_name=self.original_name,
             origin=self.origin,
             original_node=self.original_node,
             c_kind=self.c_kind,

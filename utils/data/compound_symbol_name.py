@@ -69,7 +69,8 @@ class ComponentCase(Enum):
 
         return self
 
-_pascal_case_matcher = re.compile(r'.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)')
+
+_pascal_case_matcher = re.compile(r'((^[a-z]+)|([0-9]+)|([A-Z]{1}[a-z]+)|([A-Z]+(?=([A-Z][a-z])|($)|([0-9]))))')
 
 @dataclass(repr=False)
 class CompoundSymbolName(Sequence, Hashable):
@@ -378,7 +379,9 @@ class CompoundSymbolName(Sequence, Hashable):
             CompoundSymbolName.Component(string=String, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY)
         ])
         """
-        return cls.from_string_list(*_pascal_case_matcher.findall(string))
+        matches = map(lambda t: t[0], _pascal_case_matcher.findall(string))
+
+        return cls.from_string_list(*matches)
 
     def copy(self) -> "CompoundSymbolName":
         """
