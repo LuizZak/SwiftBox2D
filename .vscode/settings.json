@@ -3,4 +3,12 @@
     "mypy.targets": [
         "utils",
     ],
+    "json.schemas": [
+        {
+            "fileMatch": [
+                "/generate_types.json"
+            ],
+            "url": "./utils/generate_types.schema.json",
+        }
+    ]
 }

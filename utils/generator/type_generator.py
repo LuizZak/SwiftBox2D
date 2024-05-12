@@ -20,12 +20,12 @@ from utils.data.generator_config import GeneratorConfig
 from utils.data.swift_decl_lookup import SwiftDeclLookup
 from utils.data.swift_decl_visitor import SwiftDeclVisitor
 from utils.doccomment.doccomment_formatter import DoccommentFormatter
+from utils.doccomment.doccomment_manager import DoccommentManager
 from utils.generator.swift_decl_generator import SwiftDeclGenerator
 from utils.generator.symbol_generator_filter import SymbolGeneratorFilter
 from utils.generator.symbol_name_generator import SymbolNameGenerator
 from utils.data.swift_decls import (
     SwiftDecl,
-    SwiftDeclWalker,
     SwiftDeclVisitResult,
     SwiftExtensionDecl,
 )
@@ -33,7 +33,6 @@ from utils.directory_structure.directory_structure_manager import (
     DirectoryStructureManager,
 )
 from utils.data.swift_file import SwiftFile
-from utils.doccomment.doccomment_lookup import DoccommentLookup
 
 # Utils
 from utils.paths import paths
@@ -287,10 +286,9 @@ class TypeGeneratorRequest:
     includes: list[str]
     symbol_filter: SymbolGeneratorFilter
     symbol_name_generator: SymbolNameGenerator
+    doccomment_manager: DoccommentManager
     swift_decl_generator: SwiftDeclGenerator | None = None
-    doccomment_formatter: DoccommentFormatter | None = None
     directory_manager: DirectoryStructureManager | None = None
-    decl_collector: DeclCollectorVisitor | None = None
 
     @classmethod
     def from_config(
@@ -298,16 +296,15 @@ class TypeGeneratorRequest:
         config: GeneratorConfig,
         header_file: Path,
         target: DeclGeneratorTarget,
-        symbol_filter: SymbolGeneratorFilter | None = None,
-        symbol_name_generator: SymbolNameGenerator | None = None,
-        swift_decl_generator: SwiftDeclGenerator | None = None,
-        doccomment_formatter: DoccommentFormatter | None = None,
-        directory_manager: DirectoryStructureManager | None = None,
-        decl_collector: DeclCollectorVisitor | None = None,
+        file_header: str = ""
     ):
         destination = Path.absolute(Path(config.fileGeneration.targetPath))
         prefixes = config.declarations.prefixes
         includes = config.fileGeneration.imports
+        directory_manager = DirectoryStructureManager.from_config(config.fileGeneration)
+
+        if len(file_header) > 0:
+            directory_manager.globalHeaderLines.append(file_header)
 
         return cls(
             header_file=header_file,
@@ -315,12 +312,11 @@ class TypeGeneratorRequest:
             prefixes=prefixes,
             target=target,
             includes=includes,
-            symbol_filter=symbol_filter if symbol_filter is not None else SymbolGeneratorFilter.from_config(config.declarations),
-            symbol_name_generator=symbol_name_generator if symbol_name_generator is not None else SymbolNameGenerator.from_config(config.declarations),
-            swift_decl_generator=swift_decl_generator if swift_decl_generator is not None else SwiftDeclGenerator.from_config(config.declarations),
-            doccomment_formatter=doccomment_formatter,
-            directory_manager=directory_manager if directory_manager is not None else DirectoryStructureManager.from_config(config.fileGeneration),
-            decl_collector=decl_collector,
+            directory_manager=directory_manager,
+            symbol_filter=SymbolGeneratorFilter.from_config(config.declarations),
+            symbol_name_generator=SymbolNameGenerator.from_config(config.declarations),
+            swift_decl_generator=SwiftDeclGenerator.from_config(config.declarations),
+            doccomment_manager=DoccommentManager.from_config(config.docComments),
         )
 
 
@@ -343,11 +339,7 @@ def generate_types(request: TypeGeneratorRequest) -> int:
 
     print_stage_name("Collecting Swift type candidates...")
 
-    visitor: DeclCollectorVisitor
-    if request.decl_collector is not None:
-        visitor = request.decl_collector
-    else:
-        visitor = DeclCollectorVisitor(prefixes=request.prefixes)
+    visitor = DeclCollectorVisitor(prefixes=request.prefixes)
     visitor.visit(ast)
 
     if request.swift_decl_generator is not None:
@@ -365,10 +357,9 @@ def generate_types(request: TypeGeneratorRequest) -> int:
 
     print(f"Found {ConsoleColor.CYAN(len(swift_decls))} potential declarations")
 
-    print_stage_name("Generating doc comments...")
-
-    doccomment_lookup = DoccommentLookup()
-    swift_decls = doccomment_lookup.populate_doc_comments(swift_decls)
+    if request.doccomment_manager.should_collect:
+        print_stage_name("Generating doc comments...")
+        request.doccomment_manager.populate(swift_decls)
 
     print_stage_name("Merging generated Swift type declarations...")
 
@@ -379,17 +370,10 @@ def generate_types(request: TypeGeneratorRequest) -> int:
 
     swift_decls = converter.post_merge(swift_decls)
 
-    if request.doccomment_formatter is not None:
+    if request.doccomment_manager.should_format:
         print_stage_name("Formatting doc comments...")
 
-        lookup = SwiftDeclLookup(swift_decls)
-        doc_visitor = SwiftDoccommentFormatterVisitor(
-            request.doccomment_formatter, lookup
-        )
-        walker = SwiftDeclWalker(doc_visitor)
-
-        for decl in swift_decls:
-            walker.walk_decl(decl)
+        request.doccomment_manager.format(swift_decls)
 
     print_stage_name("Generating files...")
 

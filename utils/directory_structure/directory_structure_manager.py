@@ -65,6 +65,9 @@ class DirectoryStructureManager:
     """
     pathMatchers: list[DirectoryStructureEntry]
 
+    globalHeaderLines: list[str]
+    "A list of lines to append to the top of every generated file."
+
     def __init__(
         self,
         basePath: Path,
@@ -74,6 +77,7 @@ class DirectoryStructureManager:
         self.basePath = basePath
         self.globalFileSuffix = globalFileSuffix if globalFileSuffix is not None else ""
         self.pathMatchers = list(pathMatchers) if pathMatchers is not None else []
+        self.globalHeaderLines = []
     
     @classmethod
     def from_config(cls, config: GeneratorConfig.FileGeneration):
@@ -93,6 +97,7 @@ class DirectoryStructureManager:
             path = self.path_for_decl(decl)
             file = result.get(path, SwiftFile(path, [], []))
             file.add_decl(decl)
+            file.header_lines.extend(self.globalHeaderLines)
 
             result[path] = file
 

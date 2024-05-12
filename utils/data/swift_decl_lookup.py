@@ -1,3 +1,4 @@
+from typing import Iterable
 from utils.data.swift_decl_visit_result import SwiftDeclVisitResult
 from utils.data.swift_decl_visitor import SwiftDeclVisitor
 from utils.data.swift_decls import SwiftDecl, SwiftDeclWalker
@@ -36,14 +37,13 @@ class SwiftDeclLookup:
 
     _cached_results: dict[str, str]
 
-    def __init__(self, decls: list[SwiftDecl]):
-        self.decls = decls
+    def __init__(self, decls: Iterable[SwiftDecl]):
         self._cached_results = dict()
 
         visitor = _PreCachingVisitor()
         walker = SwiftDeclWalker(visitor)
 
-        for decl in self.decls:
+        for decl in decls:
             walker.walk_decl(decl)
 
         self._cached_results = visitor._cached_results

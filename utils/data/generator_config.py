@@ -121,10 +121,11 @@ class GeneratorConfig:
     @dataclass
     class DocComments:
         collect: bool
+        format: bool
         
         @classmethod
         def from_json(cls, json: dict):
-            return cls(json["collect"])
+            return cls(json["collect"], json["format"])
     
     @dataclass
     class FileGeneration:
@@ -193,7 +194,8 @@ if __name__ == "__main__":
             }
         },
         "docComments": {
-            "collect": true
+            "collect": true,
+            "format": true
         },
         "fileGeneration": {
             "targetPath": "Sources/SwiftBox2D/Generated",

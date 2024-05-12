@@ -1,0 +1,332 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$ref": "#/definitions/GeneratorConfig",
+    "definitions": {
+        "NameOrRegex": {
+            "type": "string",
+            "description": "Either a raw string or a regex enclosed by '/' (i.e. '/regex/'). In case the property that uses this type supports it, prepending the string with '!' inverts the match result."
+        },
+        "Regex": {
+            "type": "string",
+            "format": "regex",
+            "description": "A regex string."
+        },
+        "GeneratorConfig": {
+            "type": "object",
+            "description": "A definition file for a generate_types.py/type_generator.py script.",
+            "additionalProperties": false,
+            "properties": {
+                "declarations": {
+                    "$ref": "#/definitions/Declarations"
+                },
+                "docComments": {
+                    "$ref": "#/definitions/DocComments"
+                },
+                "fileGeneration": {
+                    "$ref": "#/definitions/FileGeneration"
+                }
+            },
+            "required": [
+                "declarations",
+                "docComments",
+                "fileGeneration"
+            ],
+            "title": "GeneratorConfig"
+        },
+        "Declarations": {
+            "type": "object",
+            "description": "Settings for declarations to detect from C code, and how to handle the declarations.",
+            "additionalProperties": false,
+            "properties": {
+                "prefixes": {
+                    "type": "array",
+                    "description": "List of prefixes for symbol names; a symbol must have a matching prefix in this list to be generated.",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "symbolCasing": {
+                    "$ref": "#/definitions/SymbolCasingSettings"
+                },
+                "swiftSymbolFormatting": {
+                    "$ref": "#/definitions/SwiftSymbolFormatting"
+                },
+                "functionsToMethods": {
+                    "type": "array",
+                    "description": "List of method wrappers to apply to certain C functions.",
+                    "items": {
+                        "$ref": "#/definitions/FunctionsToMethod"
+                    }
+                },
+                "conformances": {
+                    "type": "array",
+                    "description": "List of conformances to apply to certain C declarations.",
+                    "items": {
+                        "$ref": "#/definitions/Conformance"
+                    }
+                },
+                "filters": {
+                    "$ref": "#/definitions/Filters"
+                }
+            },
+            "required": [
+                "filters",
+                "prefixes",
+                "swiftSymbolFormatting",
+                "symbolCasing"
+            ],
+            "title": "Declarations"
+        },
+        "Conformance": {
+            "type": "object",
+            "description": "Specifies C symbols to generate Swift protocol conformances to.",
+            "additionalProperties": false,
+            "properties": {
+                "cName": {
+                    "type": "string",
+                    "description": "C symbol to generate conformances of."
+                },
+                "conformances": {
+                    "type": "array",
+                    "description": "A list of Swift protocols to generate conformances of. If 'Equatable', 'Hashable', or 'CustomStringConvertible', conformance code will be generated based on the declaration's type automatically alongside the type extension.",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "cName",
+                "conformances"
+            ],
+            "title": "Conformance"
+        },
+        "Filters": {
+            "type": "object",
+            "description": "Describes sets of filters for selecting C definitions to generate Swift wrappers for. Only C symbols that match one or more filters are generated. If empty, no declarations from the corresponding symbol type are generated. Filters can be prefixed with '!' to generate a negative filter that rejects a symbol even if another filter accepted it.",
+            "additionalProperties": false,
+            "properties": {
+                "enums": {
+                    "type": "array",
+                    "description": "Filters C enum declarations.",
+                    "items": {
+                        "$ref": "#/definitions/Regex"
+                    }
+                },
+                "enumMembers": {
+                    "type": "array",
+                    "description": "Filters individual C enum cases to be generated. Enum itself must be matched with 'enums' before its cases can be generated.",
+                    "items": {
+                        "$ref": "#/definitions/Regex"
+                    }
+                },
+                "structs": {
+                    "type": "array",
+                    "description": "Filters C struct declarations.",
+                    "items": {
+                        "$ref": "#/definitions/Regex"
+                    }
+                },
+                "methods": {
+                    "type": "array",
+                    "description": "Filters C function declarations. Only filters the function name portion.",
+                    "items": {
+                        "$ref": "#/definitions/Regex"
+                    }
+                }
+            },
+            "required": [
+                "enumMembers",
+                "enums",
+                "methods",
+                "structs"
+            ],
+            "title": "Filters"
+        },
+        "FunctionsToMethod": {
+            "type": "object",
+            "description": "Describes the intent to transform global C functions into method wrappers on extensions of a Swift.",
+            "additionalProperties": false,
+            "properties": {
+                "cPrefix": {
+                    "type": "string",
+                    "description": "Prefix that a C function requires to trigger this method wrapper generator. The prefix itself is absent from the generated symbol, e.g. 'libObjectDoSomething' with cPrefix 'libObject' maps to a method named 'doSomething'."
+                },
+                "swiftType": {
+                    "type": "string",
+                    "description": "The name of a Swift type to extend with this method. Should be created outside the generated files in order to be extended by the generated files."
+                },
+                "param0": {
+                    "type": "object",
+                    "description": "A filter for matching the first parameter of a C global function in order to generate a method wrapper.",
+                    "additionalProperties": false,
+                    "properties": {
+                        "swiftName": {
+                            "type": "string",
+                            "description": "The name of the Swift symbol to use when calling the C function."
+                        },
+                        "type": {
+                            "type": "string",
+                            "description": "The expected type of the parameter. If the C parameter is not equivalent to this type name, the method wrapper is not generated."
+                        }
+                    },
+                    "required": [
+                        "swiftName",
+                        "type"
+                    ],
+                    "title": "Param0"
+                }
+            },
+            "required": [
+                "cPrefix",
+                "param0",
+                "swiftType"
+            ],
+            "title": "FunctionsToMethod"
+        },
+        "SwiftSymbolFormatting": {
+            "type": "object",
+            "description": "Specifies rules for formatting generated Swift symbol names.", 
+            "additionalProperties": false,
+            "properties": {
+                "symbolCasing": {
+                    "$ref": "#/definitions/SymbolCasing"
+                },
+                "capitalizeTerms": {
+                    "type": "array",
+                    "description": "A list of terms that when detected as a single component of a symbol name is always capitalized, e.g. 'AABB' capitalizes 'boxaabb' as 'boxAABB'. May also be a regex (/pattern/) with one capture group, to be used when matching a capitalization requires context, e.g. '/rect(f)/' capitalizes 'boundsRectf' as 'boundsRectF'.",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "patternsToSplit": {
+                    "type": "array",
+                    "description": "A list of regex strings with at least two capture groups that will be used to split components that are read as a single word. Applied recursively; exercise caution against infinite recursions.",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "snakeCaseAfterTerms": {
+                    "type": "array",
+                    "description": "A list of terms that force a snake case split on the element, e.g. 'sse2' to split 'x86Sse2' into 'x86_sse2'.",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "capitalizeTerms",
+                "patternsToSplit",
+                "snakeCaseAfterTerms",
+                "symbolCasing"
+            ],
+            "title": "SwiftSymbolFormatting"
+        },
+        "SymbolCasing": {
+            "type": "string",
+            "description": "Specifies a type of casing to use when parsing/generating symbols.",
+            "title": "SymbolCasing",
+            "enum": ["camelCase", "pascalCase", "snakeCase"]
+        },
+        "SymbolCasingSettings": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "enums": {
+                    "type": "string"
+                },
+                "enumMembers": {
+                    "type": "string"
+                },
+                "structs": {
+                    "type": "string"
+                },
+                "functions": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "enumMembers",
+                "enums",
+                "functions",
+                "structs"
+            ],
+            "title": "SymbolCasingSettings"
+        },
+        "DocComments": {
+            "type": "object",
+            "description": "Specifies settings for copying doc comments from C symbols to generated Swift symbols.",
+            "additionalProperties": false,
+            "properties": {
+                "collect": {
+                    "type": "boolean",
+                    "description": "Whether to collect doc comments."
+                },
+                "format": {
+                    "type": "boolean",
+                    "description": "Whether to format doc comments to more closely match expected SwiftDoc syntax."
+                }
+            },
+            "required": [
+                "collect",
+                "format"
+            ],
+            "title": "DocComments"
+        },
+        "FileGeneration": {
+            "type": "object",
+            "description": "Specifies settings for generated Swift files.",
+            "additionalProperties": false,
+            "properties": {
+                "targetPath": {
+                    "type": "string",
+                    "description": "Base path to generate the Swift files on. Based on the current CWD path."
+                },
+                "globalFileSuffix": {
+                    "type": "string",
+                    "description": "A global file suffix to append to all generated files, before extensions. Leave empty to not append anything to file names."
+                },
+                "imports": {
+                    "type": "array",
+                    "description": "A list of modules to add import declarations for on all Swift files generated.",
+                    "items": {
+                        "type": "string",
+                        "description": "A module to import at the top of every generated Swift file."
+                    }
+                },
+                "directoryStructure": {
+                    "type": "array",
+                    "description": "Optional settings for generating complex directory structures from multi-file generation setups.",
+                    "items": {
+                        "type": "object",
+                        "title": "DirectoryStructureEntry",
+                        "description": "A pair of path/file-name-matchers to organize files with. Files matched by 'match' will be placed on the deepest level of 'path' across all directory structure entries found.",
+                        "properties": {
+                            "path": {
+                                "type": "string",
+                                "description": "A path relative to 'targetPath' that matched files will be placed on."
+                            },
+                            "match": {
+                                "type": "array",
+                                "description": "One or more filename/regex patterns that will be tested against files to place in this folder. Pattern is applied to full file-name with extension, and no directory information.",
+                                "items": {
+                                    "$ref": "#/definitions/NameOrRegex"
+                                },
+                                "minItems": 1
+                            }
+                        },
+                        "required": [
+                            "path",
+                            "match"
+                        ]
+                    }
+                }
+            },
+            "required": [
+                "globalFileSuffix",
+                "imports",
+                "targetPath"
+            ],
+            "title": "FileGeneration"
+        }
+    }
+}

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Sequence
-from utils.data.swift_decl_visitor import SwiftDeclVisitor
+from utils.data.swift_decl_visitor import SwiftDeclCallableVisitor
 
 from utils.data.swift_decls import SwiftDecl, SwiftDeclWalker
 from utils.doccomment.doccomment_block import DoccommentBlock
@@ -117,6 +117,8 @@ def _split_doccomment_lines(path: Path, text_file: str, doccomment_patterns: lis
 
 
 class DoccommentLookup:
+    "Performs lookup of doc comments using `SwiftDecl.origin.path`."
+
     cached_files: dict[Path, list[str]]
     cached_comments: dict[Path, list[DoccommentBlock]]
 
@@ -211,26 +213,17 @@ class DoccommentLookup:
         return merged.normalize_indentation()
 
     def populate_doc_comments(self, decls: Sequence[SwiftDecl]) -> list[SwiftDecl]:
-        class DocCommentVisitor(SwiftDeclVisitor):
-            def __init__(self, lookup: DoccommentLookup):
-                self.lookup = lookup
+        results = [decl.copy() for decl in decls]
+        self.populate_doc_comments_inplace(results)
+        return results
 
-            def generic_visit(self, decl: SwiftDecl):
-                comments = self.lookup.find_doccomment(decl)
-                if comments is None:
-                    return super().generic_visit(decl)
+    def populate_doc_comments_inplace(self, decls: Sequence[SwiftDecl]):
+        visitor = SwiftDeclCallableVisitor(self.__populate)
 
-                decl.doccomment = comments
-
-                return super().generic_visit(decl)
-
-        walker = SwiftDeclWalker(DocCommentVisitor(self))
-
-        results = []
+        walker = SwiftDeclWalker(visitor)
 
         for decl in decls:
-            copy = decl.copy()
-            walker.walk_decl(copy)
-            results.append(copy)
-
-        return results
+            walker.walk_decl(decl)
+    
+    def __populate(self, decl: SwiftDecl):
+        decl.doccomment = self.find_doccomment(decl)

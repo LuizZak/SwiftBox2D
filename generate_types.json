@@ -32,7 +32,8 @@
         }
     },
     "docComments": {
-        "collect": true
+        "collect": true,
+        "format": true
     },
     "fileGeneration": {
         "targetPath": "Sources/SwiftBox2D/Generated",
