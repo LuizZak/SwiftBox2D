@@ -1,6 +1,6 @@
 import box2d
 
-class B2World {
+public class B2World {
     var id: b2WorldId
 
     init() {

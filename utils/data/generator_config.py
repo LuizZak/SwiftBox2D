@@ -103,11 +103,17 @@ class GeneratorConfig:
         class FunctionToMethodMapper:
             cPrefix: str
             swiftType: str
+            accessLevel: str
             param0: tuple[str, str]
 
             @classmethod
             def from_json(cls, json: dict):
-                return cls(json["cPrefix"], json["swiftType"], (json["param0"]["swiftName"], json["param0"]["type"]))
+                return cls(
+                    cPrefix=json["cPrefix"],
+                    swiftType=json["swiftType"],
+                    accessLevel=json.get("accessLevel", "public"),
+                    param0=(json["param0"]["swiftName"], json["param0"]["type"])
+                )
         
         @dataclass
         class ConformanceEntry:
@@ -179,7 +185,7 @@ if __name__ == "__main__":
                 { "cPrefix": "b2World_", "swiftType": "B2World", "param0": { "swiftName": "id", "type": "b2WorldId" } },
                 { "cPrefix": "b2Body_", "swiftType": "B2Body", "param0": { "swiftName": "id", "type": "b2BodyId" } },
                 { "cPrefix": "b2Joint_", "swiftType": "B2Joint", "param0": { "swiftName": "id", "type": "b2JointId" } },
-                { "cPrefix": "b2Shape_", "swiftType": "B2Shape", "param0": { "swiftName": "id", "type": "b2ShapeId" } },
+                { "cPrefix": "b2Shape_", "swiftType": "B2Shape", "param0": { "swiftName": "id", "type": "b2ShapeId" }, "accessLevel": "internal" },
                 { "cPrefix": "b2Chain_", "swiftType": "B2Chain", "param0": { "swiftName": "id", "type": "b2ChainId" } }
             ],
             "conformances": [

@@ -17,6 +17,13 @@
             { "cPrefix": "b2World_", "swiftType": "B2World", "param0": { "swiftName": "id", "type": "b2WorldId" } },
             { "cPrefix": "b2Body_", "swiftType": "B2Body", "param0": { "swiftName": "id", "type": "b2BodyId" } },
             { "cPrefix": "b2Joint_", "swiftType": "B2Joint", "param0": { "swiftName": "id", "type": "b2JointId" } },
+            { "cPrefix": "b2DistanceJoint_", "swiftType": "B2DistanceJoint", "param0": { "swiftName": "id", "type": "b2JointId" } },
+            { "cPrefix": "b2MotorJoint_", "swiftType": "B2MotorJoint", "param0": { "swiftName": "id", "type": "b2JointId" } },
+            { "cPrefix": "b2MouseJoint_", "swiftType": "B2MouseJoint", "param0": { "swiftName": "id", "type": "b2JointId" } },
+            { "cPrefix": "b2PrismaticJoint_", "swiftType": "B2PrismaticJoint", "param0": { "swiftName": "id", "type": "b2JointId" } },
+            { "cPrefix": "b2RevoluteJoint_", "swiftType": "B2RevoluteJoint", "param0": { "swiftName": "id", "type": "b2JointId" } },
+            { "cPrefix": "b2WeldJoint_", "swiftType": "B2WeldJoint", "param0": { "swiftName": "id", "type": "b2JointId" } },
+            { "cPrefix": "b2WheelJoint_", "swiftType": "B2WheelJoint", "param0": { "swiftName": "id", "type": "b2JointId" } },
             { "cPrefix": "b2Shape_", "swiftType": "B2Shape", "param0": { "swiftName": "id", "type": "b2ShapeId" } },
             { "cPrefix": "b2Chain_", "swiftType": "B2Chain", "param0": { "swiftName": "id", "type": "b2ChainId" } }
         ],
@@ -40,7 +47,8 @@
         "globalFileSuffix": "+Ext",
         "imports": ["box2d"],
         "directoryStructure": [
-            {"path": "Geometry", "match": ["b2Vec2+Ext.swift", "b2Circle+Ext.swift"]}
+            { "path": "Geometry", "match": [ "b2Vec2+Ext.swift", "b2Circle+Ext.swift" ] },
+            { "path": "Joints", "match": [ "/B2(\\w+)Joint.+/" ] }
         ]
     }
 }

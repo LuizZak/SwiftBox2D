@@ -35,11 +35,11 @@ class SwiftAccessLevel(Enum):
     Represents an access level for a Swift declaration.
     """
 
-    PRIVATE = 1
-    FILEPRIVATE = 2
-    INTERNAL = 3
-    PUBLIC = 4
-    OPEN = 5
+    PRIVATE = "private"
+    FILEPRIVATE = "fileprivate"
+    INTERNAL = "internal"
+    PUBLIC = "public"
+    OPEN = "open"
 
     def write(self, stream: SyntaxStream):
         stream.write(self.name.lower())
@@ -100,6 +100,17 @@ class SwiftMemberDecl(SwiftDecl):
     is_static: bool = False
     "Whether this is a static member."
 
+    access_level: SwiftAccessLevel | None = None
+
+    def write(self, stream: SyntaxStream):
+        super().write(stream)
+
+        stream.pre_line()
+
+        if self.access_level is not None:
+            self.access_level.write(stream)
+            stream.write(" ")
+
 
 @dataclass
 class SwiftMemberVarDecl(SwiftMemberDecl):
@@ -113,8 +124,6 @@ class SwiftMemberVarDecl(SwiftMemberDecl):
 
     def write(self, stream: SyntaxStream):
         super().write(stream)
-
-        stream.pre_line()
 
         if self.is_static:
             stream.write("static ")
@@ -150,6 +159,7 @@ class SwiftMemberVarDecl(SwiftMemberDecl):
             var_type=self.var_type,
             initial_value=self.initial_value,
             accessor_block=self.accessor_block,
+            access_level=self.access_level,
         )
 
     def accept(self, visitor: SwiftDeclVisitor) -> SwiftDeclVisitResult:
@@ -180,8 +190,6 @@ class SwiftMemberFunctionDecl(SwiftMemberDecl):
 
     def write(self, stream: SyntaxStream):
         super().write(stream)
-
-        stream.pre_line()
 
         if self.is_static:
             stream.write("static ")
@@ -231,6 +239,7 @@ class SwiftMemberFunctionDecl(SwiftMemberDecl):
             return_type=self.return_type,
             body=list(self.body),
             is_static=self.is_static,
+            access_level=self.access_level,
         )
 
     def accept(self, visitor: SwiftDeclVisitor) -> SwiftDeclVisitResult:

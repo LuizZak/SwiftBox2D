@@ -4,7 +4,7 @@
 import box2d
 
 /// Shape identifier validation. Provides validation for up to 64K allocations.
-internal extension B2Shape {
+public extension B2Shape {
     /// Shape identifier validation. Provides validation for up to 64K allocations.
     func isValid() -> Bool {
         b2Shape_IsValid(id)

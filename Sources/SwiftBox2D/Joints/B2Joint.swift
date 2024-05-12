@@ -1,6 +1,7 @@
 import box2d
 
-class B2Joint {
+/// Base class for joint types.
+public class B2Joint {
     var id: b2JointId
 
     init(id: b2JointId) {

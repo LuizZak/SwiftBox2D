@@ -4,7 +4,7 @@
 import box2d
 
 /// Body identifier validation. Provides validation for up to 64K allocations.
-internal extension B2Body {
+public extension B2Body {
     /// Body identifier validation. Provides validation for up to 64K allocations.
     func isValid() -> Bool {
         b2Body_IsValid(id)

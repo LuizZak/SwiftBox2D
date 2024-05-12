@@ -4,7 +4,7 @@
 import box2d
 
 /// Set the friction of a chain. Normally this is set in b2ChainDef.
-internal extension B2Chain {
+public extension B2Chain {
     /// Set the friction of a chain. Normally this is set in b2ChainDef.
     func setFriction(_ friction: Float) {
         b2Chain_SetFriction(id, friction)

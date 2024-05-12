@@ -32,8 +32,16 @@ class SwiftDeclGenerator:
         classToMap: CompoundSymbolName
         firstArgumentMember: str
         firstArgumentType: str
+        accessLevel: SwiftAccessLevel
 
-        def __init__(self, methodPrefix: str, classToMap: CompoundSymbolName | str, firstArgumentMember: str, firstArgumentType: str):
+        def __init__(
+            self,
+            methodPrefix: str,
+            classToMap: CompoundSymbolName | str,
+            firstArgumentMember: str,
+            firstArgumentType: str,
+            accessLevel: SwiftAccessLevel
+        ):
             self.methodPrefix = methodPrefix
             if isinstance(classToMap, CompoundSymbolName):
                 self.classToMap = classToMap
@@ -41,6 +49,7 @@ class SwiftDeclGenerator:
                 self.classToMap = CompoundSymbolName.from_pascal_case(classToMap)
             self.firstArgumentMember = firstArgumentMember
             self.firstArgumentType = firstArgumentType
+            self.accessLevel = accessLevel
         
         @classmethod
         def from_config(cls, config: GeneratorConfig.Declarations.FunctionToMethodMapper):
@@ -49,6 +58,7 @@ class SwiftDeclGenerator:
                 classToMap=config.swiftType,
                 firstArgumentMember=config.param0[0],
                 firstArgumentType=config.param0[1],
+                accessLevel=SwiftAccessLevel(config.accessLevel)
             )
 
         def transform(
@@ -87,7 +97,8 @@ class SwiftDeclGenerator:
                 doccomment=None,
                 body=[
                     f"{node.type.declname}({', '.join(cCallArgs)})"
-                ]
+                ],
+                access_level=self.accessLevel
             )
 
     @dataclass
@@ -228,6 +239,11 @@ class SwiftDeclGenerator:
         method = transformer.transform(self.typeMapper, node, fName, context)
         if method is None:
             return None
+        access_level = method.access_level if method.access_level is not None else SwiftAccessLevel.PUBLIC
+
+        # Reset method's access level as it will be redundant if exported alongside
+        # extension's access level
+        method.access_level = None
 
         return SwiftExtensionDecl(
             name=transformer.classToMap,
@@ -240,7 +256,7 @@ class SwiftDeclGenerator:
                 method
             ],
             conformances=[],
-            access_level=SwiftAccessLevel.INTERNAL
+            access_level=access_level
         )
     
     def _proposeMethodGenerator(self, cName: str, args: c_ast.ParamList) -> MemberMethodGenerator | None:
