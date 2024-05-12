@@ -106,6 +106,9 @@ B2_API void b2World_EnableContinuous(b2WorldId worldId, bool flag);
 /// Adjust the restitution threshold. Advanced feature for testing.
 B2_API void b2World_SetRestitutionThreshold(b2WorldId worldId, float value);
 
+/// Adjust the hit event threshold. Advanced feature for testing.
+B2_API void b2World_SetHitEventThreshold(b2WorldId worldId, float value);
+
 /// Register the pre-solve callback. This is optional.
 B2_API void b2World_SetPreSolveCallback(b2WorldId worldId, b2PreSolveFcn* fcn, void* context);
 
@@ -343,6 +346,9 @@ B2_API void b2Body_SetBullet(b2BodyId bodyId, bool flag);
 /// Is this body a bullet?
 B2_API bool b2Body_IsBullet(b2BodyId bodyId);
 
+/// Enable/disable hit events on all shapes.
+B2_API void b2Body_EnableHitEvents(b2BodyId bodyId, bool enableHitEvents);
+
 /// Get the number of shapes on this body
 B2_API int b2Body_GetShapeCount(b2BodyId bodyId);
 
@@ -461,6 +467,13 @@ B2_API void b2Shape_EnablePreSolveEvents(b2ShapeId shapeId, bool flag);
 
 /// @return are pre-solve events enabled?
 B2_API bool b2Shape_ArePreSolveEventsEnabled(b2ShapeId shapeId);
+
+/// Enable contact hit events for this shape. Ignored for sensors.
+///	@see b2WorldDef.hitEventThreshold
+B2_API void b2Shape_EnableHitEvents(b2ShapeId shapeId, bool flag);
+
+/// @return are hit events enabled?
+B2_API bool b2Shape_AreHitEventsEnabled(b2ShapeId shapeId);
 
 /// Test a point for overlap with a shape
 B2_API bool b2Shape_TestPoint(b2ShapeId shapeId, b2Vec2 point);
@@ -617,6 +630,29 @@ B2_API void b2DistanceJoint_SetLength(b2JointId jointId, float length);
 /// Get the rest length of a distance joint
 B2_API float b2DistanceJoint_GetLength(b2JointId jointId);
 
+/// Enable/disable the distance joint spring. When disabled the distance joint is rigid.
+B2_API void b2DistanceJoint_EnableSpring(b2JointId jointId, bool enableSpring);
+
+B2_API bool b2DistanceJoint_IsSpringEnabled(b2JointId jointId);
+
+/// Set the spring stiffness in Hertz
+B2_API void b2DistanceJoint_SetSpringHertz(b2JointId jointId, float hertz);
+
+/// Set the spring damping ratio, non-dimensional
+B2_API void b2DistanceJoint_SetSpringDampingRatio(b2JointId jointId, float dampingRatio);
+
+/// @return the spring Hertz
+B2_API float b2DistanceJoint_GetHertz(b2JointId jointId);
+
+/// @return the spring damping ratio
+B2_API float b2DistanceJoint_GetDampingRatio(b2JointId jointId);
+
+/// Enable joint limit. The limit only works if the joint spring is enabled. Otherwise the joint is rigid
+///	and the limit has no effect.
+B2_API void b2DistanceJoint_EnableLimit(b2JointId jointId, bool enableLimit);
+
+B2_API bool b2DistanceJoint_IsLimitEnabled(b2JointId jointId);
+
 /// Set the minimum and maximum length parameters of a distance joint
 B2_API void b2DistanceJoint_SetLengthRange(b2JointId jointId, float minLength, float maxLength);
 
@@ -629,14 +665,19 @@ B2_API float b2DistanceJoint_GetMaxLength(b2JointId jointId);
 /// Get the current length of a distance joint
 B2_API float b2DistanceJoint_GetCurrentLength(b2JointId jointId);
 
-/// Adjust the softness parameters of a distance joint
-B2_API void b2DistanceJoint_SetTuning(b2JointId jointId, float hertz, float dampingRatio);
+B2_API void b2DistanceJoint_EnableMotor(b2JointId jointId, bool enableMotor);
 
-/// Get the Hertz of a distance joint
-B2_API float b2DistanceJoint_GetHertz(b2JointId jointId);
+B2_API bool b2DistanceJoint_IsMotorEnabled(b2JointId jointId);
 
-/// Get the damping ratio of a distance joint
-B2_API float b2DistanceJoint_GetDampingRatio(b2JointId jointId);
+B2_API void b2DistanceJoint_SetMotorSpeed(b2JointId jointId, float motorSpeed);
+
+B2_API float b2DistanceJoint_GetMotorSpeed(b2JointId jointId);
+
+B2_API float b2DistanceJoint_GetMotorForce(b2JointId jointId);
+
+B2_API void b2DistanceJoint_SetMaxMotorForce(b2JointId jointId, float force);
+
+B2_API float b2DistanceJoint_GetMaxMotorForce(b2JointId jointId);
 
 /// Motor Joint
 
@@ -684,8 +725,11 @@ B2_API void b2MouseJoint_SetTarget(b2JointId jointId, b2Vec2 target);
 /// @return the target for a mouse joint
 B2_API b2Vec2 b2MouseJoint_GetTarget(b2JointId jointId);
 
-/// Adjust the softness parameters of a mouse joint
-B2_API void b2MouseJoint_SetTuning(b2JointId jointId, float hertz, float dampingRatio);
+/// Set the spring stiffness in Hertz
+B2_API void b2MouseJoint_SetSpringHertz(b2JointId jointId, float hertz);
+
+/// Set the spring damping ratio (non-dimensional)
+B2_API void b2MouseJoint_SetSpringDampingRatio(b2JointId jointId, float dampingRatio);
 
 /// Get the Hertz of a mouse joint
 B2_API float b2MouseJoint_GetHertz(b2JointId jointId);
@@ -694,6 +738,23 @@ B2_API float b2MouseJoint_GetHertz(b2JointId jointId);
 B2_API float b2MouseJoint_GetDampingRatio(b2JointId jointId);
 
 /// Prismatic Joint
+
+/// Enable/disable the joint spring.
+B2_API void b2PrismaticJoint_EnableSpring(b2JointId jointId, bool enableSpring);
+
+B2_API bool b2PrismaticJoint_IsSpringEnabled(b2JointId jointId);
+
+/// Set the joint stiffness in Hertz
+B2_API void b2PrismaticJoint_SetSpringHertz(b2JointId jointId, float hertz);
+
+/// @return the joint stiffness in Hertz
+B2_API float b2PrismaticJoint_GetSpringHertz(b2JointId jointId);
+
+/// Set the joint damping ratio (non-dimensional)
+B2_API void b2PrismaticJoint_SetSpringDampingRatio(b2JointId jointId, float dampingRatio);
+
+/// @return the joint damping ratio (non-dimensional)
+B2_API float b2PrismaticJoint_GetSpringDampingRatio(b2JointId jointId);
 
 /// Enable/disable a prismatic joint limit
 B2_API void b2PrismaticJoint_EnableLimit(b2JointId jointId, bool enableLimit);
@@ -738,6 +799,23 @@ B2_API b2Vec2 b2PrismaticJoint_GetConstraintForce(b2JointId jointId);
 B2_API float b2PrismaticJoint_GetConstraintTorque(b2JointId jointId);
 
 /// Revolute Joint
+
+/// Enable/disable the joint spring.
+B2_API void b2RevoluteJoint_EnableSpring(b2JointId jointId, bool enableSpring);
+
+B2_API bool b2RevoluteJoint_IsLimitEnabled(b2JointId jointId);
+
+/// Set the joint stiffness in Hertz
+B2_API void b2RevoluteJoint_SetSpringHertz(b2JointId jointId, float hertz);
+
+/// @return the joint stiffness in Hertz
+B2_API float b2RevoluteJoint_GetSpringHertz(b2JointId jointId);
+
+/// Set the joint damping ratio (non-dimensional)
+B2_API void b2RevoluteJoint_SetSpringDampingRatio(b2JointId jointId, float dampingRatio);
+
+/// @return the  joint damping ratio (non-dimensional)
+B2_API float b2RevoluteJoint_GetSpringDampingRatio(b2JointId jointId);
 
 /// Get the current joint angle in radians relative to the reference angle
 B2_API float b2RevoluteJoint_GetAngle(b2JointId jointId);
@@ -785,6 +863,10 @@ B2_API b2Vec2 b2RevoluteJoint_GetConstraintForce(b2JointId jointId);
 B2_API float b2RevoluteJoint_GetConstraintTorque(b2JointId jointId);
 
 /// Wheel Joint
+
+B2_API void b2WheelJoint_EnableSpring(b2JointId jointId, bool enableSpring);
+
+B2_API bool b2WheelJoint_IsSpringEnabled(b2JointId jointId);
 
 /// Set the wheel joint stiffness in Hertz
 B2_API void b2WheelJoint_SetSpringHertz(b2JointId jointId, float hertz);

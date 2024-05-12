@@ -103,6 +103,17 @@ internal extension B2Shape {
         b2Shape_ArePreSolveEventsEnabled(id)
     }
     
+    /// Enable contact hit events for this shape. Ignored for sensors.
+    /// @see b2WorldDef.hitEventThreshold
+    func enableHitEvents(_ flag: Bool) {
+        b2Shape_EnableHitEvents(id, flag)
+    }
+    
+    /// @return are hit events enabled?
+    func areHitEventsEnabled() -> Bool {
+        b2Shape_AreHitEventsEnabled(id)
+    }
+    
     /// Test a point for overlap with a shape
     func testPoint(_ point: b2Vec2) -> Bool {
         b2Shape_TestPoint(id, point)

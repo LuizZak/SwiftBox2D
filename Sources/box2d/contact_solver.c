@@ -325,7 +325,7 @@ void b2SolveOverflowContacts(b2StepContext* context, bool useBias)
 
 			// clamp the accumulated force
 			float maxFriction = friction * cp->normalImpulse;
-			float newImpulse = B2_CLAMP(cp->tangentImpulse + impulse, -maxFriction, maxFriction);
+			float newImpulse = b2ClampFloat(cp->tangentImpulse + impulse, -maxFriction, maxFriction);
 			impulse = newImpulse - cp->tangentImpulse;
 			cp->tangentImpulse = newImpulse;
 
@@ -388,43 +388,48 @@ void b2ApplyOverflowRestitution(b2StepContext* context)
 		b2Vec2 normal = constraint->normal;
 		int pointCount = constraint->pointCount;
 
-		for (int j = 0; j < pointCount; ++j)
+		// it is possible to get more accurate restitution by iterating
+		// this only makes a difference if there are two contact points
+		// for (int iter = 0; iter < 10; ++iter)
 		{
-			b2ContactConstraintPoint* cp = constraint->points + j;
-
-			// if the normal impulse is zero then there was no collision
-			// this skips speculative contact points that didn't generate an impulse
-			// The max normal impulse is used in case there was a collision that moved away within the sub-step process
-			if (cp->relativeVelocity > -threshold || cp->maxNormalImpulse == 0.0f)
+			for (int j = 0; j < pointCount; ++j)
 			{
-				continue;
+				b2ContactConstraintPoint* cp = constraint->points + j;
+
+				// if the normal impulse is zero then there was no collision
+				// this skips speculative contact points that didn't generate an impulse
+				// The max normal impulse is used in case there was a collision that moved away within the sub-step process
+				if (cp->relativeVelocity > -threshold || cp->maxNormalImpulse == 0.0f)
+				{
+					continue;
+				}
+
+				// fixed anchor points
+				b2Vec2 rA = cp->anchorA;
+				b2Vec2 rB = cp->anchorB;
+
+				// relative normal velocity at contact
+				b2Vec2 vrB = b2Add(vB, b2CrossSV(wB, rB));
+				b2Vec2 vrA = b2Add(vA, b2CrossSV(wA, rA));
+				float vn = b2Dot(b2Sub(vrB, vrA), normal);
+
+				// compute normal impulse
+				float impulse = -cp->normalMass * (vn + restitution * cp->relativeVelocity);
+
+				// clamp the accumulated impulse
+				// todo should this be stored?
+				float newImpulse = B2_MAX(cp->normalImpulse + impulse, 0.0f);
+				impulse = newImpulse - cp->normalImpulse;
+				cp->normalImpulse = newImpulse;
+				cp->maxNormalImpulse = b2MaxFloat(cp->maxNormalImpulse, impulse);
+
+				// apply contact impulse
+				b2Vec2 P = b2MulSV(impulse, normal);
+				vA = b2MulSub(vA, mA, P);
+				wA -= iA * b2Cross(rA, P);
+				vB = b2MulAdd(vB, mB, P);
+				wB += iB * b2Cross(rB, P);
 			}
-
-			// fixed anchor points
-			b2Vec2 rA = cp->anchorA;
-			b2Vec2 rB = cp->anchorB;
-
-			// relative normal velocity at contact
-			b2Vec2 vrB = b2Add(vB, b2CrossSV(wB, rB));
-			b2Vec2 vrA = b2Add(vA, b2CrossSV(wA, rA));
-			float vn = b2Dot(b2Sub(vrB, vrA), normal);
-
-			// compute normal impulse
-			float impulse = -cp->normalMass * (vn + restitution * cp->relativeVelocity);
-
-			// clamp the accumulated impulse
-			// todo should this be stored?
-			float newImpulse = B2_MAX(cp->normalImpulse + impulse, 0.0f);
-			impulse = newImpulse - cp->normalImpulse;
-			cp->normalImpulse = newImpulse;
-			cp->maxNormalImpulse = b2MaxFloat(cp->maxNormalImpulse, impulse);
-
-			// apply contact impulse
-			b2Vec2 P = b2MulSV(impulse, normal);
-			vA = b2MulSub(vA, mA, P);
-			wA -= iA * b2Cross(rA, P);
-			vB = b2MulAdd(vB, mB, P);
-			wB += iB * b2Cross(rB, P);
 		}
 
 		stateA->linearVelocity = vA;
@@ -446,6 +451,8 @@ void b2StoreOverflowImpulses(b2StepContext* context)
 	b2ContactSim* contacts = color->contacts.data;
 	int contactCount = color->contacts.count;
 
+	//float hitEventThreshold = context->world->hitEventThreshold;
+
 	for (int i = 0; i < contactCount; ++i)
 	{
 		const b2ContactConstraint* constraint = constraints + i;
@@ -458,6 +465,7 @@ void b2StoreOverflowImpulses(b2StepContext* context)
 			manifold->points[j].normalImpulse = constraint->points[j].normalImpulse;
 			manifold->points[j].tangentImpulse = constraint->points[j].tangentImpulse;
 			manifold->points[j].maxNormalImpulse = constraint->points[j].maxNormalImpulse;
+			manifold->points[j].normalVelocity = constraint->points[j].relativeVelocity;
 		}
 	}
 
@@ -1187,6 +1195,8 @@ void b2StoreImpulsesTask(int startIndex, int endIndex, b2StepContext* context)
 		const float* tangentImpulse2 = (float*)&c->tangentImpulse2;
 		const float* maxNormalImpulse1 = (float*)&c->maxNormalImpulse1;
 		const float* maxNormalImpulse2 = (float*)&c->maxNormalImpulse2;
+		const float* normalVelocity1 = (float*)&c->relativeVelocity1;
+		const float* normalVelocity2 = (float*)&c->relativeVelocity2;
 
 		int base = 8 * i;
 		b2Manifold* m0 = contacts[base + 0] == NULL ? &dummy : &contacts[base + 0]->manifold;
@@ -1201,58 +1211,82 @@ void b2StoreImpulsesTask(int startIndex, int endIndex, b2StepContext* context)
 		m0->points[0].normalImpulse = normalImpulse1[0];
 		m0->points[0].tangentImpulse = tangentImpulse1[0];
 		m0->points[0].maxNormalImpulse = maxNormalImpulse1[0];
+		m0->points[0].normalVelocity = normalVelocity1[0];
+
 		m0->points[1].normalImpulse = normalImpulse2[0];
 		m0->points[1].tangentImpulse = tangentImpulse2[0];
 		m0->points[1].maxNormalImpulse = maxNormalImpulse2[0];
+		m0->points[1].normalVelocity = normalVelocity2[0];
 
 		m1->points[0].normalImpulse = normalImpulse1[1];
 		m1->points[0].tangentImpulse = tangentImpulse1[1];
 		m1->points[0].maxNormalImpulse = maxNormalImpulse1[1];
+		m1->points[0].normalVelocity = normalVelocity1[1];
+
 		m1->points[1].normalImpulse = normalImpulse2[1];
 		m1->points[1].tangentImpulse = tangentImpulse2[1];
 		m1->points[1].maxNormalImpulse = maxNormalImpulse2[1];
+		m1->points[1].normalVelocity = normalVelocity2[1];
 
 		m2->points[0].normalImpulse = normalImpulse1[2];
 		m2->points[0].tangentImpulse = tangentImpulse1[2];
 		m2->points[0].maxNormalImpulse = maxNormalImpulse1[2];
+		m2->points[0].normalVelocity = normalVelocity1[2];
+
 		m2->points[1].normalImpulse = normalImpulse2[2];
 		m2->points[1].tangentImpulse = tangentImpulse2[2];
 		m2->points[1].maxNormalImpulse = maxNormalImpulse2[2];
+		m2->points[1].normalVelocity = normalVelocity2[2];
 
 		m3->points[0].normalImpulse = normalImpulse1[3];
 		m3->points[0].tangentImpulse = tangentImpulse1[3];
 		m3->points[0].maxNormalImpulse = maxNormalImpulse1[3];
+		m3->points[0].normalVelocity = normalVelocity1[3];
+
 		m3->points[1].normalImpulse = normalImpulse2[3];
 		m3->points[1].tangentImpulse = tangentImpulse2[3];
 		m3->points[1].maxNormalImpulse = maxNormalImpulse2[3];
+		m3->points[1].normalVelocity = normalVelocity2[3];
 
 		m4->points[0].normalImpulse = normalImpulse1[4];
 		m4->points[0].tangentImpulse = tangentImpulse1[4];
 		m4->points[0].maxNormalImpulse = maxNormalImpulse1[4];
+		m4->points[0].normalVelocity = normalVelocity1[4];
+
 		m4->points[1].normalImpulse = normalImpulse2[4];
 		m4->points[1].tangentImpulse = tangentImpulse2[4];
 		m4->points[1].maxNormalImpulse = maxNormalImpulse2[4];
+		m4->points[1].normalVelocity = normalVelocity2[4];
 
 		m5->points[0].normalImpulse = normalImpulse1[5];
 		m5->points[0].tangentImpulse = tangentImpulse1[5];
 		m5->points[0].maxNormalImpulse = maxNormalImpulse1[5];
+		m5->points[0].normalVelocity = normalVelocity1[5];
+		
 		m5->points[1].normalImpulse = normalImpulse2[5];
 		m5->points[1].tangentImpulse = tangentImpulse2[5];
 		m5->points[1].maxNormalImpulse = maxNormalImpulse2[5];
+		m5->points[1].normalVelocity = normalVelocity2[5];
 
 		m6->points[0].normalImpulse = normalImpulse1[6];
 		m6->points[0].tangentImpulse = tangentImpulse1[6];
 		m6->points[0].maxNormalImpulse = maxNormalImpulse1[6];
+		m6->points[0].normalVelocity = normalVelocity1[6];
+
 		m6->points[1].normalImpulse = normalImpulse2[6];
 		m6->points[1].tangentImpulse = tangentImpulse2[6];
 		m6->points[1].maxNormalImpulse = maxNormalImpulse2[6];
+		m6->points[1].normalVelocity = normalVelocity2[6];
 
 		m7->points[0].normalImpulse = normalImpulse1[7];
 		m7->points[0].tangentImpulse = tangentImpulse1[7];
 		m7->points[0].maxNormalImpulse = maxNormalImpulse1[7];
+		m7->points[0].normalVelocity = normalVelocity1[7];
+		
 		m7->points[1].normalImpulse = normalImpulse2[7];
 		m7->points[1].tangentImpulse = tangentImpulse2[7];
 		m7->points[1].maxNormalImpulse = maxNormalImpulse2[7];
+		m7->points[1].normalVelocity = normalVelocity2[7];
 	}
 
 	b2TracyCZoneEnd(store_impulses);

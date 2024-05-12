@@ -296,6 +296,11 @@ internal extension B2Body {
         b2Body_IsBullet(id)
     }
     
+    /// Enable/disable hit events on all shapes.
+    func enableHitEvents(_ enableHitEvents: Bool) {
+        b2Body_EnableHitEvents(id, enableHitEvents)
+    }
+    
     /// Get the number of shapes on this body
     func getShapeCount() -> Int32 {
         b2Body_GetShapeCount(id)

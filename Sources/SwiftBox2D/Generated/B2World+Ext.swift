@@ -108,6 +108,11 @@ internal extension B2World {
         b2World_SetRestitutionThreshold(id, value)
     }
     
+    /// Adjust the hit event threshold. Advanced feature for testing.
+    func setHitEventThreshold(_ value: Float) {
+        b2World_SetHitEventThreshold(id, value)
+    }
+    
     /// Register the pre-solve callback. This is optional.
     func setPreSolveCallback(_ fcn: UnsafeMutablePointer<b2PreSolveFcn>, _ context: UnsafeMutableRawPointer) {
         b2World_SetPreSolveCallback(id, fcn, context)
