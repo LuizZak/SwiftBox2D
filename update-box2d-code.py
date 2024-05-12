@@ -146,8 +146,19 @@ def backup_includes(from_path: Path, to_path: Path):
     shutil.copytree(from_path, to_path)
 
 
-def copy_repo_files(source_files: Path, target_path: Path):
-    # Backup includes
+def update_includes(include_path: Path, target_path: Path):
+    old_includes = target_path.joinpath("include", "box2d")
+    new_includes = include_path.joinpath("box2d")
+
+    shutil.rmtree(old_includes)
+    shutil.copytree(new_includes, old_includes)
+    
+
+def copy_repo_files(source_files: Path, include_path: Path, target_path: Path):
+    # Update includes
+    update_includes(include_path, target_path)
+
+    # Backup includes before removing all files from Sources/box2d
     include_target_path = target_path.joinpath("include")
     include_backup_path = source_files.joinpath("include")
     backup_includes(include_target_path, include_backup_path)
@@ -157,10 +168,10 @@ def copy_repo_files(source_files: Path, target_path: Path):
     shutil.copytree(source_files, target_path)
 
 
-def copy_box2d_files(src_path: Path, target_path: Path):
+def copy_box2d_files(src_path: Path, include_path: Path, target_path: Path):
     print_stage_name("Copying over Box2D files...")
 
-    copy_repo_files(src_path, target_path)
+    copy_repo_files(src_path, include_path, target_path)
 
 def copy_dependency_files(clone_path: Path, target_path: Path):
     print_stage_name("Copying over Box2D dependency files...")
@@ -187,12 +198,13 @@ def update_code(
     # Clone
     box2d_clone_path = clone_box2d(box2d_tag_or_branch, temp_path)
     src_path = box2d_clone_path.joinpath("src")
+    include_path = box2d_clone_path.joinpath("include")
     
     print_stage_name("Removing extraneous files...")
     remove_files_with_pattern(box2d_clone_path, rmFilePatterns)
 
     # Copy files
-    copy_box2d_files(src_path, BOX2D_TARGET_PATH)
+    copy_box2d_files(src_path, include_path, BOX2D_TARGET_PATH)
     # Copy simde from <box2d cloned repo>/extern/simde
     copy_dependency_files(box2d_clone_path, BOX2D_TARGET_PATH)
 
