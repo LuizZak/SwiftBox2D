@@ -2,15 +2,6 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$ref": "#/definitions/GeneratorConfig",
     "definitions": {
-        "NameOrRegex": {
-            "type": "string",
-            "description": "Either a raw string or a regex enclosed by '/' (i.e. '/regex/'). In case the property that uses this type supports it, prepending the string with '!' inverts the match result."
-        },
-        "Regex": {
-            "type": "string",
-            "format": "regex",
-            "description": "A regex string."
-        },
         "GeneratorConfig": {
             "type": "object",
             "description": "A definition file for a generate_types.py/type_generator.py script.",
@@ -35,12 +26,12 @@
         },
         "Declarations": {
             "type": "object",
-            "description": "Settings for declarations to detect from C code, and how to handle the declarations.",
+            "description": "Settings for detecting C declarations, and how to handle them.",
             "additionalProperties": false,
             "properties": {
                 "prefixes": {
                     "type": "array",
-                    "description": "List of prefixes for symbol names; a symbol must have a matching prefix in this list to be generated.",
+                    "description": "List of prefixes for symbol names; a symbol must have a matching prefix in this list to be selected.",
                     "items": {
                         "type": "string"
                     }
@@ -84,7 +75,7 @@
             "properties": {
                 "cName": {
                     "type": "string",
-                    "description": "C symbol to generate conformances of."
+                    "description": "C symbol to generate conformances of. Should be the full C symbol name; case-sensitive."
                 },
                 "conformances": {
                     "type": "array",
@@ -102,12 +93,12 @@
         },
         "Filters": {
             "type": "object",
-            "description": "Describes sets of filters for selecting C definitions to generate Swift wrappers for. Only C symbols that match one or more filters are generated. If empty, no declarations from the corresponding symbol type are generated. Filters can be prefixed with '!' to generate a negative filter that rejects a symbol even if another filter accepted it.",
+            "description": "Configures filters for selecting C definitions to generate Swift wrappers for. Only C symbols that match one or more filters are generated. If empty, no declarations from the corresponding symbol type are generated. Filters can be prefixed with '!' to generate a negative filter that rejects a symbol even if another filter of the same declaration type accepted it.",
             "additionalProperties": false,
             "properties": {
                 "enums": {
                     "type": "array",
-                    "description": "Filters C enum declarations.",
+                    "description": "Filters C enum declarations before conformances are added with 'conformances'.",
                     "items": {
                         "$ref": "#/definitions/Regex"
                     }
@@ -121,14 +112,14 @@
                 },
                 "structs": {
                     "type": "array",
-                    "description": "Filters C struct declarations.",
+                    "description": "Filters C struct declarations before conformances are added with 'conformances'.",
                     "items": {
                         "$ref": "#/definitions/Regex"
                     }
                 },
                 "methods": {
                     "type": "array",
-                    "description": "Filters C function declarations. Only filters the function name portion.",
+                    "description": "Filters C function declarations before they are turned to methods with 'functionsToMethods'. Only filters the function name portion.",
                     "items": {
                         "$ref": "#/definitions/Regex"
                     }
@@ -153,7 +144,7 @@
                 },
                 "swiftType": {
                     "type": "string",
-                    "description": "The name of a Swift type to extend with this method. Should be created outside the generated files in order to be extended by the generated files."
+                    "description": "The name of the Swift type to extend when adding matching methods. Should be created outside the generated files in order to be extended by the generated files as an 'extension' declaration."
                 },
                 "param0": {
                     "type": "object",
@@ -162,7 +153,7 @@
                     "properties": {
                         "swiftName": {
                             "type": "string",
-                            "description": "The name of the Swift symbol to use when calling the C function."
+                            "description": "The name of the Swift symbol to use as the first argument when calling the C function. Should be visible to the extension as either a member of 'swiftType' or a global declaration."
                         },
                         "type": {
                             "type": "string",
@@ -185,7 +176,7 @@
         },
         "SwiftSymbolFormatting": {
             "type": "object",
-            "description": "Specifies rules for formatting generated Swift symbol names.", 
+            "description": "Specifies formatting for generated Swift declarations.", 
             "additionalProperties": false,
             "properties": {
                 "symbolCasing": {
@@ -193,21 +184,21 @@
                 },
                 "capitalizeTerms": {
                     "type": "array",
-                    "description": "A list of terms that when detected as a single component of a symbol name is always capitalized, e.g. 'AABB' capitalizes 'boxaabb' as 'boxAABB'. May also be a regex (/pattern/) with one capture group, to be used when matching a capitalization requires context, e.g. '/rect(f)/' capitalizes 'boundsRectf' as 'boundsRectF'.",
+                    "description": "A list of terms to always capitalized, e.g. 'AABB' capitalizes 'boxaabb' as 'boxAABB'. May also be a regex ('/pattern/') with exactly one capture group, to be used when matching a capitalization requires context, e.g. '/rect(f)/' capitalizes 'boundsRectf' as 'boundsRectF'.",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/NameOrRegex"
                     }
                 },
                 "patternsToSplit": {
                     "type": "array",
-                    "description": "A list of regex strings with at least two capture groups that will be used to split components that are read as a single word. Applied recursively; exercise caution against infinite recursions.",
+                    "description": "A list of regex strings, each with at least two capture groups, that will be used to split components that are read as a single word, e.g. '(two)(worded)' splits 'declTWOWORDED' into 'declTwoWorded'. Applied recursively: exercise caution against infinite recursions.",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/Regex"
                     }
                 },
                 "snakeCaseAfterTerms": {
                     "type": "array",
-                    "description": "A list of terms that force a snake case split on the element, e.g. 'sse2' to split 'x86Sse2' into 'x86_sse2'.",
+                    "description": "A list of terms that force a snake case split in a declaration name, e.g. 'sse2' splits 'x86Sse2' into 'x86_sse2'.",
                     "items": {
                         "type": "string"
                     }
@@ -229,19 +220,20 @@
         },
         "SymbolCasingSettings": {
             "type": "object",
+            "description": "Specifies expected casing style of C declarations.",
             "additionalProperties": false,
             "properties": {
                 "enums": {
-                    "type": "string"
+                    "$ref": "#/definitions/SymbolCasing"
                 },
                 "enumMembers": {
-                    "type": "string"
+                    "$ref": "#/definitions/SymbolCasing"
                 },
                 "structs": {
-                    "type": "string"
+                    "$ref": "#/definitions/SymbolCasing"
                 },
                 "functions": {
-                    "type": "string"
+                    "$ref": "#/definitions/SymbolCasing"
                 }
             },
             "required": [
@@ -254,7 +246,7 @@
         },
         "DocComments": {
             "type": "object",
-            "description": "Specifies settings for copying doc comments from C symbols to generated Swift symbols.",
+            "description": "Settings for copying/formatting doc comments from C symbols to generated Swift symbols.",
             "additionalProperties": false,
             "properties": {
                 "collect": {
@@ -263,7 +255,7 @@
                 },
                 "format": {
                     "type": "boolean",
-                    "description": "Whether to format doc comments to more closely match expected SwiftDoc syntax."
+                    "description": "Whether to attempt to format doc comments to a more agreeable SwiftDoc syntax wherever possible."
                 }
             },
             "required": [
@@ -274,12 +266,12 @@
         },
         "FileGeneration": {
             "type": "object",
-            "description": "Specifies settings for generated Swift files.",
+            "description": "Settings for generating Swift files.",
             "additionalProperties": false,
             "properties": {
                 "targetPath": {
                     "type": "string",
-                    "description": "Base path to generate the Swift files on. Based on the current CWD path."
+                    "description": "Base path to generate the Swift files to. Based on the current CWD path."
                 },
                 "globalFileSuffix": {
                     "type": "string",
@@ -287,7 +279,7 @@
                 },
                 "imports": {
                     "type": "array",
-                    "description": "A list of modules to add import declarations for on all Swift files generated.",
+                    "description": "List of modules to import at the top of all generated Swift files.",
                     "items": {
                         "type": "string",
                         "description": "A module to import at the top of every generated Swift file."
@@ -307,7 +299,7 @@
                             },
                             "match": {
                                 "type": "array",
-                                "description": "One or more filename/regex patterns that will be tested against files to place in this folder. Pattern is applied to full file-name with extension, and no directory information.",
+                                "description": "One or more filename/regex patterns that will be tested against files to place in this folder. Pattern is applied to full file-name with extension (including 'globalFileSuffix', if present), and no directory information. Reminder: files are generated 1-to-1 to each type that was extended during generation.",
                                 "items": {
                                     "$ref": "#/definitions/NameOrRegex"
                                 },
@@ -327,6 +319,15 @@
                 "targetPath"
             ],
             "title": "FileGeneration"
+        },
+        "NameOrRegex": {
+            "type": "string",
+            "description": "Either a raw string or a regex enclosed by '/' (i.e. '/regex/'). In case the property that uses this type supports it, prepending the string with '!' inverts the match result."
+        },
+        "Regex": {
+            "type": "string",
+            "format": "regex",
+            "description": "A regex string."
         }
     }
 }

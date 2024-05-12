@@ -67,18 +67,15 @@ def main() -> int:
     if not swift_target_path.exists() or not swift_target_path.is_dir():
         print(f"Error: No target directory with name '{swift_target_path}' found.")
         return 1
-
-    destination_path = swift_target_path
     
-    config = GeneratorConfig.from_json_file(args.config_file)
-
     target: DeclGeneratorTarget
 
     if args.stdout:
         target = DeclFileGeneratorStdoutTarget()
     else:
-        target = DeclFileGeneratorDiskTarget(destination_path, rm_folder=True)
+        target = DeclFileGeneratorDiskTarget(swift_target_path, rm_folder=True)
 
+    config = GeneratorConfig.from_json_file(args.config_file)
     print_stage_name(f"Loaded config from {ConsoleColor.CYAN(args.config_file)}")
 
     request = TypeGeneratorRequest.from_config(

@@ -193,14 +193,10 @@ class DeclFileGenerator:
         target: DeclGeneratorTarget,
         decls: list[SwiftDecl],
         includes: list[str],
-        directory_manager: DirectoryStructureManager | None = None,
+        directory_manager: DirectoryStructureManager,
         verbose: bool = False,
     ):
-        if directory_manager is None:
-            self.directory_manager = DirectoryStructureManager(destination_folder)
-        else:
-            self.directory_manager = directory_manager
-
+        self.directory_manager = directory_manager
         self.destination_folder = destination_folder
         self.target = target
         self.decls = decls
@@ -287,8 +283,8 @@ class TypeGeneratorRequest:
     symbol_filter: SymbolGeneratorFilter
     symbol_name_generator: SymbolNameGenerator
     doccomment_manager: DoccommentManager
+    directory_manager: DirectoryStructureManager
     swift_decl_generator: SwiftDeclGenerator | None = None
-    directory_manager: DirectoryStructureManager | None = None
 
     @classmethod
     def from_config(

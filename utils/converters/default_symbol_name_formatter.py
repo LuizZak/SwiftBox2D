@@ -17,13 +17,13 @@ class DefaultSymbolNameFormatter(SymbolNameFormatter):
     capitalizers: list[BaseWordCapitalizer]
     """
     Capitalizers for words that are contained within terms.
-    When capitalizers report a substring to capitalize, the string is split and the substring
-    portion pinned to uppercase.
+    When capitalizers report a substring to capitalize, the string is split and
+    the match substring portion pinned to uppercase.
 
-    - note: Capitalization implicitly splits components in a CompoundSymbolName into separate
-    components.
-    - note: If more than one entry in this list match a single component, the entry that
-    matches earliest in the string is chosen.
+    - note: Capitalization implicitly splits components in a CompoundSymbolName
+    into separate components.
+    - note: If more than one entry in this list match a single component, the
+    entry that matches earliest in the string is chosen.
     """
 
     # TODO: Figure out a better way to automatically recognize joined symbol name.

@@ -138,7 +138,7 @@ class GeneratorConfig:
             def from_json(cls, json: dict):
                 return cls(
                     path=json["path"],
-                    patterns=json["patterns"]
+                    patterns=json["match"]
                 )
 
         targetPath: str

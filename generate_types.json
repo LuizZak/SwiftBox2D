@@ -38,6 +38,9 @@
     "fileGeneration": {
         "targetPath": "Sources/SwiftBox2D/Generated",
         "globalFileSuffix": "+Ext",
-        "imports": ["box2d"]
+        "imports": ["box2d"],
+        "directoryStructure": [
+            {"path": "Geometry", "match": ["b2Vec2+Ext.swift", "b2Circle+Ext.swift"]}
+        ]
     }
 }
