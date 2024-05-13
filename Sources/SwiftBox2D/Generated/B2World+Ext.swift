@@ -11,9 +11,9 @@ public extension B2World {
     }
     
     /// Simulate a world for one time step. This performs collision detection, integration, and constraint solution.
-    /// @param worldId the world to simulate
-    /// @param timeStep the amount of time to simulate, this should be a fixed number. Typically 1/60.
-    /// @param subStepCount the number of sub-steps, increasing the sub-step count can increase accuracy. Typically 4.
+    /// - param worldId: the world to simulate
+    /// - param timeStep: the amount of time to simulate, this should be a fixed number. Typically 1/60.
+    /// - param subStepCount: the number of sub-steps, increasing the sub-step count can increase accuracy. Typically 4.
     func step(_ timeStep: Float, _ subStepCount: Int32) {
         b2World_Step(id, timeStep, subStepCount)
     }
@@ -61,9 +61,9 @@ public extension B2World {
     /// Ray-cast the world for all shapes in the path of the ray. Your callback
     /// controls whether you get the closest point, any point, or n-points.
     /// The ray-cast ignores shapes that contain the starting point.
-    /// @param callback a user implemented callback class.
-    /// @param point1 the ray starting point
-    /// @param point2 the ray ending point
+    /// - param callback: a user implemented callback class.
+    /// - param point1: the ray starting point
+    /// - param point2: the ray ending point
     func rayCast(_ origin: b2Vec2, _ translation: b2Vec2, _ filter: b2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) {
         b2World_RayCast(id, origin, translation, filter, fcn, context)
     }

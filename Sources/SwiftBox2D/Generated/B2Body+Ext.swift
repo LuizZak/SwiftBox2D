@@ -94,24 +94,24 @@ public extension B2Body {
     /// Apply a force at a world point. If the force is not
     /// applied at the center of mass, it will generate a torque and
     /// affect the angular velocity. This wakes up the body.
-    /// @param force the world force vector, usually in Newtons (N).
-    /// @param point the world position of the point of application.
-    /// @param wake also wake up the body
+    /// - param force: the world force vector, usually in Newtons (N).
+    /// - param point: the world position of the point of application.
+    /// - param wake: also wake up the body
     func applyForce(_ force: b2Vec2, _ point: b2Vec2, _ wake: Bool) {
         b2Body_ApplyForce(id, force, point, wake)
     }
     
     /// Apply a force to the center of mass. This wakes up the body.
-    /// @param force the world force vector, usually in Newtons (N).
-    /// @param wake also wake up the body
+    /// - param force: the world force vector, usually in Newtons (N).
+    /// - param wake: also wake up the body
     func applyForceToCenter(_ force: b2Vec2, _ wake: Bool) {
         b2Body_ApplyForceToCenter(id, force, wake)
     }
     
     /// Apply a torque. This affects the angular velocity
     /// without affecting the linear velocity of the center of mass.
-    /// @param torque about the z-axis (out of the screen), usually in N-m.
-    /// @param wake also wake up the body
+    /// - param torque: about the z-axis (out of the screen), usually in N-m.
+    /// - param wake: also wake up the body
     func applyTorque(_ torque: Float, _ wake: Bool) {
         b2Body_ApplyTorque(id, torque, wake)
     }
@@ -121,9 +121,9 @@ public extension B2Body {
     /// is not at the center of mass. This wakes up the body.
     /// This should be used for one-shot impulses. If you need a steady force,
     /// use a force instead, which will work better with the sub-stepping solver.
-    /// @param impulse the world impulse vector, usually in N-seconds or kg-m/s.
-    /// @param point the world position of the point of application.
-    /// @param wake also wake up the body
+    /// - param impulse: the world impulse vector, usually in N-seconds or kg-m/s.
+    /// - param point: the world position of the point of application.
+    /// - param wake: also wake up the body
     func applyLinearImpulse(_ impulse: b2Vec2, _ point: b2Vec2, _ wake: Bool) {
         b2Body_ApplyLinearImpulse(id, impulse, point, wake)
     }
@@ -131,8 +131,8 @@ public extension B2Body {
     /// Apply an impulse to the center of mass. This immediately modifies the velocity.
     /// This should be used for one-shot impulses. If you need a steady force,
     /// use a force instead, which will work better with the sub-stepping solver.
-    /// @param impulse the world impulse vector, usually in N-seconds or kg-m/s.
-    /// @param wake also wake up the body
+    /// - param impulse: the world impulse vector, usually in N-seconds or kg-m/s.
+    /// - param wake: also wake up the body
     func applyLinearImpulseToCenter(_ impulse: b2Vec2, _ wake: Bool) {
         b2Body_ApplyLinearImpulseToCenter(id, impulse, wake)
     }
@@ -140,9 +140,9 @@ public extension B2Body {
     /// Apply an angular impulse.
     /// This should be used for one-shot impulses. If you need a steady force,
     /// use a force instead, which will work better with the sub-stepping solver.
-    /// @param impulse the angular impulse in units of
+    /// - param impulse: the angular impulse in units of
     /// kg*m*m/s
-    /// @param wake also wake up the body
+    /// - param wake: also wake up the body
     func applyAngularImpulse(_ impulse: Float, _ wake: Bool) {
         b2Body_ApplyAngularImpulse(id, impulse, wake)
     }

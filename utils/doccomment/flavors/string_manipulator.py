@@ -34,7 +34,7 @@ class StringManipulator:
         self.extend_to(self.__buffer.find("\n", self.end()) + 1)
 
     def extend_whitespace(self):
-        "Extends the current selection until a whitespace is found."
+        "Extends the current selection past any whitespace available at the current selection end."
         if match := self.__whitespace_regex.match(self.__buffer, self.end()):
             self.extend_to(match.end())
 
@@ -55,7 +55,7 @@ class StringManipulator:
             pattern = re.compile(pattern)
 
         if match := pattern.match(self.__buffer, self.end()):
-            self.__length += (match.end() - match.start())
+            self.extend_to(match.end())
             return match.group()
 
         return None

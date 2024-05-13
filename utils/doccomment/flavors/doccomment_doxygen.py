@@ -49,6 +49,10 @@ class DoccommentFlavorDoxygen(DoccommentFlavor):
             comment, "ingroup",
             lambda range: (range.extend_to_newline(), range.remove())
         )
+        # Replace '@param <symbol>' with '- param <symbol>:'
+        comment = self.handle_command(
+            comment, "param", lambda range: (range.extend_whitespace(), range.replace("- param " + str(range.extend(r'\w+')) + ":"))
+        )
         # Reword '\note' to '- note:'
         comment = self.handle_command(
             comment, "note", lambda range: range.replace("- note:")
@@ -65,8 +69,8 @@ class DoccommentFlavorDoxygen(DoccommentFlavor):
         while match := pattern.search(buffer, start_index):
             start_index = match.start(0) + 1
 
-            manipulator = StringManipulator(comment.comment_contents, match.start(0))
-            manipulator.extend_length(match.end(0) - match.start(0))
+            manipulator = StringManipulator(buffer, match.start(0))
+            manipulator.extend_to(match.end(0))
             handler(manipulator)
             
             new_buffer = manipulator.get_buffer()
