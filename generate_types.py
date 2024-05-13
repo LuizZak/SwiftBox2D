@@ -17,12 +17,23 @@ from utils.generator.type_generator import (
     generate_types,
 )
 from utils.paths import paths
+from utils.utils import jsonc
 
 
 # MARK: Config
 
 FILE_NAME = "box2d.h"
 
+def complete_json_path(path: Path) -> Path:
+    "Completes a JSON file path, adding .json/.jsonc if necessary in order to match an existing file in disk."
+    if path.exists():
+        return path
+    if path.suffix == "":
+        if path.with_suffix(".json").exists():
+            return path.with_suffix(".json")
+        if path.with_suffix(".jsonc").exists():
+            return path.with_suffix(".jsonc")
+    return path
 
 def main() -> int:
     parser = argparse.ArgumentParser(
@@ -33,10 +44,12 @@ def main() -> int:
         "-c",
         "--config_file",
         type=Path,
-        default=Path("generate_types.json"),
+        default=Path("generate_types"),
         help="""
         Path to JSON file containing the configuration for the type generation.
-        If not provided, defaults to 'generate_types.json'.
+        If no file extension is provided, an attempt is made with extensions
+        .json/.jsonc (in that order) in order to locate a valid JSON file.
+        If not provided, defaults to 'generate_types'.
         """
     )
     parser.add_argument(
@@ -75,8 +88,10 @@ def main() -> int:
     else:
         target = DeclFileGeneratorDiskTarget(swift_target_path, rm_folder=True)
 
-    config = GeneratorConfig.from_json_file(args.config_file)
-    print_stage_name(f"Loaded config from {ConsoleColor.CYAN(args.config_file)}")
+    config_path = complete_json_path(args.config_file)
+    config_json = jsonc.jsonc_strip_comments(config_path)
+    config = GeneratorConfig.from_json_string(config_json)
+    print_stage_name(f"Loaded config from {ConsoleColor.CYAN(config_path)}")
 
     request = TypeGeneratorRequest.from_config(
         config=config,

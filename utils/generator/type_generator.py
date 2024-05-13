@@ -5,6 +5,7 @@ import os
 import subprocess
 import shutil
 from dataclasses import dataclass
+import time
 from typing import Generator
 
 import pycparser
@@ -244,8 +245,45 @@ class TypeGeneratorRequest:
             doccomment_manager=DoccommentManager.from_config(config.docComments),
         )
 
+def label_time_ns(ns):
+    def format(value, suffix):
+        return f"{value:0.3f}{suffix}"
+
+    delta = ns
+    if delta < 1000:  # ns -> us
+        return format(delta, "ns")
+    delta /= 1000
+    if delta < 1000:  # us -> ms
+        return format(delta, "us")
+    delta /= 1000
+    if delta < 1000:  # ms -> s
+        return format(delta, "ms")
+    
+    seconds = ns / 1000000000
+    days, seconds = divmod(seconds, 86400)
+    hours, seconds = divmod(seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
+    ms = (ns / 1000000) % 1000
+    
+    if days > 0:
+        return '%dd%dh%dm%ds.%f' % (days, hours, minutes, seconds, ms)
+    elif hours > 0:
+        return '%dh%dm%ds.%f' % (hours, minutes, seconds, ms)
+    elif minutes > 0:
+        return '%dm%ds.%f' % (minutes, seconds, ms)
+    else:
+        return '%ds.%f' % (seconds, ms)
 
 def generate_types(request: TypeGeneratorRequest) -> int:
+    start = time.perf_counter_ns()
+    result = _generate_types(request)
+    duration = time.perf_counter_ns() - start
+
+    print(f"Completed request in: {label_time_ns(duration)}")
+
+    return result
+
+def _generate_types(request: TypeGeneratorRequest) -> int:
     print_stage_name("Generating header file...")
 
     output_file = run_c_preprocessor(request.header_file)

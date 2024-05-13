@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 import json
+from os import PathLike
 
 
 @dataclass
@@ -10,12 +11,12 @@ class GeneratorConfig:
     docComments: "DocComments"
 
     @classmethod
-    def from_json_file(cls, filePath):
+    def from_json_file(cls, filePath: PathLike):
         with open(filePath) as file:
             return cls.from_json(json.load(file))
     
     @classmethod
-    def from_json_string(cls, string):
+    def from_json_string(cls, string: str | bytes | bytearray):
         return cls.from_json(json.loads(string))
 
     @classmethod
