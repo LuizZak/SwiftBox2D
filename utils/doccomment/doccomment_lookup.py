@@ -6,6 +6,7 @@ from utils.data.swift_decl_visitor import SwiftDeclCallableVisitor
 
 from utils.data.swift_decls import SwiftDecl, SwiftDeclWalker
 from utils.doccomment.doccomment_block import DoccommentBlock
+from utils.text.char_stream import CharStream
 
 class DoccommentLookup:
     """
@@ -144,6 +145,8 @@ def _split_doccomment_lines(path: Path, text_file: str, doccomment_patterns: lis
 
     if len(text_file) < 2:
         return result
+    
+    stream = CharStream(text_file)
 
     state = State.NORMAL
 
@@ -160,8 +163,8 @@ def _split_doccomment_lines(path: Path, text_file: str, doccomment_patterns: lis
         current.column = column
         current.index = index
 
-    def close_current(end_index: int, multi_line: bool):
-        contents = text_file[current_start():end_index]
+    def close_current(end_index: int):
+        contents = stream.buffer[current_start():end_index]
 
         for pattern in doccomment_patterns:
             if contents.startswith(pattern):
@@ -178,9 +181,9 @@ def _split_doccomment_lines(path: Path, text_file: str, doccomment_patterns: lis
                 result.append(final)
 
                 break
-
-    for index in range(len(text_file)):
-        char = text_file[index]
+    
+    while not stream.is_eof():
+        char = stream.next()
 
         if char == "\n":
             column = 0
@@ -197,14 +200,17 @@ def _split_doccomment_lines(path: Path, text_file: str, doccomment_patterns: lis
                 if char != "/":
                     continue
                 
-                next = text_file[index + 1]
+                if stream.is_eof():
+                    continue
+
+                next = stream.peek()
 
                 if next == "/":
                     state = State.SINGLE_LINE
-                    start_current(index)
-                if next == "*":
+                    start_current(stream.index - 1)
+                elif next == "*":
                     state = State.MULTI_LINE
-                    start_current(index)
+                    start_current(stream.index - 1)
             
             case State.STRING:
                 if char == "\"":
@@ -213,19 +219,19 @@ def _split_doccomment_lines(path: Path, text_file: str, doccomment_patterns: lis
             case State.SINGLE_LINE:
                 # End of single line
                 if char == "\n":
-                    close_current(index, multi_line=False)
+                    close_current(stream.index - 1)
                     state = State.NORMAL
             
             case State.MULTI_LINE:
                 # End of multi-line
-                if char == "*" and text_file[index + 1] == "/":
-                    close_current(index, multi_line=True)
+                if char == "*" and not stream.is_eof() and stream.peek() == "/":
+                    close_current(stream.index - 1)
                     state = State.NORMAL
     
     # Finish any existing comment
     if state == State.SINGLE_LINE:
-        close_current(index, multi_line=False)
+        close_current(stream.index - 1)
     elif state == State.MULTI_LINE:
-        close_current(index, multi_line=True)
+        close_current(stream.index - 1)
 
     return result
