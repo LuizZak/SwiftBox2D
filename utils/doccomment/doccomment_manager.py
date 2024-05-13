@@ -1,4 +1,5 @@
 from typing import Sequence
+from utils.collection.collection_utils import flatten
 from utils.data.generator_config import GeneratorConfig
 from utils.data.swift_decl_lookup import SwiftDeclLookup
 from utils.data.swift_decl_visitor import SwiftDeclCallableVisitor
@@ -26,9 +27,13 @@ class DoccommentManager:
 
     @classmethod
     def from_config(cls, config: GeneratorConfig.DocComments):
+        flavors: list[DoccommentFlavor] = [DoccommentFlavorDoxygen()]
+
         return cls(
-            lookup=DoccommentLookup(),
-            flavors=[DoccommentFlavorDoxygen()],
+            lookup=DoccommentLookup(
+                doccomment_patterns=flatten(pat for pat in (flavor.doccomment_patterns() for flavor in flavors))
+            ),
+            flavors=flavors,
             formatter=DoccommentFormatter(),
             should_collect=config.collect,
             should_format=config.format,

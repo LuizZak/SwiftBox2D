@@ -4,7 +4,7 @@ import re
 from typing import Callable, Iterable
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class DoccommentBlock:
     """
     A block of doc comments, with one or more printable line of text.
@@ -26,24 +26,30 @@ class DoccommentBlock:
     May not be the same contents, if customized by a doccomment formatter.
     """
 
+    line_count: int
+    """
+    Cached number of lines on `comment_contents`. Equals to # of newline characters
+    present in comment_contents + 1.
+    """
+
     def copy(self) -> "DoccommentBlock":
         return DoccommentBlock(
             file=self.file,
             line=self.line,
             column=self.column,
             comment_contents=self.comment_contents,
+            line_count=self.line_count
         )
 
     def contains_line(self, line_index: int) -> bool:
-        return line_index >= self.line and line_index < (
-            self.line + self.total_line_span()
-        )
+        return line_index >= self.line and line_index < self.end_line()
 
-    def total_line_span(self) -> int:
-        return self.comment_contents.count("\n") + 1
+    def end_line(self) -> int:
+        "Returns the line this comment span ends, inclusive."
+        return self.line + self.line_count
 
     def is_multi_lined(self) -> bool:
-        return self.total_line_span() > 1
+        return self.line_count > 1
 
     def lines(self) -> list[str]:
         "Returns the comment lines associated with this doc comment block."
@@ -69,14 +75,17 @@ class DoccommentBlock:
             line=self.line,
             column=self.column,
             comment_contents=contents,
+            line_count=contents.count("\n") + 1
         )
 
     def with_lines(self, lines: Iterable[str]) -> "DoccommentBlock":
+        contents = "\n".join(lines)
         return DoccommentBlock(
             file=self.file,
             line=self.line,
             column=self.column,
-            comment_contents="\n".join(lines),
+            comment_contents=contents,
+            line_count=len(contents)
         )
 
     def replace(self, old: str, new: str) -> "DoccommentBlock":
@@ -89,6 +98,7 @@ class DoccommentBlock:
         pattern: re.Pattern,
         repl: str | Callable[[re.Match[str]], str],
     ) -> "DoccommentBlock":
+        "Performs substitution using a given regex and replacement on this comment's contents."
 
         return self.with_contents(
             pattern.sub(repl, self.comment_contents),
@@ -98,6 +108,8 @@ class DoccommentBlock:
         """
         Merges this doc comment by appending a given doc comment block to this
         block, with a new line separating the two.
+        If `self.line < other.line`, then the new doccomment inherits this instance's
+        line and column, otherwise it inherits from `other`.
         """
         min_line = self if self.line < other.line else other
 
@@ -106,6 +118,7 @@ class DoccommentBlock:
             line=min_line.line,
             column=min_line.column,
             comment_contents=self.comment_contents + "\n" + other.comment_contents,
+            line_count=self.line_count + other.line_count
         )
 
     def normalize_indentation(self, start_index: int = 0) -> "DoccommentBlock":
@@ -162,4 +175,11 @@ class DoccommentBlock:
 
     @classmethod
     def from_string(cls, string: str) -> "DoccommentBlock":
-        return DoccommentBlock(file=Path(), line=1, column=1, comment_contents=string)
+        "Makes a doc comment with no path/line/column information with the given string contents."
+        return DoccommentBlock(
+            file=Path(),
+            line=1,
+            column=1,
+            comment_contents=string,
+            line_count=string.count("\n") + 1
+        )

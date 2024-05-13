@@ -112,7 +112,8 @@ if __name__ == "__main__":
 
     test_comment = DoccommentBlock(
         Path("dummy"), 1, 1,
-        "\\ingroup Groupname\n\\brief \\ref c_symbol::abc is a symbol.\n\\note This is a note!"
+        "\\ingroup Groupname\n\\brief \\ref c_symbol::abc is a symbol.\n\\note This is a note!",
+        line_count=0
     )
 
     formatter = DoccommentFlavorDoxygen()

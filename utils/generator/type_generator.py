@@ -263,16 +263,16 @@ def label_time_ns(ns):
     days, seconds = divmod(seconds, 86400)
     hours, seconds = divmod(seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
-    ms = (ns / 1000000) % 1000
+    ms = (ns // 1000000) % 1000
     
     if days > 0:
-        return '%dd%dh%dm%ds.%f' % (days, hours, minutes, seconds, ms)
+        return '%dd%dh%dm%d.%ds' % (days, hours, minutes, seconds, ms)
     elif hours > 0:
-        return '%dh%dm%ds.%f' % (hours, minutes, seconds, ms)
+        return '%dh%dm%d.%ds' % (hours, minutes, seconds, ms)
     elif minutes > 0:
-        return '%dm%ds.%f' % (minutes, seconds, ms)
+        return '%dm%d.%ds' % (minutes, seconds, ms)
     else:
-        return '%ds.%f' % (seconds, ms)
+        return '%d.%ds' % (seconds, ms)
 
 def generate_types(request: TypeGeneratorRequest) -> int:
     start = time.perf_counter_ns()

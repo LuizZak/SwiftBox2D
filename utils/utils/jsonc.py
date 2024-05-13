@@ -115,52 +115,49 @@ def jsonc_strip_comments(source: str | Path) -> str:
     new_json = ""
 
     while not stream.isEoF():
-        if state == State.DEFAULT:
-            # Regular JSON structure stream
-            if stream.advance_if_next('"'):
-                # Start of string literal
-                state = State.STRING
-                new_json += '"'
-            elif stream.advance_if_next("//"):
-                # Start of line comment
-                state = State.LINE_COMMENT
-                new_json += "  "  # Insert dummy placeholders for line/column keeping purposes
-            elif stream.advance_if_next("/*"):
-                # Start of multi-line comment
-                state = State.MULTI_LINE_COMMENT
-                new_json += "  "
-            else:
-                # Regular JSON structure character
-                new_json += stream.next()
-        elif state == State.LINE_COMMENT:
-            # Line comment
-            if stream.advance_if_next("\n"):
-                # End of comment; back to regular JSON stream
-                state = State.DEFAULT
-                new_json += "\n"
-            else:
-                stream.advance()
-                new_json += " "
-        elif state == State.MULTI_LINE_COMMENT:
-            # Multi-line comment
-            if stream.advance_if_next("*/"):
-                # Explicit end of comment block; back to regular JSON stream
-                state = State.DEFAULT
-                new_json += "  "
-            else:
-                stream.advance()
-                new_json += " "
-        elif state == State.STRING:
-            # String literal
-            if stream.advance_if_next(r'\"'):
-                # Escaped string terminator; continue reading as a string still
-                new_json += r'\"'
-            elif stream.advance_if_next('"'):
-                # End of string; back to regular JSON stream
-                state = State.DEFAULT
-                new_json += '"'
-            else:
-                # String contents
-                new_json += stream.next()
+        match state:
+            case State.DEFAULT:  # Regular JSON structure stream
+                if stream.advance_if_next('"'):
+                    # Start of string literal
+                    state = State.STRING
+                    new_json += '"'
+                elif stream.advance_if_next("//"):
+                    # Start of line comment
+                    state = State.LINE_COMMENT
+                    new_json += "  "  # Insert dummy placeholders for line/column keeping purposes
+                elif stream.advance_if_next("/*"):
+                    # Start of multi-line comment
+                    state = State.MULTI_LINE_COMMENT
+                    new_json += "  "
+                else:
+                    # Regular JSON structure character
+                    new_json += stream.next()
+            case State.LINE_COMMENT:  # Inside line comment
+                if stream.advance_if_next("\n"):
+                    # End of comment; back to regular JSON stream
+                    state = State.DEFAULT
+                    new_json += "\n"
+                else:
+                    stream.advance()
+                    new_json += " "
+            case State.MULTI_LINE_COMMENT:  # Inside multi-line comment
+                if stream.advance_if_next("*/"):
+                    # Explicit end of comment block; back to regular JSON stream
+                    state = State.DEFAULT
+                    new_json += "  "
+                else:
+                    stream.advance()
+                    new_json += " "
+            case State.STRING:  # Inside string literal
+                if stream.advance_if_next(r'\"'):
+                    # Escaped string terminator; continue reading as a string still
+                    new_json += r'\"'
+                elif stream.advance_if_next('"'):
+                    # End of string; back to regular JSON stream
+                    state = State.DEFAULT
+                    new_json += '"'
+                else:
+                    # String contents
+                    new_json += stream.next()
 
     return new_json
