@@ -140,9 +140,12 @@ class SymbolGeneratorFilter:
         "Base class for filters."
         neutralResult: "SymbolGeneratorFilter.DeclarationFilterResult"
         "Result of filter in case a positive match is not found. Defaults to `NEITHER`."
+        positiveResult: "SymbolGeneratorFilter.DeclarationFilterResult"
+        "Result of filter in case a positive match is found. Defaults to `ACCEPT`."
 
         def __init__(self):
             self.neutralResult = SymbolGeneratorFilter.DeclarationFilterResult.NEITHER
+            self.positiveResult = SymbolGeneratorFilter.DeclarationFilterResult.ACCEPT
 
         def filter_decl(self, node: c_ast.Node, decl: SwiftDecl) -> "SymbolGeneratorFilter.DeclarationFilterResult":
             return SymbolGeneratorFilter.DeclarationFilterResult.NEITHER
@@ -158,14 +161,14 @@ class SymbolGeneratorFilter:
         @classmethod
         def from_string(cls, string: str):
             pattern = string
-            neutralResult = SymbolGeneratorFilter.DeclarationFilterResult.NEITHER
+            positiveResult = SymbolGeneratorFilter.DeclarationFilterResult.ACCEPT
 
             if string.startswith("!"):
                 pattern = pattern[1:]
-                neutralResult = SymbolGeneratorFilter.DeclarationFilterResult.REJECT
+                positiveResult = SymbolGeneratorFilter.DeclarationFilterResult.REJECT
             
             filter = cls(re.compile(pattern))
-            filter.neutralResult = neutralResult
+            filter.positiveResult = positiveResult
             return filter
         
         def filter_decl(self, node: c_ast.Node, decl: SwiftDecl):
@@ -173,6 +176,6 @@ class SymbolGeneratorFilter:
                 return self.neutralResult
             
             if self.pattern.match(decl.original_name) is not None:
-                return SymbolGeneratorFilter.DeclarationFilterResult.ACCEPT
+                return self.positiveResult
             
             return self.neutralResult

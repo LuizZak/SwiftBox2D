@@ -72,30 +72,45 @@ class SwiftDeclGenerator:
             if len(node.args.params) < 1:
                 return None
             
-            def mapArgument(p) -> SwiftMemberFunctionDecl.ARG_TYPE:
+            def mapArgument(p) -> tuple[SwiftMemberFunctionDecl.ARG_TYPE, str]:
                 decl = declarationFromType(p.type)
-                type = typeMapper.mapToSwiftType(p.type, context)
-                return (
+                type = typeMapper.map_to_swift_type(p.type, context)
+                type_str = type.to_string() if type is not None else "?"
+                invocation = decl[0] if decl is not None else "?"
+
+                # Ensure function pointer arguments are converted into appropriate
+                # `@convention(c)` closure parameters
+                if type is not None:
+                    if typename := type.as_typename_type():
+                        if unaliased := typeMapper.unalias_type(typename.name, context):
+                            if fType := unaliased.as_function_type():
+                                # args = ", ".join(f"${i}" for i in range(len(fType.parameters)))
+                                type_str = f"@convention(c) {fType.to_string()}"
+                                # invocation = f"{{ {invocation}({args}) }}"
+
+                return ((
                     None,
                     decl[0] if decl is not None else "?",
-                    type.to_string() if type is not None else "?"
-                )
+                    type_str
+                ), invocation)
             
-            arguments = list(map(mapArgument, node.args.params[1:]))
+            # Generate arguments for function
+            arguments = [mapArgument(a) for a in node.args.params[1:]]
 
-            cCallArgs = [self.firstArgumentMember] + list(map(lambda a: a[1], arguments))
-            returnType = typeMapper.mapToSwiftType(node.type.type, context)
+            cCallArgs = [self.firstArgumentMember] + [a[1] for a in arguments]
+            returnType = typeMapper.map_to_swift_type(node.type.type, context)
 
             return SwiftMemberFunctionDecl(
                 c_kind=CDeclKind.FUNC,
                 name=fName,
                 original_name=node.type.declname,
-                arguments=arguments,
+                arguments=[a[0] for a in arguments],
                 return_type=returnType.to_string() if returnType is not None else None,
                 origin=coord_to_location(node.coord),
                 original_node=node,
                 doccomment=None,
                 body=[
+                    # Default body just calls the C decl using a configured first argument and the rest of the arguments from the original function
                     f"{node.type.declname}({', '.join(cCallArgs)})"
                 ],
                 access_level=self.accessLevel

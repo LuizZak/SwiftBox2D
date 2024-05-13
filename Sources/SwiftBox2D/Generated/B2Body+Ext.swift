@@ -22,7 +22,7 @@ public extension B2Body {
     }
     
     /// Set the user data for a body
-    func setUserData(_ userData: UnsafeMutableRawPointer) {
+    func setUserData(_ userData: UnsafeMutableRawPointer?) {
         b2Body_SetUserData(id, userData)
     }
     
@@ -188,16 +188,6 @@ public extension B2Body {
         b2Body_ApplyMassFromShapes(id)
     }
     
-    /// Set the automatic mass setting.
-    func setAutomaticMass(_ automaticMass: Bool) {
-        b2Body_SetAutomaticMass(id, automaticMass)
-    }
-    
-    /// Get the automatic mass setting.
-    func getAutomaticMass() -> Bool {
-        b2Body_GetAutomaticMass(id)
-    }
-    
     /// Adjust the linear damping. Normally this is set in b2BodyDef before creation.
     func setLinearDamping(_ linearDamping: Float) {
         b2Body_SetLinearDamping(id, linearDamping)
@@ -308,7 +298,7 @@ public extension B2Body {
     
     /// Get the shape ids for all shapes on this body, up to the provided capacity.
     /// @returns the number of shape ids stored in the user array
-    func getShapes(_ shapeArray: UnsafeMutablePointer<b2ShapeId>, _ capacity: Int32) -> Int32 {
+    func getShapes(_ shapeArray: UnsafeMutablePointer<b2ShapeId>?, _ capacity: Int32) -> Int32 {
         b2Body_GetShapes(id, shapeArray, capacity)
     }
     
@@ -319,7 +309,7 @@ public extension B2Body {
     
     /// Get the joint ids for all joints on this body, up to the provided capacity
     /// @returns the number of joint ids stored in the user array
-    func getJoints(_ jointArray: UnsafeMutablePointer<b2JointId>, _ capacity: Int32) -> Int32 {
+    func getJoints(_ jointArray: UnsafeMutablePointer<b2JointId>?, _ capacity: Int32) -> Int32 {
         b2Body_GetJoints(id, jointArray, capacity)
     }
     
@@ -329,7 +319,7 @@ public extension B2Body {
     }
     
     /// Get the touching contact data for a body
-    func getContactData(_ contactData: UnsafeMutablePointer<b2ContactData>, _ capacity: Int32) -> Int32 {
+    func getContactData(_ contactData: UnsafeMutablePointer<b2ContactData>?, _ capacity: Int32) -> Int32 {
         b2Body_GetContactData(id, contactData, capacity)
     }
     

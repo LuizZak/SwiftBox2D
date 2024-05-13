@@ -55,10 +55,6 @@ public extension B2DistanceJoint {
         b2DistanceJoint_EnableLimit(id, enableLimit)
     }
     
-    func isLimitEnabled() -> Bool {
-        b2DistanceJoint_IsLimitEnabled(id)
-    }
-    
     /// Set the minimum and maximum length parameters of a distance joint
     func setLengthRange(_ minLength: Float, _ maxLength: Float) {
         b2DistanceJoint_SetLengthRange(id, minLength, maxLength)

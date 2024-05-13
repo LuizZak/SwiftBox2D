@@ -46,7 +46,7 @@ public extension B2Joint {
     }
     
     /// Set the user data on a joint
-    func setUserData(_ userData: UnsafeMutableRawPointer) {
+    func setUserData(_ userData: UnsafeMutableRawPointer?) {
         b2Joint_SetUserData(id, userData)
     }
     

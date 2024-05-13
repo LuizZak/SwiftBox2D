@@ -21,13 +21,13 @@ from utils.data.swift_decl_lookup import SwiftDeclLookup
 from utils.data.swift_decl_visitor import SwiftDeclVisitor
 from utils.doccomment.doccomment_formatter import DoccommentFormatter
 from utils.doccomment.doccomment_manager import DoccommentManager
+from utils.generator.swift_decl_merger import SwiftDeclMerger
 from utils.generator.swift_decl_generator import SwiftDeclGenerator
 from utils.generator.symbol_generator_filter import SymbolGeneratorFilter
 from utils.generator.symbol_name_generator import SymbolNameGenerator
 from utils.data.swift_decls import (
     SwiftDecl,
     SwiftDeclVisitResult,
-    SwiftExtensionDecl,
 )
 from utils.directory_structure.directory_structure_manager import (
     DirectoryStructureManager,
@@ -68,77 +68,6 @@ def run_c_preprocessor(input_path: Path) -> bytes:
         return run_cl(input_path)
 
     return run_clang(input_path)
-
-
-class SwiftDeclMerger:
-    """
-    Merges Swift declarations that share a name
-    """
-
-    def merge(self, decls: list[SwiftDecl]) -> list[SwiftDecl]:
-        decl_dict: dict[str, SwiftDecl] = dict()
-
-        for decl in decls:
-            decl_name = decl.name.to_string()
-            existing = decl_dict.get(decl_name)
-            if existing is not None:
-                if ext_decl := self.try_merge_as_extensions(existing, decl):
-                    decl_dict[decl_name] = ext_decl
-                    continue
-
-                existing_name = existing.name.to_string()
-                existing_original = existing.original_name if existing.original_name is not None else "<none>"
-                decl_original = decl.original_name if decl.original_name is not None else "<none>"
-
-                raise BaseException(
-                    f"Found two symbols that share the same name but are of different types or access levels: {existing_name} (type: {type(existing)}) (originally: {existing_original}) and {decl_name} (type: {type(decl)}) (originally: {decl_original})"
-                )
-
-            else:
-                decl_dict[decl_name] = decl
-
-        return list(decl_dict.values())
-
-    def try_merge_as_extensions(
-        self, decl1: SwiftDecl, decl2: SwiftDecl
-    ) -> SwiftExtensionDecl | None:
-
-        if isinstance(decl1, SwiftExtensionDecl) and isinstance(decl2, SwiftExtensionDecl):
-            # Don't merge different access levels
-            if decl1.access_level != decl2.access_level:
-                return None
-            
-            node = self.choose_nodes(decl1.original_node, decl2.original_node)
-
-            return SwiftExtensionDecl(
-                name=decl1.name,
-                original_name=decl1.original_name,
-                members=decl1.members + decl2.members,
-                origin=decl1.origin,
-                original_node=node,
-                c_kind=decl1.c_kind,
-                doccomment=decl1.doccomment,
-                conformances=list(set(decl1.conformances + decl2.conformances)),
-                access_level=decl1.access_level
-            )
-
-        return None
-    
-    def choose_nodes(self, node1: c_ast.Node | None, node2: c_ast.Node | None) -> c_ast.Node | None:
-        if node1 is None:
-            return node2
-        if node2 is None:
-            return node1
-        
-        # Choose the source node that has members, if possible
-        match (node1, node2):
-            case (c_ast.Struct(), c_ast.Struct()):
-                if node1.decls is None:
-                    return node2
-                if node2.decls is None:
-                    return node1
-        
-        return node1
 
 
 class DeclGeneratorTarget:

@@ -19,7 +19,7 @@ public extension B2World {
     }
     
     /// Call this to draw shapes and other debug draw data. This is intentionally non-const.
-    func draw(_ draw: UnsafeMutablePointer<b2DebugDraw>) {
+    func draw(_ draw: UnsafeMutablePointer<b2DebugDraw>?) {
         b2World_Draw(id, draw)
     }
     
@@ -39,22 +39,22 @@ public extension B2World {
     }
     
     /// Overlap test for all shapes that *potentially* overlap the provided AABB.
-    func overlapAABB(_ aabb: b2AABB, _ filter: b2QueryFilter, _ fcn: UnsafeMutablePointer<b2OverlapResultFcn>, _ context: UnsafeMutableRawPointer) {
+    func overlapAABB(_ aabb: b2AABB, _ filter: b2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
         b2World_OverlapAABB(id, aabb, filter, fcn, context)
     }
     
     /// Overlap test for for all shapes that overlap the provided circle.
-    func overlapCircle(_ circle: UnsafeMutablePointer<b2Circle>, _ transform: b2Transform, _ filter: b2QueryFilter, _ fcn: UnsafeMutablePointer<b2OverlapResultFcn>, _ context: UnsafeMutableRawPointer) {
+    func overlapCircle(_ circle: UnsafeMutablePointer<b2Circle>?, _ transform: b2Transform, _ filter: b2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
         b2World_OverlapCircle(id, circle, transform, filter, fcn, context)
     }
     
     /// Overlap test for all shapes that overlap the provided capsule.
-    func overlapCapsule(_ capsule: UnsafeMutablePointer<b2Capsule>, _ transform: b2Transform, _ filter: b2QueryFilter, _ fcn: UnsafeMutablePointer<b2OverlapResultFcn>, _ context: UnsafeMutableRawPointer) {
+    func overlapCapsule(_ capsule: UnsafeMutablePointer<b2Capsule>?, _ transform: b2Transform, _ filter: b2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
         b2World_OverlapCapsule(id, capsule, transform, filter, fcn, context)
     }
     
     /// Overlap test for all shapes that overlap the provided polygon.
-    func overlapPolygon(_ polygon: UnsafeMutablePointer<b2Polygon>, _ transform: b2Transform, _ filter: b2QueryFilter, _ fcn: UnsafeMutablePointer<b2OverlapResultFcn>, _ context: UnsafeMutableRawPointer) {
+    func overlapPolygon(_ polygon: UnsafeMutablePointer<b2Polygon>?, _ transform: b2Transform, _ filter: b2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
         b2World_OverlapPolygon(id, polygon, transform, filter, fcn, context)
     }
     
@@ -64,7 +64,7 @@ public extension B2World {
     /// @param callback a user implemented callback class.
     /// @param point1 the ray starting point
     /// @param point2 the ray ending point
-    func rayCast(_ origin: b2Vec2, _ translation: b2Vec2, _ filter: b2QueryFilter, _ fcn: UnsafeMutablePointer<b2CastResultFcn>, _ context: UnsafeMutableRawPointer) {
+    func rayCast(_ origin: b2Vec2, _ translation: b2Vec2, _ filter: b2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) {
         b2World_RayCast(id, origin, translation, filter, fcn, context)
     }
     
@@ -74,17 +74,17 @@ public extension B2World {
     }
     
     /// Cast a circle through the world. Similar to a ray-cast except that a circle is cast instead of a point.
-    func circleCast(_ circle: UnsafeMutablePointer<b2Circle>, _ originTransform: b2Transform, _ translation: b2Vec2, _ filter: b2QueryFilter, _ fcn: UnsafeMutablePointer<b2CastResultFcn>, _ context: UnsafeMutableRawPointer) {
+    func circleCast(_ circle: UnsafeMutablePointer<b2Circle>?, _ originTransform: b2Transform, _ translation: b2Vec2, _ filter: b2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) {
         b2World_CircleCast(id, circle, originTransform, translation, filter, fcn, context)
     }
     
     /// Cast a capsule through the world. Similar to a ray-cast except that a capsule is cast instead of a point.
-    func capsuleCast(_ capsule: UnsafeMutablePointer<b2Capsule>, _ originTransform: b2Transform, _ translation: b2Vec2, _ filter: b2QueryFilter, _ fcn: UnsafeMutablePointer<b2CastResultFcn>, _ context: UnsafeMutableRawPointer) {
+    func capsuleCast(_ capsule: UnsafeMutablePointer<b2Capsule>?, _ originTransform: b2Transform, _ translation: b2Vec2, _ filter: b2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) {
         b2World_CapsuleCast(id, capsule, originTransform, translation, filter, fcn, context)
     }
     
     /// Cast a capsule through the world. Similar to a ray-cast except that a polygon is cast instead of a point.
-    func polygonCast(_ polygon: UnsafeMutablePointer<b2Polygon>, _ originTransform: b2Transform, _ translation: b2Vec2, _ filter: b2QueryFilter, _ fcn: UnsafeMutablePointer<b2CastResultFcn>, _ context: UnsafeMutableRawPointer) {
+    func polygonCast(_ polygon: UnsafeMutablePointer<b2Polygon>?, _ originTransform: b2Transform, _ translation: b2Vec2, _ filter: b2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) {
         b2World_PolygonCast(id, polygon, originTransform, translation, filter, fcn, context)
     }
     
@@ -114,7 +114,7 @@ public extension B2World {
     }
     
     /// Register the pre-solve callback. This is optional.
-    func setPreSolveCallback(_ fcn: UnsafeMutablePointer<b2PreSolveFcn>, _ context: UnsafeMutableRawPointer) {
+    func setPreSolveCallback(_ fcn: @convention(c) (b2ShapeId, b2ShapeId, UnsafeMutablePointer<b2Manifold>?, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
         b2World_SetPreSolveCallback(id, fcn, context)
     }
     

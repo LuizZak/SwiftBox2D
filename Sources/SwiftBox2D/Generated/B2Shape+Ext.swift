@@ -26,7 +26,7 @@ public extension B2Shape {
     }
     
     /// Set the user data for a shape.
-    func setUserData(_ userData: UnsafeMutableRawPointer) {
+    func setUserData(_ userData: UnsafeMutableRawPointer?) {
         b2Shape_SetUserData(id, userData)
     }
     
@@ -152,25 +152,25 @@ public extension B2Shape {
     
     /// Allows you to change a shape to be a circle or update the current circle.
     /// This does not modify the mass properties.
-    func setCircle(_ circle: UnsafeMutablePointer<b2Circle>) {
+    func setCircle(_ circle: UnsafeMutablePointer<b2Circle>?) {
         b2Shape_SetCircle(id, circle)
     }
     
     /// Allows you to change a shape to be a capsule or update the current capsule.
     /// This does not modify the mass properties.
-    func setCapsule(_ capsule: UnsafeMutablePointer<b2Capsule>) {
+    func setCapsule(_ capsule: UnsafeMutablePointer<b2Capsule>?) {
         b2Shape_SetCapsule(id, capsule)
     }
     
     /// Allows you to change a shape to be a segment or update the current segment.
     /// This does not modify the mass properties.
-    func setSegment(_ segment: UnsafeMutablePointer<b2Segment>) {
+    func setSegment(_ segment: UnsafeMutablePointer<b2Segment>?) {
         b2Shape_SetSegment(id, segment)
     }
     
     /// Allows you to change a shape to be a segment or update the current segment.
     /// This does not modify the mass properties.
-    func setPolygon(_ polygon: UnsafeMutablePointer<b2Polygon>) {
+    func setPolygon(_ polygon: UnsafeMutablePointer<b2Polygon>?) {
         b2Shape_SetPolygon(id, polygon)
     }
     
@@ -186,7 +186,7 @@ public extension B2Shape {
     }
     
     /// Get the touching contact data for a shape. The provided shapeId will be either shapeIdA or shapeIdB on the contact data.
-    func getContactData(_ contactData: UnsafeMutablePointer<b2ContactData>, _ capacity: Int32) -> Int32 {
+    func getContactData(_ contactData: UnsafeMutablePointer<b2ContactData>?, _ capacity: Int32) -> Int32 {
         b2Shape_GetContactData(id, contactData, capacity)
     }
     

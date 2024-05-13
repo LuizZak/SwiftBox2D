@@ -10,6 +10,7 @@ public extension B2RevoluteJoint {
         b2RevoluteJoint_EnableSpring(id, enableSpring)
     }
     
+    /// @return is the revolute joint limit enabled
     func isLimitEnabled() -> Bool {
         b2RevoluteJoint_IsLimitEnabled(id)
     }
@@ -42,11 +43,6 @@ public extension B2RevoluteJoint {
     /// Enable/disable a revolute joint limit.
     func enableLimit(_ enableLimit: Bool) {
         b2RevoluteJoint_EnableLimit(id, enableLimit)
-    }
-    
-    /// @return is the revolute joint limit enabled
-    func isLimitEnabled() -> Bool {
-        b2RevoluteJoint_IsLimitEnabled(id)
     }
     
     /// Get the lower joint limit in radians.

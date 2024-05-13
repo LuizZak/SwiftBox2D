@@ -35,7 +35,7 @@
             "enums": [],
             "enumMembers": [],
             "structs": ["."],
-            "methods": ["."]
+            "methods": [".", "!b2DistanceJoint_IsLimitEnabled", "!b2Body_SetAutomaticMass", "!b2Body_GetAutomaticMass"]
         }
     },
     "docComments": {
