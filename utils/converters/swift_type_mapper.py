@@ -4,7 +4,7 @@ if __name__ == "__main__":
     sys.path.insert(0, str(pathlib.Path(__file__).joinpath("../../../").resolve()))
 
 from dataclasses import dataclass
-from pycparser import (c_ast, c_generator)
+from pycparser import c_ast
 
 from utils.data.swift_type import (
     OptionalSwiftType,
@@ -19,16 +19,31 @@ class SwiftTypeMapper:
     A type mapper that converts C types to equivalent or approximate Swift types.
     """
 
-    @dataclass
-    class __InternalTypeResult:
-        name: str
-        "Original C name, or raw C type string."
+    @dataclass(slots=True)
+    class _InternalTypeResult:
         swift_type: SwiftType
         "Resolved unaliased Swift type."
         swift_type_aliased: SwiftType
         "Resolved Swift type, with aliased typedefs in place."
+    
+    @dataclass(slots=True)
+    class _Flags:
+        is_constant: bool = False
+
+        @classmethod
+        def from_node(cls, node: c_ast.Node):
+            if not isinstance(node, c_ast.Decl):
+                return cls()
+            
+            return cls(
+                is_constant="const" in node.quals
+            )
 
     __default_pointer_type = "UnsafeMutablePointer"
+    __default_const_pointer_type = "UnsafePointer"
+    __void_pointer_type = "UnsafeMutableRawPointer"
+    __const_void_pointer_type = "UnsafeRawPointer"
+
     __simpleTypes: list[tuple[str, str | list[str]]] = [
         ("Void", "void"),
         ("Bool", "_Bool"),
@@ -45,107 +60,90 @@ class SwiftTypeMapper:
     ]
 
     def map_to_swift_type(self, cDecl: c_ast.Node, context: c_ast.FileAST) -> SwiftType | None:
-        if mapped := self.__map_base(cDecl, context):
+        if mapped := self._map_base(cDecl, context):
             return mapped.swift_type
         
         return None
     
     def unalias_type(self, type_name: str, context: c_ast.FileAST) -> SwiftType | None:
         "Returns the fully resolved unaliased type of name `type_name`, if it is a typedef, returns `None` otherwise."
-        if expanded := self.__expand_type_def(type_name, context):
+        if expanded := self._expand_type_def(type_name, context):
             return expanded.swift_type
         
         return None
 
-    def __map_base(self, cDecl: c_ast.Node, context: c_ast.FileAST) -> __InternalTypeResult | None:
-        mapped = self.__map(cDecl, context)
+    def _map_base(self, cDecl: c_ast.Node, context: c_ast.FileAST, flags=_Flags()) -> _InternalTypeResult | None:
+        mapped = self._map(cDecl, context)
         if mapped is None:
             return None
         
-        # Pointer to function typedef maps to the function typedef itself
         match mapped.swift_type:
+            # Pointer to function typedef maps to the function typedef itself
             case OptionalSwiftType(NominalSwiftType(self.__default_pointer_type, [FunctionSwiftType()])):
-                return self.__InternalTypeResult(
-                    mapped.name,
+                return self._InternalTypeResult(
                     mapped.swift_type_aliased.as_optional_sugar_type().type.as_generic_type()[1][0],
                     mapped.swift_type_aliased.as_optional_sugar_type().type.as_generic_type()[1][0]
                 )
         
         return mapped
 
-    def __map(self, cDecl: c_ast.Node, context: c_ast.FileAST) -> __InternalTypeResult | None:
+    def _map(self, cDecl: c_ast.Node, context: c_ast.FileAST, flags=_Flags()) -> _InternalTypeResult | None:
         "Maps a C declaration node to an equivalent Swift type, un-aliasing any typedef along the way."
 
         if isinstance(cDecl, c_ast.Decl):
-            return self.__map(cDecl.type, context)
+            return self._map(cDecl.type, context, self._Flags.from_node(cDecl))
         elif isinstance(cDecl, c_ast.TypeDecl):
             if isinstance(cDecl.type, c_ast.Struct) or isinstance(cDecl.type, c_ast.Enum):
-                return self.__InternalTypeResult(
-                    self.__c_string(cDecl),
+                return self._InternalTypeResult(
                     SwiftType.typeName(cDecl.declname),
                     SwiftType.typeName(cDecl.declname)
                 )
             
-            return self.__map(cDecl.type, context)
+            return self._map(cDecl.type, context)
         elif isinstance(cDecl, c_ast.Typedef):
-            if type := self.__map(cDecl.type, context):
-                return self.__InternalTypeResult(
-                    self.__c_string(cDecl),
+            if type := self._map(cDecl.type, context):
+                return self._InternalTypeResult(
                     type.swift_type,
                     SwiftType.typeName(cDecl.name)
                 )
         elif isinstance(cDecl, c_ast.PtrDecl):
-            inner = self.__map(cDecl.type, context)
+            inner = self._map(cDecl.type, context)
             if inner is None:
                 return None
-            # void* should map to UnsafeMutableRawPointer
-            if inner.swift_type.isEquivalent(SwiftType.void()):
-                return self.__InternalTypeResult(
-                    self.__c_string(cDecl),
-                    SwiftType.typeName("UnsafeMutableRawPointer").wrap_optional(),
-                    SwiftType.typeName("UnsafeMutableRawPointer").wrap_optional()
-                )
-            return self.__InternalTypeResult(
-                self.__c_string(cDecl),
-                SwiftType.generic(self.__default_pointer_type, [inner.swift_type]).wrap_optional(),
-                SwiftType.generic(self.__default_pointer_type, [inner.swift_type_aliased]).wrap_optional(),
-            )
+            return self._make_pointer_type(inner.swift_type, inner.swift_type_aliased, flags)
         elif isinstance(cDecl, c_ast.IdentifierType):
-            return self.__map_compound_name(cDecl.names, context)
+            return self._map_compound_name(cDecl.names, context)
         elif isinstance(cDecl, c_ast.FuncDecl):
-            ret_type = self.__map_base(cDecl.type, context)
+            ret_type = self._map_base(cDecl.type, context)
             if ret_type is None:
                 return None
             
             if cDecl.args.params is None:
-                return self.__InternalTypeResult(
-                    self.__c_string(cDecl),
+                return self._InternalTypeResult(
                     SwiftType.function([], ret_type.swift_type),
                     SwiftType.function([], ret_type.swift_type),
                 )
 
             params = []
             for p in cDecl.args.params:
-                if type := self.__map_base(p, context=context):
+                if type := self._map_base(p, context=context):
                     params.append(type.swift_type)
                 else:
                     return None
             
-            return self.__InternalTypeResult(
-                self.__c_string(cDecl),
+            return self._InternalTypeResult(
                 SwiftType.function(params, ret_type.swift_type),
                 SwiftType.function(params, ret_type.swift_type),
             )
 
         return None
     
-    def __map_compound_name(self, names: list[str], context: c_ast.FileAST) -> __InternalTypeResult | None:
+    def _map_compound_name(self, names: list[str], context: c_ast.FileAST, flags=_Flags()) -> _InternalTypeResult | None:
         full = " ".join(names)
         for (swiftType, aliases) in self.__simpleTypes:
             if isinstance(aliases, str):
                 if full == aliases:
-                    return self.__InternalTypeResult(
-                        full,
+                    return self._InternalTypeResult(
                         SwiftType.typeName(swiftType),
                         SwiftType.typeName(swiftType),
                     )
@@ -153,41 +151,58 @@ class SwiftTypeMapper:
             
             for alias in aliases:
                 if full == alias:
-                    return self.__InternalTypeResult(
-                        full,
+                    return self._InternalTypeResult(
                         SwiftType.typeName(swiftType),
                         SwiftType.typeName(swiftType),
                     )
         
         if len(names) == 1:
-            return self.__expand_type_def(names[0], context)
+            return self._expand_type_def(names[0], context)
 
         return None
     
-    def __expand_type_def(self, typeName: str, context: c_ast.FileAST) -> __InternalTypeResult | None:
+    def _make_pointer_type(self, pointee: SwiftType, unaliased: SwiftType, flags: _Flags) -> _InternalTypeResult:
+        # void* should map to UnsafeMutableRawPointer/UnsafeRawPointer
+        if pointee.isEquivalent(SwiftType.void()):
+            pointer_type = (
+                self.__const_void_pointer_type
+                if flags.is_constant
+                else self.__void_pointer_type
+            )
+            return self._InternalTypeResult(
+                SwiftType.typeName(pointer_type).wrap_optional(),
+                SwiftType.typeName(pointer_type).wrap_optional()
+            )
+        
+        pointer_type = (
+            self.__default_const_pointer_type
+            if flags.is_constant
+            else self.__default_pointer_type
+        )
+        return self._InternalTypeResult(
+            SwiftType.generic(pointer_type, [pointee]).wrap_optional(),
+            SwiftType.generic(pointer_type, [unaliased]).wrap_optional(),
+        )
+    
+    def _expand_type_def(self, typeName: str, context: c_ast.FileAST, flags=_Flags()) -> _InternalTypeResult | None:
         for decl in context.ext:
             if not isinstance(decl, c_ast.Typedef):
                 continue
             if decl.name != typeName:
                 continue
 
-            if type := self.__map(decl.type, context):
-                return self.__InternalTypeResult(
-                    type.name,
+            if type := self._map(decl.type, context):
+                return self._InternalTypeResult(
                     type.swift_type,
                     SwiftType.typeName(typeName),
                 )
             
             return None
         
-        return self.__InternalTypeResult(
-            typeName,
+        return self._InternalTypeResult(
             SwiftType.typeName(typeName),
             SwiftType.typeName(typeName),
         )
-    
-    def __c_string(self, node: c_ast.Node):
-        return c_generator.CGenerator(True).visit(node)
 
 
 if __name__ == "__main__":
@@ -204,6 +219,7 @@ if __name__ == "__main__":
     void h(g* a);
     typedef struct { int b; } i;
     void j(i a);
+    const int *k;
     """
 
     parser = pycparser.CParser()
