@@ -10,7 +10,7 @@ public extension B2MouseJoint {
         b2MouseJoint_SetTarget(id, target)
     }
     
-    /// @return the target for a mouse joint
+    /// - returns: the target for a mouse joint
     func getTarget() -> b2Vec2 {
         b2MouseJoint_GetTarget(id)
     }

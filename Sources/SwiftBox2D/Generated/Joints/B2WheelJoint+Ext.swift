@@ -17,7 +17,7 @@ public extension B2WheelJoint {
         b2WheelJoint_SetSpringHertz(id, hertz)
     }
     
-    /// @return the wheel joint stiffness in Hertz
+    /// - returns: the wheel joint stiffness in Hertz
     func getSpringHertz() -> Float {
         b2WheelJoint_GetSpringHertz(id)
     }
@@ -27,7 +27,7 @@ public extension B2WheelJoint {
         b2WheelJoint_SetSpringDampingRatio(id, dampingRatio)
     }
     
-    /// @return the wheel joint damping ratio (non-dimensional)
+    /// - returns: the wheel joint damping ratio (non-dimensional)
     func getSpringDampingRatio() -> Float {
         b2WheelJoint_GetSpringDampingRatio(id)
     }
@@ -37,7 +37,7 @@ public extension B2WheelJoint {
         b2WheelJoint_EnableLimit(id, enableLimit)
     }
     
-    /// @return is the wheel joint limit enabled
+    /// - returns: is the wheel joint limit enabled
     func isLimitEnabled() -> Bool {
         b2WheelJoint_IsLimitEnabled(id)
     }
@@ -62,7 +62,7 @@ public extension B2WheelJoint {
         b2WheelJoint_EnableMotor(id, enableMotor)
     }
     
-    /// @return is the wheel joint motor enabled
+    /// - returns: is the wheel joint motor enabled
     func isMotorEnabled() -> Bool {
         b2WheelJoint_IsMotorEnabled(id)
     }
@@ -72,7 +72,7 @@ public extension B2WheelJoint {
         b2WheelJoint_SetMotorSpeed(id, motorSpeed)
     }
     
-    /// @return the wheel joint motor speed in radians per second
+    /// - returns: the wheel joint motor speed in radians per second
     func getMotorSpeed() -> Float {
         b2WheelJoint_GetMotorSpeed(id)
     }
@@ -87,7 +87,7 @@ public extension B2WheelJoint {
         b2WheelJoint_SetMaxMotorTorque(id, torque)
     }
     
-    /// @return the wheel joint maximum motor torque
+    /// - returns: the wheel joint maximum motor torque
     func getMaxMotorTorque() -> Float {
         b2WheelJoint_GetMaxMotorTorque(id)
     }

@@ -6,12 +6,9 @@
     "json.schemas": [
         {
             "fileMatch": [
-                "/generate_types.json"
+                "/generate_types.jsonc"
             ],
             "url": "./utils/generate_types.schema.json",
         }
-    ],
-    "cSpell.words": [
-        "unaliased"
     ]
 }

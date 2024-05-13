@@ -10,7 +10,7 @@ public extension B2WeldJoint {
         b2WeldJoint_SetLinearHertz(id, hertz)
     }
     
-    /// @return the weld joint linear stiffness in Hertz.
+    /// - returns: the weld joint linear stiffness in Hertz.
     func getLinearHertz() -> Float {
         b2WeldJoint_GetLinearHertz(id)
     }
@@ -20,7 +20,7 @@ public extension B2WeldJoint {
         b2WeldJoint_SetLinearDampingRatio(id, dampingRatio)
     }
     
-    /// @return the weld joint linear damping ratio (non-dimensional)
+    /// - returns: the weld joint linear damping ratio (non-dimensional)
     func getLinearDampingRatio() -> Float {
         b2WeldJoint_GetLinearDampingRatio(id)
     }
@@ -30,7 +30,7 @@ public extension B2WeldJoint {
         b2WeldJoint_SetAngularHertz(id, hertz)
     }
     
-    /// @return the weld joint angular stiffness in Hertz.
+    /// - returns: the weld joint angular stiffness in Hertz.
     func getAngularHertz() -> Float {
         b2WeldJoint_GetAngularHertz(id)
     }
@@ -40,7 +40,7 @@ public extension B2WeldJoint {
         b2WeldJoint_SetAngularDampingRatio(id, dampingRatio)
     }
     
-    /// @return the weld joint angular damping ratio (non-dimensional)
+    /// - returns: the weld joint angular damping ratio (non-dimensional)
     func getAngularDampingRatio() -> Float {
         b2WeldJoint_GetAngularDampingRatio(id)
     }

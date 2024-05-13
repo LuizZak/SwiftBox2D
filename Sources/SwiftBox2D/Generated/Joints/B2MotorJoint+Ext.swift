@@ -10,7 +10,7 @@ public extension B2MotorJoint {
         b2MotorJoint_SetLinearOffset(id, linearOffset)
     }
     
-    /// @return the linear offset target for a motor joint
+    /// - returns: the linear offset target for a motor joint
     func getLinearOffset() -> b2Vec2 {
         b2MotorJoint_GetLinearOffset(id)
     }
@@ -20,7 +20,7 @@ public extension B2MotorJoint {
         b2MotorJoint_SetAngularOffset(id, angularOffset)
     }
     
-    /// @return the angular offset target for a motor joint in radians
+    /// - returns: the angular offset target for a motor joint in radians
     func getAngularOffset() -> Float {
         b2MotorJoint_GetAngularOffset(id)
     }
@@ -30,7 +30,7 @@ public extension B2MotorJoint {
         b2MotorJoint_SetMaxForce(id, maxForce)
     }
     
-    /// @return the maximum force for a motor joint
+    /// - returns: the maximum force for a motor joint
     func getMaxForce() -> Float {
         b2MotorJoint_GetMaxForce(id)
     }
@@ -40,7 +40,7 @@ public extension B2MotorJoint {
         b2MotorJoint_SetMaxTorque(id, maxTorque)
     }
     
-    /// @return the maximum torque for a motor joint
+    /// - returns: the maximum torque for a motor joint
     func getMaxTorque() -> Float {
         b2MotorJoint_GetMaxTorque(id)
     }
@@ -50,7 +50,7 @@ public extension B2MotorJoint {
         b2MotorJoint_SetCorrectionFactor(id, correctionFactor)
     }
     
-    /// @return the correction factor for a motor joint
+    /// - returns: the correction factor for a motor joint
     func getCorrectionFactor() -> Float {
         b2MotorJoint_GetCorrectionFactor(id)
     }

@@ -141,7 +141,8 @@
             "doccomments",
             "msvc",
             "pycparser",
-            "swiftpm"
+            "swiftpm",
+            "unaliased",
         ],
         "C_Cpp.default.includePath": [
             "${workspaceFolder}/Sources/box2d/**"

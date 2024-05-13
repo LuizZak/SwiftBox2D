@@ -77,7 +77,7 @@ public extension B2Shape {
         b2Shape_EnableSensorEvents(id, flag)
     }
     
-    /// @return are sensor events enabled?
+    /// - returns: are sensor events enabled?
     func areSensorEventsEnabled() -> Bool {
         b2Shape_AreSensorEventsEnabled(id)
     }
@@ -87,7 +87,7 @@ public extension B2Shape {
         b2Shape_EnableContactEvents(id, flag)
     }
     
-    /// @return are contact events enabled?
+    /// - returns: are contact events enabled?
     func areContactEventsEnabled() -> Bool {
         b2Shape_AreContactEventsEnabled(id)
     }
@@ -98,7 +98,7 @@ public extension B2Shape {
         b2Shape_EnablePreSolveEvents(id, flag)
     }
     
-    /// @return are pre-solve events enabled?
+    /// - returns: are pre-solve events enabled?
     func arePreSolveEventsEnabled() -> Bool {
         b2Shape_ArePreSolveEventsEnabled(id)
     }
@@ -109,7 +109,7 @@ public extension B2Shape {
         b2Shape_EnableHitEvents(id, flag)
     }
     
-    /// @return are hit events enabled?
+    /// - returns: are hit events enabled?
     func areHitEventsEnabled() -> Bool {
         b2Shape_AreHitEventsEnabled(id)
     }

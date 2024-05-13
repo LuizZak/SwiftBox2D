@@ -28,8 +28,15 @@
             { "cPrefix": "b2Chain_", "swiftType": "B2Chain", "param0": { "swiftName": "id", "type": "b2ChainId" } }
         ],
         "conformances": [
+            // Geometry types
             { "cName": "b2Vec2", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
-            { "cName": "b2Circle", "conformances": ["Equatable", "Hashable"] }
+            { "cName": "b2Circle", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
+            { "cName": "b2AABB", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
+            { "cName": "b2Rot", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
+            { "cName": "b2Transform", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
+            { "cName": "b2Mat22", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
+            // Misc types
+            { "cName": "b2Color", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] }
         ],
         "filters": {
             "enums": [],
@@ -47,7 +54,13 @@
         "globalFileSuffix": "+Ext",
         "imports": ["box2d"],
         "directoryStructure": [
-            { "path": "Geometry", "match": [ "b2Vec2+Ext.swift", "b2Circle+Ext.swift" ] },
+            {
+                "path": "Geometry",
+                "match": [
+                    "b2Vec2+Ext.swift", "b2Circle+Ext.swift", "b2AABB+Ext.swift", "b2Rot+Ext.swift",
+                    "b2Transform+Ext.swift", "b2Mat22+Ext.swift"
+                ]
+            },
             { "path": "Joints", "match": [ "/B2(\\w+)Joint.+/" ] }
         ]
     }

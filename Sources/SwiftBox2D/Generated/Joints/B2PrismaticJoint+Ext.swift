@@ -19,7 +19,7 @@ public extension B2PrismaticJoint {
         b2PrismaticJoint_SetSpringHertz(id, hertz)
     }
     
-    /// @return the joint stiffness in Hertz
+    /// - returns: the joint stiffness in Hertz
     func getSpringHertz() -> Float {
         b2PrismaticJoint_GetSpringHertz(id)
     }
@@ -29,7 +29,7 @@ public extension B2PrismaticJoint {
         b2PrismaticJoint_SetSpringDampingRatio(id, dampingRatio)
     }
     
-    /// @return the joint damping ratio (non-dimensional)
+    /// - returns: the joint damping ratio (non-dimensional)
     func getSpringDampingRatio() -> Float {
         b2PrismaticJoint_GetSpringDampingRatio(id)
     }
@@ -39,7 +39,7 @@ public extension B2PrismaticJoint {
         b2PrismaticJoint_EnableLimit(id, enableLimit)
     }
     
-    /// @return is the prismatic joint limit enabled
+    /// - returns: is the prismatic joint limit enabled
     func isLimitEnabled() -> Bool {
         b2PrismaticJoint_IsLimitEnabled(id)
     }
@@ -64,7 +64,7 @@ public extension B2PrismaticJoint {
         b2PrismaticJoint_EnableMotor(id, enableMotor)
     }
     
-    /// @return is the prismatic joint motor enabled
+    /// - returns: is the prismatic joint motor enabled
     func isMotorEnabled() -> Bool {
         b2PrismaticJoint_IsMotorEnabled(id)
     }
@@ -74,7 +74,7 @@ public extension B2PrismaticJoint {
         b2PrismaticJoint_SetMotorSpeed(id, motorSpeed)
     }
     
-    /// @return the motor speed for a prismatic joint
+    /// - returns: the motor speed for a prismatic joint
     func getMotorSpeed() -> Float {
         b2PrismaticJoint_GetMotorSpeed(id)
     }
@@ -89,7 +89,7 @@ public extension B2PrismaticJoint {
         b2PrismaticJoint_SetMaxMotorForce(id, force)
     }
     
-    /// @return the maximum force for a prismatic joint motor
+    /// - returns: the maximum force for a prismatic joint motor
     func getMaxMotorForce() -> Float {
         b2PrismaticJoint_GetMaxMotorForce(id)
     }

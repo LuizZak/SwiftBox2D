@@ -3,19 +3,21 @@
 
 import box2d
 
-extension b2Circle: CustomStringConvertible, Equatable, Hashable { }
+/// 2D rotation
+/// This is similar to using a complex number for rotation
+extension b2Rot: CustomStringConvertible, Equatable, Hashable { }
 
-public extension b2Circle {
+public extension b2Rot {
     var description: String {
-        "b2Circle(center: \(center), radius: \(radius))"
+        "b2Rot(c: \(c), s: \(s))"
     }
     
     static func == (_ lhs: Self, _ rhs: Self) -> Bool {
-        lhs.center == rhs.center && lhs.radius == rhs.radius
+        lhs.c == rhs.c && lhs.s == rhs.s
     }
     
     func hash(into hasher: inout Hasher) {
-        hasher.combine(center)
-        hasher.combine(radius)
+        hasher.combine(c)
+        hasher.combine(s)
     }
 }

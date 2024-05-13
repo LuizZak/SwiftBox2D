@@ -39,12 +39,12 @@ public extension B2DistanceJoint {
         b2DistanceJoint_SetSpringDampingRatio(id, dampingRatio)
     }
     
-    /// @return the spring Hertz
+    /// - returns: the spring Hertz
     func getHertz() -> Float {
         b2DistanceJoint_GetHertz(id)
     }
     
-    /// @return the spring damping ratio
+    /// - returns: the spring damping ratio
     func getDampingRatio() -> Float {
         b2DistanceJoint_GetDampingRatio(id)
     }

@@ -3,19 +3,20 @@
 
 import box2d
 
-extension b2Circle: CustomStringConvertible, Equatable, Hashable { }
+/// A 2-by-2 Matrix
+extension b2Mat22: CustomStringConvertible, Equatable, Hashable { }
 
-public extension b2Circle {
+public extension b2Mat22 {
     var description: String {
-        "b2Circle(center: \(center), radius: \(radius))"
+        "b2Mat22(cx: \(cx), cy: \(cy))"
     }
     
     static func == (_ lhs: Self, _ rhs: Self) -> Bool {
-        lhs.center == rhs.center && lhs.radius == rhs.radius
+        lhs.cx == rhs.cx && lhs.cy == rhs.cy
     }
     
     func hash(into hasher: inout Hasher) {
-        hasher.combine(center)
-        hasher.combine(radius)
+        hasher.combine(cx)
+        hasher.combine(cy)
     }
 }

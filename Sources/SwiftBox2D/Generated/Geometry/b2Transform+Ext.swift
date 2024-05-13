@@ -3,19 +3,20 @@
 
 import box2d
 
-extension b2Circle: CustomStringConvertible, Equatable, Hashable { }
+/// A 2D rigid transform
+extension b2Transform: CustomStringConvertible, Equatable, Hashable { }
 
-public extension b2Circle {
+public extension b2Transform {
     var description: String {
-        "b2Circle(center: \(center), radius: \(radius))"
+        "b2Transform(p: \(p), q: \(q))"
     }
     
     static func == (_ lhs: Self, _ rhs: Self) -> Bool {
-        lhs.center == rhs.center && lhs.radius == rhs.radius
+        lhs.p == rhs.p && lhs.q == rhs.q
     }
     
     func hash(into hasher: inout Hasher) {
-        hasher.combine(center)
-        hasher.combine(radius)
+        hasher.combine(p)
+        hasher.combine(q)
     }
 }

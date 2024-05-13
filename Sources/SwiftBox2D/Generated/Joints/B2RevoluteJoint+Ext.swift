@@ -10,7 +10,7 @@ public extension B2RevoluteJoint {
         b2RevoluteJoint_EnableSpring(id, enableSpring)
     }
     
-    /// @return is the revolute joint limit enabled
+    /// - returns: is the revolute joint limit enabled
     func isLimitEnabled() -> Bool {
         b2RevoluteJoint_IsLimitEnabled(id)
     }
@@ -20,7 +20,7 @@ public extension B2RevoluteJoint {
         b2RevoluteJoint_SetSpringHertz(id, hertz)
     }
     
-    /// @return the joint stiffness in Hertz
+    /// - returns: the joint stiffness in Hertz
     func getSpringHertz() -> Float {
         b2RevoluteJoint_GetSpringHertz(id)
     }
@@ -30,7 +30,7 @@ public extension B2RevoluteJoint {
         b2RevoluteJoint_SetSpringDampingRatio(id, dampingRatio)
     }
     
-    /// @return the  joint damping ratio (non-dimensional)
+    /// - returns: the  joint damping ratio (non-dimensional)
     func getSpringDampingRatio() -> Float {
         b2RevoluteJoint_GetSpringDampingRatio(id)
     }
@@ -65,7 +65,7 @@ public extension B2RevoluteJoint {
         b2RevoluteJoint_EnableMotor(id, enableMotor)
     }
     
-    /// @return is the revolute joint motor enabled
+    /// - returns: is the revolute joint motor enabled
     func isMotorEnabled() -> Bool {
         b2RevoluteJoint_IsMotorEnabled(id)
     }
@@ -75,7 +75,7 @@ public extension B2RevoluteJoint {
         b2RevoluteJoint_SetMotorSpeed(id, motorSpeed)
     }
     
-    /// @return the motor speed for a revolute joint in radians per second
+    /// - returns: the motor speed for a revolute joint in radians per second
     func getMotorSpeed() -> Float {
         b2RevoluteJoint_GetMotorSpeed(id)
     }
@@ -90,7 +90,7 @@ public extension B2RevoluteJoint {
         b2RevoluteJoint_SetMaxMotorTorque(id, torque)
     }
     
-    /// @return the maximum torque for a revolute joint motor
+    /// - returns: the maximum torque for a revolute joint motor
     func getMaxMotorTorque() -> Float {
         b2RevoluteJoint_GetMaxMotorTorque(id)
     }

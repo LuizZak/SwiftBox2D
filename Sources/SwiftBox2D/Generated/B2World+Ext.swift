@@ -123,7 +123,7 @@ public extension B2World {
         b2World_SetGravity(id, gravity)
     }
     
-    /// @return the gravity vector
+    /// - returns: the gravity vector
     func getGravity() -> b2Vec2 {
         b2World_GetGravity(id)
     }
