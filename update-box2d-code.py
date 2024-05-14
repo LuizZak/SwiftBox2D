@@ -39,7 +39,7 @@ def run(
     *args: str,
     cwd: str | Path | None = None,
     echo: bool = True,
-    silent: bool = False
+    silent: bool = False,
 ):
     if echo:
         echo_call(bin_name, *args)
@@ -108,12 +108,13 @@ def create_temporary_folder() -> Path:
 
     return temp_path
 
+
 def remove_files_with_pattern(base_folder: Path, patterns: list[str]):
     for pattern in patterns:
         for result in glob.iglob(pattern, root_dir=base_folder, recursive=True):
             rel_path = os.path.relpath(Path(base_folder, result), base_folder)
             final_path = Path(base_folder, rel_path).resolve()
-            
+
             if not str(final_path).startswith(str(base_folder.resolve())):
                 continue
 
@@ -152,7 +153,7 @@ def update_includes(include_path: Path, target_path: Path):
 
     shutil.rmtree(old_includes)
     shutil.copytree(new_includes, old_includes)
-    
+
 
 def copy_repo_files(source_files: Path, include_path: Path, target_path: Path):
     # Update includes
@@ -173,17 +174,16 @@ def copy_box2d_files(src_path: Path, include_path: Path, target_path: Path):
 
     copy_repo_files(src_path, include_path, target_path)
 
+
 def copy_dependency_files(clone_path: Path, target_path: Path):
     print_stage_name("Copying over Box2D dependency files...")
-    
+
     simde_path = clone_path.joinpath("extern", "simde")
 
     shutil.copytree(simde_path, target_path, dirs_exist_ok=True)
 
 
-def update_code(
-    box2d_tag_or_branch: str | None, force: bool
-) -> int:
+def update_code(box2d_tag_or_branch: str | None, force: bool) -> int:
     if (not force) and len(git_output("status", "--porcelain", echo=False).strip()) > 0:
         print(
             ConsoleColor.RED(
@@ -199,7 +199,7 @@ def update_code(
     box2d_clone_path = clone_box2d(box2d_tag_or_branch, temp_path)
     src_path = box2d_clone_path.joinpath("src")
     include_path = box2d_clone_path.joinpath("include")
-    
+
     print_stage_name("Removing extraneous files...")
     remove_files_with_pattern(box2d_clone_path, rmFilePatterns)
 

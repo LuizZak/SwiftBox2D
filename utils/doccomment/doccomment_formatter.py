@@ -47,12 +47,11 @@ class DoccommentFormatter:
     def trim_empty_lines(
         self, sequence: Sequence[T], is_empty: Callable[[T], bool]
     ) -> list[T]:
-
         has_content = False
         first_index: int | None = None
         last_index: int | None = None
 
-        for (i, comment) in enumerate(sequence):
+        for i, comment in enumerate(sequence):
             if not is_empty(comment):
                 has_content = True
 

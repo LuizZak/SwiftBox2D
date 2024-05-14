@@ -10,6 +10,7 @@ class ComponentCase(Enum):
     """
     Describes the casing for a CompoundSymbolName.Component.
     """
+
     ANY = 0
     "Any casing is supported."
 
@@ -70,7 +71,10 @@ class ComponentCase(Enum):
         return self
 
 
-_pascal_case_matcher = re.compile(r'((^[a-z]+)|([0-9]+)|([A-Z]{1}[a-z]+)|([A-Z]+(?=([A-Z][a-z])|($)|([0-9]))))')
+_pascal_case_matcher = re.compile(
+    r"((^[a-z]+)|([0-9]+)|([A-Z]{1}[a-z]+)|([A-Z]+(?=([A-Z][a-z])|($)|([0-9]))))"
+)
+
 
 @dataclass(repr=False)
 class CompoundSymbolName(Sequence, Hashable):
@@ -103,19 +107,27 @@ class CompoundSymbolName(Sequence, Hashable):
         "Specifies the suggested casing for this component."
 
         def __repr__(self) -> str:
-            return f"CompoundSymbolName.Component(string={self.string}, prefix={self.prefix}, prefix={self.suffix}, " \
-                   f"prefix={self.joint_to_prev}, string_case={self.string_case})"
-        
+            return (
+                f"CompoundSymbolName.Component(string={self.string}, prefix={self.prefix}, prefix={self.suffix}, "
+                f"prefix={self.joint_to_prev}, string_case={self.string_case})"
+            )
+
         def __key(self):
-            return (self.string, self.prefix, self.suffix, self.joint_to_prev, self.string_case)
+            return (
+                self.string,
+                self.prefix,
+                self.suffix,
+                self.joint_to_prev,
+                self.string_case,
+            )
 
         def __hash__(self) -> int:
             return hash(self.__key())
-        
+
         def __eq__(self, other: object) -> bool:
             if isinstance(other, CompoundSymbolName.Component):
                 return self.__key() == other.__key()
-            
+
             return False
 
         def copy(self) -> "CompoundSymbolName.Component":
@@ -128,10 +140,16 @@ class CompoundSymbolName(Sequence, Hashable):
             CompoundSymbolName.Component(string=string, prefix=prefix, prefix=suffix, prefix=_, string_case=ComponentCase.LOWER)
             """
             return CompoundSymbolName.Component(
-                self.string, self.prefix, self.suffix, self.joint_to_prev, self.string_case
+                self.string,
+                self.prefix,
+                self.suffix,
+                self.joint_to_prev,
+                self.string_case,
             )
 
-        def with_string_only(self, string_case: ComponentCase | None = None) -> "CompoundSymbolName.Component":
+        def with_string_only(
+            self, string_case: ComponentCase | None = None
+        ) -> "CompoundSymbolName.Component":
             """
             Returns a copy of this component with the same self.string, but nil prefix, suffix, and joint_to_prev.
 
@@ -152,14 +170,20 @@ class CompoundSymbolName(Sequence, Hashable):
             return CompoundSymbolName.Component(
                 string, self.prefix, self.suffix, self.joint_to_prev, self.string_case
             )
-        
-        def replacing_in_string(self, old: str, new: str) -> "CompoundSymbolName.Component":
+
+        def replacing_in_string(
+            self, old: str, new: str
+        ) -> "CompoundSymbolName.Component":
             """
             Returns a copy of this `Component`, with any occurrence of `old` within
             `self.string` replaced with `new`.
             """
             return CompoundSymbolName.Component(
-                self.string.replace(old, new), self.prefix, self.suffix, self.joint_to_prev, self.string_case
+                self.string.replace(old, new),
+                self.prefix,
+                self.suffix,
+                self.joint_to_prev,
+                self.string_case,
             )
 
         def with_suffix(self, suffix: str) -> "CompoundSymbolName.Component":
@@ -172,7 +196,9 @@ class CompoundSymbolName(Sequence, Hashable):
                 self.string, self.prefix, self.suffix, joint_to_prev, self.string_case
             )
 
-        def with_string_case(self, string_case: ComponentCase) -> "CompoundSymbolName.Component":
+        def with_string_case(
+            self, string_case: ComponentCase
+        ) -> "CompoundSymbolName.Component":
             return CompoundSymbolName.Component(
                 self.string, self.prefix, self.suffix, self.joint_to_prev, string_case
             )
@@ -284,19 +310,19 @@ class CompoundSymbolName(Sequence, Hashable):
                 result += self.string_case.change_case(self.suffix)
 
             return result
-        
+
         def startswith(self, string: str, has_previous: bool) -> bool:
             """
             Returns `True` if `self.to_string(has_previous=has_previous).startswith(string)`.
             """
             return self.to_string(has_previous=has_previous).startswith(string)
-        
+
         def endswith(self, string: str, has_previous: bool) -> bool:
             """
             Returns `True` if `self.to_string(has_previous=has_previous).endswith(string)`.
             """
             return self.to_string(has_previous=has_previous).endswith(string)
-    
+
     #
 
     components: list[Component]
@@ -309,12 +335,12 @@ class CompoundSymbolName(Sequence, Hashable):
             assert isinstance(comp, CompoundSymbolName.Component)
 
         self.components = components
-    
+
     def __eq__(self, other) -> bool:
         if isinstance(other, CompoundSymbolName):
             return self.components == other.components
         return False
-    
+
     def __hash__(self) -> int:
         return hash(frozenset(self.components))
 
@@ -351,18 +377,35 @@ class CompoundSymbolName(Sequence, Hashable):
         )
 
         return CompoundSymbolName(list(components))
-    
+
     @classmethod
     def from_camel_case(cls, string: str) -> "CompoundSymbolName":
         """
-        Alias for from_pascal_case.
+        Alias for `CompoundSymbolName.from_pascal_case(<string>)`.
+
+        Creates a new symbol name from a given `PascalCase` or `camelCase` string.
+
+        >>> CompoundSymbolName.from_camel_case("APascalCaseString")
+        CompoundSymbolName(components=[
+            CompoundSymbolName.Component(string=A, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Pascal, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Case, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=String, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY)
+        ])
+        >>> CompoundSymbolName.from_camel_case("aPascalCaseString")
+        CompoundSymbolName(components=[
+            CompoundSymbolName.Component(string=a, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Pascal, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Case, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=String, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY)
+        ])
         """
         return cls.from_pascal_case(string)
 
     @classmethod
     def from_pascal_case(cls, string: str) -> "CompoundSymbolName":
         """
-        Creates a new symbol name from a given PascalCase or camelCase string.
+        Creates a new symbol name from a given `PascalCase` or `camelCase` string.
 
         >>> CompoundSymbolName.from_pascal_case("APascalCaseString")
         CompoundSymbolName(components=[
@@ -444,41 +487,55 @@ class CompoundSymbolName(Sequence, Hashable):
         return self.to_string().endswith(string)
 
     def adding_component(
-            self,
-            string: str,
-            prefix: str | None = None,
-            suffix: str | None = None,
-            joint_to_prev: str | None = None,
-            string_case: ComponentCase = ComponentCase.ANY
+        self,
+        string: str,
+        prefix: str | None = None,
+        suffix: str | None = None,
+        joint_to_prev: str | None = None,
+        string_case: ComponentCase = ComponentCase.ANY,
     ) -> "CompoundSymbolName":
         copy = self.copy()
         copy.components.append(
-            CompoundSymbolName.Component(string, prefix, suffix, joint_to_prev, string_case)
+            CompoundSymbolName.Component(
+                string, prefix, suffix, joint_to_prev, string_case
+            )
         )
         return copy
 
     def prepending_component(
-            self,
-            string: str,
-            prefix: str | None = None,
-            suffix: str | None = None,
-            joint_to_prev: str | None = None,
-            string_case: ComponentCase = ComponentCase.ANY
+        self,
+        string: str,
+        prefix: str | None = None,
+        suffix: str | None = None,
+        joint_to_prev: str | None = None,
+        string_case: ComponentCase = ComponentCase.ANY,
     ) -> "CompoundSymbolName":
         copy = self.copy()
         copy.components.insert(
-            0, CompoundSymbolName.Component(string, prefix, suffix, joint_to_prev, string_case)
+            0,
+            CompoundSymbolName.Component(
+                string, prefix, suffix, joint_to_prev, string_case
+            ),
         )
         return copy
-    
-    def mapping_components(self, mapper: Callable[[int, "CompoundSymbolName.Component"], "CompoundSymbolName.Component"]):
+
+    def mapping_components(
+        self,
+        mapper: Callable[
+            [int, "CompoundSymbolName.Component"], "CompoundSymbolName.Component"
+        ],
+    ):
         copy = self.copy()
         for i, comp in enumerate(copy):
             copy[i] = mapper(i, comp)
-        
+
         return copy
-    
-    def split(self, predicate: Callable[[int, "CompoundSymbolName.Component"], bool], include_separator: bool = False) -> list["CompoundSymbolName"]:
+
+    def split(
+        self,
+        predicate: Callable[[int, "CompoundSymbolName.Component"], bool],
+        include_separator: bool = False,
+    ) -> list["CompoundSymbolName"]:
         """
         Splits this CompoundSymbolName across components based on a predicate that receives the component and its index
         on the component list.
@@ -517,7 +574,7 @@ class CompoundSymbolName(Sequence, Hashable):
                     current = CompoundSymbolName([comp.copy()])
                 else:
                     current.components.append(comp.copy())
-        
+
         if current is not None:
             result.append(current)
 
@@ -568,7 +625,9 @@ class CompoundSymbolName(Sequence, Hashable):
 
         return copy
 
-    def removing_prefixes(self, prefixes: list[str], case_sensitive=True) -> "CompoundSymbolName":
+    def removing_prefixes(
+        self, prefixes: list[str], case_sensitive=True
+    ) -> "CompoundSymbolName":
         """
         Returns a new CompoundSymbolName with any compound whose string matches a string in 'prefixes' removed.
 
@@ -601,7 +660,10 @@ class CompoundSymbolName(Sequence, Hashable):
         return CompoundSymbolName(self.copy().components[index:])
 
     def removing_common(
-            self, other: "CompoundSymbolName", case_sensitive: bool = True, detect_plurals: bool = True
+        self,
+        other: "CompoundSymbolName",
+        case_sensitive: bool = True,
+        detect_plurals: bool = True,
     ) -> Tuple["CompoundSymbolName", Optional["CompoundSymbolName"]]:
         """
         Returns a new CompoundSymbolName with the common prefix between it and another CompoundSymbolName removed.
@@ -641,18 +703,27 @@ class CompoundSymbolName(Sequence, Hashable):
         prefix_index = 0
         for index in range(min(len(self.components), len(other.components))):
             if detect_plurals:
-                if self.components[index].string.lower() + "s" == other.components[index].string.lower():
+                if (
+                    self.components[index].string.lower() + "s"
+                    == other.components[index].string.lower()
+                ):
                     prefix_index += 1
                     continue
-                if self.components[index].string.lower() == other.components[index].string.lower() + "s":
+                if (
+                    self.components[index].string.lower()
+                    == other.components[index].string.lower() + "s"
+                ):
                     prefix_index += 1
                     continue
-            
+
             if case_sensitive:
                 if self.components[index].string != other.components[index].string:
                     break
             else:
-                if self.components[index].string.lower() != other.components[index].string.lower():
+                if (
+                    self.components[index].string.lower()
+                    != other.components[index].string.lower()
+                ):
                     break
 
             prefix_index += 1
@@ -660,7 +731,10 @@ class CompoundSymbolName(Sequence, Hashable):
         # Detect names starting with digits and relax the prefix index until we
         # reach a name that does not start with a digit.
         extra_prefix_index = prefix_index
-        while extra_prefix_index > 0 and self.components[extra_prefix_index].string[0].isdigit():
+        while (
+            extra_prefix_index > 0
+            and self.components[extra_prefix_index].string[0].isdigit()
+        ):
             extra_prefix_index -= 1
 
         new_name.components = list(self.components[prefix_index:])
@@ -678,13 +752,13 @@ class CompoundSymbolName(Sequence, Hashable):
     def lower_snake_cased(self, force=False) -> "CompoundSymbolName":
         """
         Returns a new compound name where each component is a component from this
-        compound name that when put together with to_string() forms a lower_case_snake_cased_string.
+        compound name that when put together with to_string() forms a `lower_case_snake_cased_string`.
 
         >>> CompoundSymbolName.from_string_list('A', 'Symbol', 'Name').lower_snake_cased().to_string()
         'a_symbol_name'
 
         If this compound symbol name has any component where the casing is pinned to some value other than
-        ComponentCase.ANY, the casing of that element is manitained.
+        ComponentCase.ANY, the casing of that element is maintained.
 
         >>> c = CompoundSymbolName.from_string_list('A', 'Symbol', 'NAME')
         >>> c.components[2].string_case = ComponentCase.UPPER
@@ -699,14 +773,46 @@ class CompoundSymbolName(Sequence, Hashable):
         result: list[CompoundSymbolName.Component] = []
 
         for comp in self.components:
-            result.append(comp.with_string_only().lower(force=force).with_joint_to_prev("_"))
+            result.append(
+                comp.with_string_only().lower(force=force).with_joint_to_prev("_")
+            )
+
+        return CompoundSymbolName(components=result)
+
+    def upper_snake_cased(self, force=False) -> "CompoundSymbolName":
+        """
+        Returns a new compound name where each component is a component from this
+        compound name that when put together with to_string() forms an `UPPER_CASE_SNAKE_CASED_STRING`.
+
+        >>> CompoundSymbolName.from_string_list('A', 'Symbol', 'Name').upper_snake_cased().to_string()
+        'A_SYMBOL_NAME'
+
+        If this compound symbol name has any component where the casing is pinned to some value other than
+        ComponentCase.ANY, the casing of that element is maintained.
+
+        >>> c = CompoundSymbolName.from_string_list('A', 'Symbol', 'name')
+        >>> c.components[2].string_case = ComponentCase.LOWER
+        >>> c.upper_snake_cased(force=False).to_string()
+        'A_SYMBOL_name'
+
+        Passing force=True resets the casing of the components to ComponentCase.ANY and the string is lowercased:
+        >>> c.upper_snake_cased(force=True).to_string()
+        'A_SYMBOL_NAME'
+        """
+
+        result: list[CompoundSymbolName.Component] = []
+
+        for comp in self.components:
+            result.append(
+                comp.with_string_only().upper(force=force).with_joint_to_prev("_")
+            )
 
         return CompoundSymbolName(components=result)
 
     def pascal_cased(self) -> "CompoundSymbolName":
         """
         Returns a new compound name where each component is a component from this
-        compound name that when put together with to_string() forms a PascalCaseString.
+        compound name that when put together with to_string() forms a `PascalCaseString`.
 
         >>> CompoundSymbolName.from_string_list('a', 'symbol', 'name').pascal_cased().to_string()
         'ASymbolName'
@@ -724,7 +830,7 @@ class CompoundSymbolName(Sequence, Hashable):
     def camel_cased(self, digit_separator: str = "_") -> "CompoundSymbolName":
         """
         Returns a new compound name where each component is a component from this
-        compound name that when put together with to_string() forms a camelCaseString.
+        compound name that when put together with to_string() forms a `camelCaseString`.
 
         >>> CompoundSymbolName.from_string_list('a', 'symbol', 'name').camel_cased().to_string()
         'aSymbolName'
@@ -744,15 +850,15 @@ class CompoundSymbolName(Sequence, Hashable):
             if i > 0:
                 new_comp.string = new_comp.string.capitalize()
                 if (
-                        new_comp.to_string(True)[0].isdigit()
-                        and self.components[i - 1].to_string(i > 1)[-1].isdigit()
+                    new_comp.to_string(True)[0].isdigit()
+                    and self.components[i - 1].to_string(i > 1)[-1].isdigit()
                 ):
                     new_comp = new_comp.with_joint_to_prev(digit_separator)
 
             result.append(new_comp)
 
         return CompoundSymbolName(components=result)
-    
+
     def appending(self, other: "CompoundSymbolName") -> "CompoundSymbolName":
         """
         Returns the result of appending all the components of `other` onto `self`.

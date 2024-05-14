@@ -28,7 +28,7 @@ class UncheckedCharStream:
 
     def peek_l(self, length: int) -> str:
         "Returns the next `length` characters in the stream, but does not change its position."
-        return self.buffer[(self.index):(self.index + length)]
+        return self.buffer[(self.index) : (self.index + length)]
 
     def next(self) -> str:
         "Returns the next character in the stream, advancing its position by 1."
@@ -57,11 +57,14 @@ class UncheckedCharStream:
         self.advance_l(len(char))
         return True
 
+
 class CharStream(UncheckedCharStream):
     "A variant of `UncheckedCharStream` that performs EOF checks by default."
 
     def _check_eof(self, offset=1):
-        assert not (self.index + offset - 1) >= self.length, "Attempted to read past end of the buffer!"
+        assert (
+            not (self.index + offset - 1) >= self.length
+        ), "Attempted to read past end of the buffer!"
 
     def _check_eof_l(self, length: int):
         assert not self.is_eof_l(length), "Attempted to read past end of the buffer!"
@@ -85,7 +88,7 @@ class CharStream(UncheckedCharStream):
         "Returns the next `length` characters in the stream, but does not change its position."
         assert length >= 0, "Attempted to peek_l with negative length!"
         self._check_eof_l(length)
-        return self.buffer[(self.index):(self.index + length)]
+        return self.buffer[(self.index) : (self.index + length)]
 
     def is_next(self, char: str) -> bool:
         "Returns `True` if the buffer has a given string at the current position. If len(char) leads to EoF but the current position is not EoF, `False` is returned."

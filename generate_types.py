@@ -24,6 +24,7 @@ from utils.utils import jsonc
 
 FILE_NAME = "box2d.h"
 
+
 def complete_json_path(path: Path) -> Path:
     "Completes a JSON file path, adding .json/.jsonc if necessary in order to match an existing file in disk."
     if path.exists():
@@ -34,6 +35,7 @@ def complete_json_path(path: Path) -> Path:
         if path.with_suffix(".jsonc").exists():
             return path.with_suffix(".jsonc")
     return path
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(
@@ -50,7 +52,7 @@ def main() -> int:
         If no file extension is provided, an attempt is made with extensions
         .json/.jsonc (in that order) in order to locate a valid JSON file.
         If not provided, defaults to 'generate_types'.
-        """
+        """,
     )
     parser.add_argument(
         "--stdout",
@@ -80,7 +82,7 @@ def main() -> int:
     if not swift_target_path.exists() or not swift_target_path.is_dir():
         print(f"Error: No target directory with name '{swift_target_path}' found.")
         return 1
-    
+
     target: DeclGeneratorTarget
 
     if args.stdout:

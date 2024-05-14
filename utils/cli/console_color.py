@@ -2,11 +2,13 @@ from enum import Enum, unique
 from functools import reduce
 from typing import Any
 
+
 @unique
 class ConsoleStyle(str, Enum):
     NORMAL = "normal"
     BOLD = "bold"
     UNDERLINE = "underline"
+
 
 @unique
 class ConsoleColor(str, Enum):
@@ -25,23 +27,32 @@ class ConsoleColor(str, Enum):
             return colored(bold, color=self, style=ConsoleStyle.BOLD)
         if underlined := kwds.get("underlined"):
             return colored(underlined, color=self, style=ConsoleStyle.UNDERLINE)
-        
+
         if len(args) > 0:
             return colored(*args, color=self)
         else:
             return ""
 
+
 def joined(text: tuple[Any, ...]) -> str:
     return reduce(lambda x, y: f"{x} {y}", text[1:], text[0])
+
 
 def colored(*text: Any, color: ConsoleColor, style: ConsoleStyle | None = None) -> str:
     return f"{color_foreground_ascii(color, style)}{joined(text)}{color_foreground_ascii(ConsoleColor.NORMAL)}"
 
-def color_foreground_ascii(color: ConsoleColor, style: ConsoleStyle | None = None) -> str:
-    return f"\u001B[{style_code(style)};{color_foreground_code(color)}m"
 
-def color_background_ascii(color: ConsoleColor, style: ConsoleStyle | None = None) -> str:
-    return f"\u001B[{style_code(style)};{color_background_code(color)}m"
+def color_foreground_ascii(
+    color: ConsoleColor, style: ConsoleStyle | None = None
+) -> str:
+    return f"\u001b[{style_code(style)};{color_foreground_code(color)}m"
+
+
+def color_background_ascii(
+    color: ConsoleColor, style: ConsoleStyle | None = None
+) -> str:
+    return f"\u001b[{style_code(style)};{color_background_code(color)}m"
+
 
 def style_code(style: ConsoleStyle | None = None) -> int:
     match style:
@@ -53,6 +64,7 @@ def style_code(style: ConsoleStyle | None = None) -> int:
             return 1
         case ConsoleStyle.UNDERLINE:
             return 4
+
 
 def color_foreground_code(color: ConsoleColor) -> int:
     match color:
@@ -74,6 +86,7 @@ def color_foreground_code(color: ConsoleColor) -> int:
             return 36
         case ConsoleColor.WHITE:
             return 37
+
 
 def color_background_code(color: ConsoleColor) -> int:
     match color:

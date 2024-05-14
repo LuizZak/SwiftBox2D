@@ -1,6 +1,6 @@
+from utils.data.c_decl_kind import CDeclKind
 from utils.data.compound_symbol_name import CompoundSymbolName
 from utils.data.swift_decls import (
-    CDeclKind,
     SwiftExtensionDecl,
     SwiftMemberDecl,
     SwiftMemberVarDecl,
@@ -41,7 +41,6 @@ class SwiftCustomStringConvertibleConformance(SwiftConformanceGenerator):
     def generate_members(
         self, decl: SwiftExtensionDecl, node: c_ast.Node
     ) -> list[SwiftMemberDecl]:
-
         if not isinstance(node, c_ast.Struct):
             return []
 

@@ -5,10 +5,12 @@ from pathlib import Path
 
 from utils.text.char_stream import CharStream
 
+
 def jsonc_load(path: PathLike):
     "Loads the contents of the given JSONC string buffer as a JSON with `json.loads`"
-    with open(path, 'r') as file:
+    with open(path, "r") as file:
         return jsonc_loads(file.read())
+
 
 def jsonc_loads(string: str | bytes | bytearray):
     "Loads the contents of the given JSONC string buffer as a JSON with `json.loads`"
@@ -19,12 +21,13 @@ def jsonc_loads(string: str | bytes | bytearray):
         _string = str(string)
     elif isinstance(string, bytearray):
         _string = str(string)
-    
+
     return json.loads(jsonc_strip_comments(_string))
+
 
 def jsonc_strip_comments(source: str | Path) -> str:
     "Strips C-style comments from a given JSON string or JSON file's contents, returning a string capable of being parsed with `json.loads(<str>)`"
-    
+
     class State(Enum):
         DEFAULT = 0
         LINE_COMMENT = 1
@@ -35,7 +38,7 @@ def jsonc_strip_comments(source: str | Path) -> str:
 
     string: str
     if isinstance(source, Path):
-        with open(source, 'r') as f:
+        with open(source, "r") as f:
             string = f.read()
     else:
         string = source
@@ -80,9 +83,9 @@ def jsonc_strip_comments(source: str | Path) -> str:
                     stream.advance()
                     new_json += " "
             case State.STRING:  # Inside string literal
-                if stream.advance_if_next(r'\"'):
+                if stream.advance_if_next(r"\""):
                     # Escaped string terminator; continue reading as a string still
-                    new_json += r'\"'
+                    new_json += r"\""
                 elif stream.advance_if_next('"'):
                     # End of string; back to regular JSON stream
                     state = State.DEFAULT

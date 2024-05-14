@@ -3,6 +3,7 @@ from contextlib import contextmanager
 
 T = TypeVar("T")
 
+
 class SyntaxStream:
     def __init__(self, destination: TextIO):
         self.destination = destination
@@ -31,8 +32,10 @@ class SyntaxStream:
 
     def unindent(self):
         self.indent_depth -= 1
-    
-    def with_separator(self, sep: str, items: Iterable[T], writer: Callable[["SyntaxStream", T], None]):
+
+    def with_separator(
+        self, sep: str, items: Iterable[T], writer: Callable[["SyntaxStream", T], None]
+    ):
         """
         Returns a callable that receives a SyntaxStream, and from the second item
         onwards also prepends the stream with `sep` automatically.
@@ -56,7 +59,7 @@ class SyntaxStream:
         for item in items:
             if count > 0:
                 self.write(sep)
-            
+
             writer(self, item)
 
             count += 1

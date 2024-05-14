@@ -6,11 +6,12 @@ def identifierFromType(typ: c_ast.TypeDecl) -> str | None:
     inner = typ.type
     if not isinstance(inner, c_ast.IdentifierType):
         return None
-    
+
     if len(inner.names) != 1:
         return None
-    
+
     return inner.names[0]
+
 
 def declarationFromType(typ: c_ast.Decl) -> tuple[str, str] | None:
     """
@@ -26,12 +27,13 @@ def declarationFromType(typ: c_ast.Decl) -> tuple[str, str] | None:
         inner = declarationFromType(typ.type)
         if inner is None:
             return None
-        
+
         return (inner[0], f"*{inner[1]}")
-    
+
     raise Exception(f"Unknown declaration type {type(typ)}")
 
     return None
+
 
 def cStringFromNode(node: c_ast.Node) -> str:
     return c_generator.CGenerator(True).visit(node)

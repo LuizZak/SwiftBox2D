@@ -38,7 +38,7 @@ class DoccommentBlock:
             line=self.line,
             column=self.column,
             comment_contents=self.comment_contents,
-            line_count=self.line_count
+            line_count=self.line_count,
         )
 
     def contains_line(self, line_index: int) -> bool:
@@ -75,7 +75,7 @@ class DoccommentBlock:
             line=self.line,
             column=self.column,
             comment_contents=contents,
-            line_count=contents.count("\n") + 1
+            line_count=contents.count("\n") + 1,
         )
 
     def with_lines(self, lines: Iterable[str]) -> "DoccommentBlock":
@@ -85,7 +85,7 @@ class DoccommentBlock:
             line=self.line,
             column=self.column,
             comment_contents=contents,
-            line_count=len(contents)
+            line_count=len(contents),
         )
 
     def replace(self, old: str, new: str) -> "DoccommentBlock":
@@ -118,7 +118,7 @@ class DoccommentBlock:
             line=min_line.line,
             column=min_line.column,
             comment_contents=self.comment_contents + "\n" + other.comment_contents,
-            line_count=self.line_count + other.line_count
+            line_count=self.line_count + other.line_count,
         )
 
     def normalize_indentation(self, start_index: int = 0) -> "DoccommentBlock":
@@ -181,5 +181,5 @@ class DoccommentBlock:
             line=1,
             column=1,
             comment_contents=string,
-            line_count=string.count("\n") + 1
+            line_count=string.count("\n") + 1,
         )

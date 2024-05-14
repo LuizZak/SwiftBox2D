@@ -28,7 +28,7 @@ T = TypeVar("T")
 
 
 def find(predicate: Callable[[T], bool], list: List[T]) -> Optional[int]:
-    for (i, item) in enumerate(list):
+    for i, item in enumerate(list):
         if predicate(item):
             return i
 
@@ -73,7 +73,7 @@ class FileWalker(object):
         current_visit = FileVisit(self.file_name, 1, 1)
 
         with open(self.file_name, "r") as file:
-            for (line, line_contents) in enumerate(file):
+            for line, line_contents in enumerate(file):
                 visit = self.process_line(line_contents, line + 1)
                 if visit is not None:
                     current_visit = visit
@@ -93,7 +93,7 @@ class FileWalker(object):
         self.visits = []
 
         with open(self.file_name, "r") as file:
-            for (line, line_contents) in enumerate(file):
+            for line, line_contents in enumerate(file):
                 if line >= target_line_number:
                     return
 

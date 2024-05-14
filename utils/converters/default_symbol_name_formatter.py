@@ -1,18 +1,17 @@
 import re
-
 from typing import Iterable, Tuple
 
 from utils.collection.collection_utils import flatten
 from utils.converters.base_word_capitalizer import BaseWordCapitalizer
 from utils.converters.symbol_name_formatter import SymbolNameFormatter
-from utils.data.compound_symbol_name import CompoundSymbolName
-from utils.data.compound_symbol_name import ComponentCase
+from utils.data.c_decl_kind import CDeclKind
+from utils.data.compound_symbol_name import ComponentCase, CompoundSymbolName
 from utils.data.generator_config import GeneratorConfig
 
 
 class DefaultSymbolNameFormatter(SymbolNameFormatter):
-    symbolCase: GeneratorConfig.Declarations.SymbolCasing
-    "Default symbol casing to use when first formatting symbol names, before extra capitalization work is done."
+    symbol_case_settings: GeneratorConfig.Declarations.SymbolCasingSettings
+    "Default symbol casing settings to use when first formatting symbol names, before extra capitalization work is done."
 
     capitalizers: list[BaseWordCapitalizer]
     """
@@ -48,7 +47,7 @@ class DefaultSymbolNameFormatter(SymbolNameFormatter):
 
     def __init__(
         self,
-        symbolCase: GeneratorConfig.Declarations.SymbolCasing,
+        symbol_case_settings: GeneratorConfig.Declarations.SymbolCasingSettings,
         capitalizers: Iterable[BaseWordCapitalizer] = None,
         words_to_split: Iterable[re.Pattern] | None = None,
         terms_to_snake_case_after: Iterable[str] | None = None,
@@ -59,33 +58,35 @@ class DefaultSymbolNameFormatter(SymbolNameFormatter):
             words_to_split = []
         if terms_to_snake_case_after is None:
             terms_to_snake_case_after = []
-        
-        self.symbolCase = symbolCase
+
+        self.symbol_case_settings = symbol_case_settings
         self.capitalizers = list(capitalizers)
         self.words_to_split = list(words_to_split)
         self.terms_to_snake_case_after = list(terms_to_snake_case_after)
-    
+
     @classmethod
-    def from_config(cls, config: GeneratorConfig.Declarations.NameFormatter):
-        def splitterPattern(pattern: str):
+    def from_config(cls, config: GeneratorConfig.Declarations.SwiftNameFormatting):
+        def splitter_pattern(pattern: str):
             regex = re.compile(pattern, flags=re.IGNORECASE)
-            assert regex.groups > 1, "Found formatter pattern to split that has a single group; this leads to recursion errors"
+            assert (
+                regex.groups > 1
+            ), "Found formatter pattern to split that has a single group; this leads to recursion errors"
             return regex
 
-        capitalizers = map(BaseWordCapitalizer.from_string, config.capitalizeTerms)
-        splitterPatterns = map(splitterPattern, config.patternsToSplit)
-        snakeCaseTerms = config.snakeCaseAfterTerms
+        capitalizers = map(BaseWordCapitalizer.from_string, config.capitalize_terms)
+        splitter_patterns = map(splitter_pattern, config.patterns_to_split)
+        snake_case_terms = config.snake_case_after_terms
 
         return cls(
-            config.symbolCasing,
+            config.symbol_casing_settings,
             capitalizers,
-            splitterPatterns,
-            snakeCaseTerms
+            splitter_patterns,
+            snake_case_terms,
         )
 
-    def format(self, name: CompoundSymbolName) -> CompoundSymbolName:
+    def format(self, name: CompoundSymbolName, decl: CDeclKind) -> CompoundSymbolName:
         # Initial capitalization
-        name = self.pre_capitalization(name)
+        name = self.pre_capitalization(name, decl)
 
         # Split/capitalize
         components = flatten(map(self.split_and_capitalize, name.components))
@@ -96,22 +97,45 @@ class DefaultSymbolNameFormatter(SymbolNameFormatter):
             if is_camel_case and len(components) > 0:
                 components[0] = components[0].with_string_case(ComponentCase.LOWER)
 
-        # Snakecase
+        # Snake case
         components = self.snake_case(components)
 
         return CompoundSymbolName(components)
 
-    def pre_capitalization(self, name: CompoundSymbolName) -> CompoundSymbolName:
+    def pre_capitalization(
+        self,
+        name: CompoundSymbolName,
+        decl: CDeclKind,
+    ) -> CompoundSymbolName:
+        match decl:
+            case CDeclKind.ENUM:
+                return self._capitalize(name, self.symbol_case_settings.enums)
+            case CDeclKind.ENUM_CASE:
+                return self._capitalize(name, self.symbol_case_settings.enum_members)
+            case CDeclKind.STRUCT:
+                return self._capitalize(name, self.symbol_case_settings.structs)
+            case CDeclKind.FUNC:
+                return self._capitalize(name, self.symbol_case_settings.functions)
+            case _:
+                raise ValueError(f"Unknown C declaration kind {decl}")
+
+    def _capitalize(
+        self,
+        name: CompoundSymbolName,
+        capitalization: GeneratorConfig.Declarations.SymbolCasing,
+    ):
         e = GeneratorConfig.Declarations.SymbolCasing
-        match self.symbolCase:
+        match capitalization:
             case e.SNAKE_CASE:
                 return name.lower_snake_cased()
             case e.PASCAL_CASE:
                 return name.pascal_cased()
             case e.CAMEL_CASE:
                 return name.camel_cased()
+            case e.UPPER_SNAKE_CASE:
+                return name.upper_snake_cased()
             case _:
-                raise ValueError(f"Unknown symbol capitalization {self.symbolCase}")
+                raise ValueError(f"Unknown symbol capitalization {capitalization}")
 
     def split_and_capitalize(
         self, component: CompoundSymbolName.Component
@@ -171,7 +195,6 @@ class DefaultSymbolNameFormatter(SymbolNameFormatter):
     def capitalize_component_string(
         self, string: str, has_prev: bool
     ) -> list[Tuple[str, ComponentCase]]:
-
         result: list[Tuple[str, ComponentCase]] = []
         leftmost_interval: Tuple[str, int, int] | None = None
 
@@ -212,7 +235,6 @@ class DefaultSymbolNameFormatter(SymbolNameFormatter):
     def snake_case(
         self, components: list[CompoundSymbolName.Component]
     ) -> list[CompoundSymbolName.Component]:
-
         result = []
         snake_case_next = False
 

@@ -6,28 +6,11 @@ from pathlib import Path
 from pycparser import c_ast
 from utils.converters.syntax_stream import SyntaxStream
 from utils.converters.backticked_term import backticked_term
+from utils.data.c_decl_kind import CDeclKind
 from utils.data.compound_symbol_name import CompoundSymbolName
 from utils.data.swift_decl_visit_result import SwiftDeclVisitResult
 from utils.data.swift_decl_visitor import SwiftDeclVisitor
 from utils.doccomment.doccomment_block import DoccommentBlock
-
-
-class CDeclKind(Enum):
-    """
-    Represents a kind of C declaration.
-    """
-
-    NONE = 0
-    "No declaration associated."
-
-    ENUM = 1
-    "A C-style enum declaration."
-    ENUM_CASE = 2
-    "A C-style enum value declaration."
-    STRUCT = 3
-    "A C-style struct declaration."
-    FUNC = 4
-    "A C-style function declaration."
 
 
 class SwiftAccessLevel(Enum):
@@ -177,6 +160,7 @@ class SwiftMemberFunctionDecl(SwiftMemberDecl):
     """
     A Swift function member declaration.
     """
+
     ARG_TYPE = tuple[str | None, str, str]
 
     arguments: list[ARG_TYPE] = field(default_factory=lambda: [])
@@ -263,9 +247,10 @@ class SwiftExtensionDecl(SwiftDecl):
 
         name = self.name.to_string()
 
+        # TODO: Make typealias generation configurable and/or explicit
         if self.original_name is not None and name != self.original_name:
             self.access_level.write(stream)
-            stream.line(f"typealias {name} = {self.original_name}")
+            stream.line(f" typealias {name} = {self.original_name}")
             stream.line()
 
         # Emit conformances, with no access control specifier so the code compiles
@@ -302,7 +287,7 @@ class SwiftExtensionDecl(SwiftDecl):
             doccomment=self.doccomment,
             members=list(map(lambda c: c.copy(), self.members)),
             conformances=self.conformances,
-            access_level=self.access_level
+            access_level=self.access_level,
         )
 
     def accept(self, visitor: SwiftDeclVisitor) -> SwiftDeclVisitResult:

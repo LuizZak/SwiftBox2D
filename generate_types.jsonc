@@ -3,12 +3,17 @@
         "prefixes": ["b2"],
         "symbolCasing": {
             "enums": "camelCase",
-            "enumMembers": "snakeCase",
+            "enumMembers": "UPPER_SNAKE_CASE",
             "structs": "camelCase",
             "functions": "camelCase"
         },
         "swiftSymbolFormatting": {
-            "symbolCasing": "camelCase",
+            "symbolCasing": {
+                "enums": "PascalCase",
+                "enumMembers": "camelCase",
+                "structs": "PascalCase",
+                "functions": "camelCase"
+            },
             "capitalizeTerms": ["AABB"],
             "patternsToSplit": [],
             "snakeCaseAfterTerms": []

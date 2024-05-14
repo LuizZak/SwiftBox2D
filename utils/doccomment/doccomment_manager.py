@@ -17,7 +17,7 @@ class DoccommentManager:
         flavors: list[DoccommentFlavor],
         formatter: DoccommentFormatter,
         should_collect: bool,
-        should_format: bool
+        should_format: bool,
     ):
         self.lookup = lookup
         self.flavors = flavors
@@ -31,7 +31,9 @@ class DoccommentManager:
 
         return cls(
             lookup=DoccommentLookup(
-                doccomment_patterns=flatten(pat for pat in (flavor.doccomment_patterns() for flavor in flavors))
+                doccomment_patterns=flatten(
+                    pat for pat in (flavor.doccomment_patterns() for flavor in flavors)
+                )
             ),
             flavors=flavors,
             formatter=DoccommentFormatter(),
@@ -46,7 +48,7 @@ class DoccommentManager:
             return
 
         self.lookup.populate_doc_comments_inplace(decls)
-    
+
     def format(self, decls: Sequence[SwiftDecl]):
         "Formats doc comments from provided declarations inplace."
 
@@ -58,12 +60,16 @@ class DoccommentManager:
             lambda decl: self.__format(decl, swift_lookup)
         )
         walker = SwiftDeclWalker(visitor)
-        
+
         for decl in decls:
             walker.walk_decl(decl)
-    
+
     def __format(self, decl: SwiftDecl, swift_lookup: SwiftDeclLookup):
         for flavor in self.flavors:
-            decl.doccomment = flavor.transform_doccomment(decl.doccomment, decl, swift_lookup)
-        
-        decl.doccomment = self.formatter.format_doccomment(decl.doccomment, decl, swift_lookup)
+            decl.doccomment = flavor.transform_doccomment(
+                decl.doccomment, decl, swift_lookup
+            )
+
+        decl.doccomment = self.formatter.format_doccomment(
+            decl.doccomment, decl, swift_lookup
+        )

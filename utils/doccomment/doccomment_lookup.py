@@ -8,6 +8,7 @@ from utils.data.swift_decls import SwiftDecl, SwiftDeclWalker
 from utils.doccomment.doccomment_block import DoccommentBlock
 from utils.text.char_stream import UncheckedCharStream
 
+
 class DoccommentLookup:
     """
     Performs parsing and lookup of doc comments using `SwiftDecl.origin.path`.
@@ -28,10 +29,10 @@ class DoccommentLookup:
             for comment in self.doccomments:
                 for line in range(comment.line, comment.end_line()):
                     self.doccomment_line_map[line] = comment
-        
+
         def has_comment_on_line(self, line: int):
             return line in self.doccomment_line_map
-        
+
         def comment_on_line(self, line: int):
             return self.doccomment_line_map.get(line)
 
@@ -43,7 +44,7 @@ class DoccommentLookup:
     def __init__(self, doccomment_patterns: list[str]) -> None:
         self._cached_files = dict()
         self.doccomment_patterns = sorted(doccomment_patterns, key=len, reverse=True)
-    
+
     def populate_doc_comments(self, decls: Sequence[SwiftDecl]) -> list[SwiftDecl]:
         "Populates doc comments for a provided sequence of Swift declarations, returning a list of copies of the declarations with doccomments populated."
 
@@ -59,10 +60,10 @@ class DoccommentLookup:
 
         for decl in decls:
             walker.walk_decl(decl)
-    
+
     def _populate(self, decl: SwiftDecl):
         decl.doccomment = self._find_doccomment(decl)
-    
+
     def _fetch_file(self, file_path: Path) -> _CachedFile | None:
         cached_file = self._cached_files.get(file_path)
         if cached_file is not None:
@@ -70,15 +71,17 @@ class DoccommentLookup:
 
         if not (file_path.exists() and file_path.is_file()):
             return None
-        
+
         with open(file_path) as file:
-            comments = _split_doccomment_lines(file_path, file.read(), self.doccomment_patterns)
+            comments = _split_doccomment_lines(
+                file_path, file.read(), self.doccomment_patterns
+            )
             cache_file = self._CachedFile(file_path, comments)
 
             self._cached_files[file_path] = cache_file
 
             return cache_file
-    
+
     def _find_doccomment(self, decl: SwiftDecl) -> DoccommentBlock | None:
         # The original node is required for this lookup.
         if decl.original_node is None or decl.origin is None:
@@ -116,14 +119,18 @@ class DoccommentLookup:
         merged = DoccommentBlock.merge_list(reversed(collected))
         if merged is None:
             return None
-        
+
         return merged.normalize_indentation()
 
-    def _doccomment_for_line(self, cached_file: _CachedFile, line: int) -> DoccommentBlock | None:
+    def _doccomment_for_line(
+        self, cached_file: _CachedFile, line: int
+    ) -> DoccommentBlock | None:
         return cached_file.comment_on_line(line)
 
 
-def _split_doccomment_lines(path: Path, text_file: str, doccomment_patterns: list[str]) -> list[DoccommentBlock]:
+def _split_doccomment_lines(
+    path: Path, text_file: str, doccomment_patterns: list[str]
+) -> list[DoccommentBlock]:
     """
     Returns a list of comments of an input string that represent C-based single
     and multi-lined doc comments.
@@ -134,7 +141,7 @@ def _split_doccomment_lines(path: Path, text_file: str, doccomment_patterns: lis
         line: int
         column: int
         index: int
-    
+
     class State(Enum):
         NORMAL = 0
         STRING = 1
@@ -145,7 +152,7 @@ def _split_doccomment_lines(path: Path, text_file: str, doccomment_patterns: lis
 
     if len(text_file) < 2:
         return result
-    
+
     stream = UncheckedCharStream(text_file)
 
     state = State.NORMAL
@@ -164,24 +171,24 @@ def _split_doccomment_lines(path: Path, text_file: str, doccomment_patterns: lis
         current.index = index
 
     def close_current(end_index: int):
-        contents = stream.buffer[current_start():end_index]
+        contents = stream.buffer[current_start() : end_index]
 
         for pattern in doccomment_patterns:
             if contents.startswith(pattern):
-                contents = contents[len(pattern):]
-                
+                contents = contents[len(pattern) :]
+
                 final = DoccommentBlock(
                     file=path,
                     line=current.line,
                     column=current.column + len(pattern),
                     comment_contents=contents,
-                    line_count=contents.count("\n") + 1
+                    line_count=contents.count("\n") + 1,
                 )
 
                 result.append(final)
 
                 break
-    
+
     while not stream.is_eof():
         char = stream.next()
 
@@ -193,13 +200,13 @@ def _split_doccomment_lines(path: Path, text_file: str, doccomment_patterns: lis
 
         match state:
             case State.NORMAL:
-                if char == "\"":
+                if char == '"':
                     state = State.STRING
                     continue
-                
+
                 if char != "/":
                     continue
-                
+
                 if stream.is_eof():
                     continue
 
@@ -211,23 +218,23 @@ def _split_doccomment_lines(path: Path, text_file: str, doccomment_patterns: lis
                 elif next == "*":
                     state = State.MULTI_LINE
                     start_current(stream.index - 1)
-            
+
             case State.STRING:
-                if char == "\"":
+                if char == '"':
                     state = State.NORMAL
-            
+
             case State.SINGLE_LINE:
                 # End of single line
                 if char == "\n":
                     close_current(stream.index - 1)
                     state = State.NORMAL
-            
+
             case State.MULTI_LINE:
                 # End of multi-line
                 if char == "*" and not stream.is_eof() and stream.peek() == "/":
                     close_current(stream.index - 1)
                     state = State.NORMAL
-    
+
     # Finish any existing comment
     if state == State.SINGLE_LINE:
         close_current(stream.index - 1)

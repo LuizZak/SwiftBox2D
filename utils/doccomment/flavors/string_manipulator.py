@@ -3,6 +3,7 @@ import re
 
 class StringManipulator:
     "Manipulates subsections of strings by extending an index range into buffer before replacing the entire selected range with a substitution."
+
     def __init__(self, buffer: str, index: int):
         self.__buffer = buffer
         self.__index = index
@@ -69,8 +70,8 @@ class StringManipulator:
         """
         range = self.get_range()
 
-        new_buffer = self.__buffer[0:range.start]
-        new_buffer += self.__buffer[range.stop:]
+        new_buffer = self.__buffer[0 : range.start]
+        new_buffer += self.__buffer[range.stop :]
         self.__length = 0
         self.__buffer = new_buffer
 
@@ -84,8 +85,8 @@ class StringManipulator:
 
         range = self.get_range()
 
-        new_buffer = self.__buffer[0:range.start]
+        new_buffer = self.__buffer[0 : range.start]
         new_buffer += rep
-        new_buffer += self.__buffer[range.stop:]
+        new_buffer += self.__buffer[range.stop :]
         self.__length = 0
         self.__buffer = new_buffer

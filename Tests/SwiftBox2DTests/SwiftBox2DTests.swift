@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import SwiftBox2D
 
 final class SwiftBox2DTests: XCTestCase {
@@ -7,5 +8,9 @@ final class SwiftBox2DTests: XCTestCase {
         let world = B2World()
         
         world.step(step)
+    }
+
+    func testVisibleSymbols() {
+        _=B2AABB()
     }
 }

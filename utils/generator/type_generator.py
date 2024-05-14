@@ -167,26 +167,26 @@ class DeclCollectorVisitor(c_ast.NodeVisitor):
 
         return False
 
-    def visit_Struct(self, node: c_ast.Struct):
+    def visit_Struct(self, node: c_ast.Struct):  # noqa: N802
         if node.name is not None and self.should_include(node.name):
             self.decls.append(node)
 
-    def visit_Enum(self, node: c_ast.Enum):
+    def visit_Enum(self, node: c_ast.Enum):  # noqa: N802
         if node.name is not None and self.should_include(node.name):
             self.decls.append(node)
-    
-    def visit_FuncDecl(self, node: c_ast.FuncDecl):
+
+    def visit_FuncDecl(self, node: c_ast.FuncDecl):  # noqa: N802
         ident = self.identifier_from_type(node.type)
         if ident is None:
             return
-        
+
         if ident is not None and self.should_include(ident):
             self.decls.append(node)
-    
+
     def identifier_from_type(self, decl: c_ast.Decl) -> str | None:
         if not isinstance(decl, c_ast.TypeDecl):
             return None
-        
+
         return decl.declname
 
 
@@ -222,15 +222,17 @@ class TypeGeneratorRequest:
         config: GeneratorConfig,
         header_file: Path,
         target: DeclGeneratorTarget,
-        file_header: str = ""
+        file_header: str = "",
     ):
-        destination = Path.absolute(Path(config.fileGeneration.targetPath))
+        destination = Path.absolute(Path(config.file_generation.target_path))
         prefixes = config.declarations.prefixes
-        includes = config.fileGeneration.imports
-        directory_manager = DirectoryStructureManager.from_config(config.fileGeneration)
+        includes = config.file_generation.imports
+        directory_manager = DirectoryStructureManager.from_config(
+            config.file_generation
+        )
 
         if len(file_header) > 0:
-            directory_manager.globalHeaderLines.append(file_header)
+            directory_manager.global_header_lines.append(file_header)
 
         return cls(
             header_file=header_file,
@@ -242,8 +244,9 @@ class TypeGeneratorRequest:
             symbol_filter=SymbolGeneratorFilter.from_config(config.declarations),
             symbol_name_generator=SymbolNameGenerator.from_config(config.declarations),
             swift_decl_generator=SwiftDeclGenerator.from_config(config.declarations),
-            doccomment_manager=DoccommentManager.from_config(config.docComments),
+            doccomment_manager=DoccommentManager.from_config(config.doc_comments),
         )
+
 
 def _label_time_ns(ns):
     def format(value, suffix):
@@ -258,21 +261,22 @@ def _label_time_ns(ns):
     delta /= 1000
     if delta < 1000:  # ms -> s
         return format(delta, "ms")
-    
+
     seconds = ns / 1000000000
     days, seconds = divmod(seconds, 86400)
     hours, seconds = divmod(seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
     ms = (ns // 1000000) % 1000
-    
+
     if days > 0:
-        return '%dd%dh%dm%d.%ds' % (days, hours, minutes, seconds, ms)
+        return "%dd%dh%dm%d.%ds" % (days, hours, minutes, seconds, ms)
     elif hours > 0:
-        return '%dh%dm%d.%ds' % (hours, minutes, seconds, ms)
+        return "%dh%dm%d.%ds" % (hours, minutes, seconds, ms)
     elif minutes > 0:
-        return '%dm%d.%ds' % (minutes, seconds, ms)
+        return "%dm%d.%ds" % (minutes, seconds, ms)
     else:
-        return '%d.%ds' % (seconds, ms)
+        return "%d.%ds" % (seconds, ms)
+
 
 def generate_types(request: TypeGeneratorRequest) -> int:
     start = time.perf_counter_ns()
@@ -282,6 +286,7 @@ def generate_types(request: TypeGeneratorRequest) -> int:
     print(f"Completed request in: {_label_time_ns(duration)}")
 
     return result
+
 
 def _generate_types(request: TypeGeneratorRequest) -> int:
     print_stage_name("Generating header file...")
@@ -346,7 +351,9 @@ def _generate_types(request: TypeGeneratorRequest) -> int:
         if conformance.satisfied:
             continue
 
-        print(f"{ConsoleColor.YELLOW('WARNING')}: Declaration {ConsoleColor.CYAN(conformance.symbolName)} listed in configuration was not matched by any generated declaration!")
+        print(
+            f"{ConsoleColor.YELLOW('WARNING')}: Declaration {ConsoleColor.CYAN(conformance.symbol_name)} listed in configuration was not matched by any generated declaration!"
+        )
 
     print(ConsoleColor.GREEN("Success!"))
 

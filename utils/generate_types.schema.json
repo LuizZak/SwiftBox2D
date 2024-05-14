@@ -180,7 +180,7 @@
             "additionalProperties": false,
             "properties": {
                 "symbolCasing": {
-                    "$ref": "#/definitions/SymbolCasing"
+                    "$ref": "#/definitions/SymbolCasingSettings"
                 },
                 "capitalizeTerms": {
                     "type": "array",
@@ -216,7 +216,7 @@
             "type": "string",
             "description": "Specifies a type of casing to use when parsing/generating symbols.",
             "title": "SymbolCasing",
-            "enum": ["camelCase", "pascalCase", "snakeCase"]
+            "enum": ["camelCase", "PascalCase", "snake_case", "UPPER_SNAKE_CASE"]
         },
         "SymbolCasingSettings": {
             "type": "object",

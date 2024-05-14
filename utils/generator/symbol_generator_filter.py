@@ -17,36 +17,43 @@ class SymbolGeneratorFilter:
     Class responsible for selecting which C symbols get converted into Swift symbol
     declarations.
     """
-    enumFilters: list["DeclarationFilter"] = []
-    enumMemberFilters: list["DeclarationFilter"] = []
-    structFilters: list["DeclarationFilter"] = []
-    methodFilters: list["DeclarationFilter"] = []
+
+    enum_filters: list["DeclarationFilter"] = []
+    enum_member_filters: list["DeclarationFilter"] = []
+    struct_filters: list["DeclarationFilter"] = []
+    method_filters: list["DeclarationFilter"] = []
     implicit: list[str] = []
     "List of implicit typename filters that indicate a typename should be allowed, if no denying filters match the typename."
 
     @classmethod
     def from_config(cls, config: GeneratorConfig.Declarations):
         instance = cls()
-        instance.enumFilters.extend(map(
-            SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
-            config.filters.enums
-        ))
-        instance.enumMemberFilters.extend(map(
-            SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
-            config.filters.enumMembers
-        ))
-        instance.structFilters.extend(map(
-            SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
-            config.filters.structs
-        ))
-        instance.methodFilters.extend(map(
-            SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
-            config.filters.methods
-        ))
-        instance.implicit.extend(
-            map(lambda c: c.cName, config.conformances)
+        instance.enum_filters.extend(
+            map(
+                SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
+                config.filters.enums,
+            )
         )
-            
+        instance.enum_member_filters.extend(
+            map(
+                SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
+                config.filters.enum_members,
+            )
+        )
+        instance.struct_filters.extend(
+            map(
+                SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
+                config.filters.structs,
+            )
+        )
+        instance.method_filters.extend(
+            map(
+                SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
+                config.filters.methods,
+            )
+        )
+        instance.implicit.extend(map(lambda c: c.c_name, config.conformances))
+
         return instance
 
     def should_gen_enum_extension(
@@ -54,14 +61,13 @@ class SymbolGeneratorFilter:
     ) -> bool:
         if decl.is_empty():
             return False
-        
-        return self.apply_filters(self.enumFilters, node, decl)
+
+        return self.apply_filters(self.enum_filters, node, decl)
 
     def should_gen_enum_member(
         self, node: c_ast.Enumerator, decl: SwiftMemberDecl
     ) -> bool:
-        
-        return self.apply_filters(self.enumMemberFilters, node, decl)
+        return self.apply_filters(self.enum_member_filters, node, decl)
 
     def should_gen_enum_var_member(
         self, node: c_ast.Enumerator, decl: SwiftMemberVarDecl
@@ -73,19 +79,19 @@ class SymbolGeneratorFilter:
     ) -> bool:
         if decl.is_empty():
             return False
-        
-        return self.apply_filters(self.structFilters, node, decl)
-    
-    def should_gen_funcDecl(
-        self, node: c_ast.FuncDecl, decl: SwiftDecl
-    ) -> bool:
+
+        return self.apply_filters(self.struct_filters, node, decl)
+
+    def should_gen_func_decl(self, node: c_ast.FuncDecl, decl: SwiftDecl) -> bool:
         # An extension method generation?
         if isinstance(decl, SwiftExtensionDecl) and len(decl.members) > 0:
-            return self.apply_filters(self.methodFilters, node, decl.members[0])
-        
-        return self.apply_filters(self.methodFilters, node, decl)
-    
-    def apply_filters(self, filters: Iterable["DeclarationFilter"], node: c_ast.Node, decl: SwiftDecl):
+            return self.apply_filters(self.method_filters, node, decl.members[0])
+
+        return self.apply_filters(self.method_filters, node, decl)
+
+    def apply_filters(
+        self, filters: Iterable["DeclarationFilter"], node: c_ast.Node, decl: SwiftDecl
+    ):
         result = SymbolGeneratorFilter.DeclarationFilterResult.NEITHER
 
         # Verify implicit filters
@@ -95,18 +101,17 @@ class SymbolGeneratorFilter:
                 result = SymbolGeneratorFilter.DeclarationFilterResult.ACCEPT
 
         for filter in filters:
-            result = result.combine(
-                filter.filter_decl(node, decl)
-            )
-        
+            result = result.combine(filter.filter_decl(node, decl))
+
         return result == SymbolGeneratorFilter.DeclarationFilterResult.ACCEPT
-    
+
     class DeclarationFilterResult(Enum):
         """
         Specifiers the result of a filter, either as an accept, reject, or indifferent
         case. Declarations must have at least one `ACCEPT` filter result, with no
         `REJECT` results in order not be discarded.
         """
+
         NEITHER = 0
         """
         Filtering result that is negative, but does not reject a symbol in case
@@ -138,44 +143,48 @@ class SymbolGeneratorFilter:
 
     class DeclarationFilter:
         "Base class for filters."
-        neutralResult: "SymbolGeneratorFilter.DeclarationFilterResult"
+
+        neutral_result: "SymbolGeneratorFilter.DeclarationFilterResult"
         "Result of filter in case a positive match is not found. Defaults to `NEITHER`."
-        positiveResult: "SymbolGeneratorFilter.DeclarationFilterResult"
+        positive_result: "SymbolGeneratorFilter.DeclarationFilterResult"
         "Result of filter in case a positive match is found. Defaults to `ACCEPT`."
 
         def __init__(self):
-            self.neutralResult = SymbolGeneratorFilter.DeclarationFilterResult.NEITHER
-            self.positiveResult = SymbolGeneratorFilter.DeclarationFilterResult.ACCEPT
+            self.neutral_result = SymbolGeneratorFilter.DeclarationFilterResult.NEITHER
+            self.positive_result = SymbolGeneratorFilter.DeclarationFilterResult.ACCEPT
 
-        def filter_decl(self, node: c_ast.Node, decl: SwiftDecl) -> "SymbolGeneratorFilter.DeclarationFilterResult":
+        def filter_decl(
+            self, node: c_ast.Node, decl: SwiftDecl
+        ) -> "SymbolGeneratorFilter.DeclarationFilterResult":
             return SymbolGeneratorFilter.DeclarationFilterResult.NEITHER
-    
+
     class RegexDeclarationFilter(DeclarationFilter):
         "A declaration filter that filters based on the regex of the original C symbol name."
+
         pattern: re.Pattern
 
         def __init__(self, pattern: re.Pattern):
             super().__init__()
             self.pattern = pattern
-        
+
         @classmethod
         def from_string(cls, string: str):
             pattern = string
-            positiveResult = SymbolGeneratorFilter.DeclarationFilterResult.ACCEPT
+            positive_result = SymbolGeneratorFilter.DeclarationFilterResult.ACCEPT
 
             if string.startswith("!"):
                 pattern = pattern[1:]
-                positiveResult = SymbolGeneratorFilter.DeclarationFilterResult.REJECT
-            
+                positive_result = SymbolGeneratorFilter.DeclarationFilterResult.REJECT
+
             filter = cls(re.compile(pattern))
-            filter.positiveResult = positiveResult
+            filter.positive_result = positive_result
             return filter
-        
+
         def filter_decl(self, node: c_ast.Node, decl: SwiftDecl):
             if decl.original_name is None:
-                return self.neutralResult
-            
+                return self.neutral_result
+
             if self.pattern.match(decl.original_name) is not None:
-                return self.positiveResult
-            
-            return self.neutralResult
+                return self.positive_result
+
+            return self.neutral_result

@@ -16,7 +16,7 @@ class BaseWordCapitalizer:
         For no capitalization suggestions on a given string, 'None' can be returned.
         """
         raise NotImplementedError()
-    
+
     @classmethod
     def from_string(cls, string: str) -> "BaseWordCapitalizer":
         """
@@ -27,7 +27,9 @@ class BaseWordCapitalizer:
         """
         if len(string) > 2 and string.startswith("/") and string.endswith("/"):
             regex = re.compile(string[1:-1], re.IGNORECASE)
-            assert regex.groups == 1, "Expected regex form of capitalizer to have exactly one capture group to capitalize."
+            assert (
+                regex.groups == 1
+            ), "Expected regex form of capitalizer to have exactly one capture group to capitalize."
 
             return PatternCapitalizer(regex)
 
