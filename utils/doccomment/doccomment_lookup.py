@@ -6,7 +6,7 @@ from utils.data.swift_decl_visitor import SwiftDeclCallableVisitor
 
 from utils.data.swift_decls import SwiftDecl, SwiftDeclWalker
 from utils.doccomment.doccomment_block import DoccommentBlock
-from utils.text.char_stream import CharStream
+from utils.text.char_stream import UncheckedCharStream
 
 class DoccommentLookup:
     """
@@ -146,7 +146,7 @@ def _split_doccomment_lines(path: Path, text_file: str, doccomment_patterns: lis
     if len(text_file) < 2:
         return result
     
-    stream = CharStream(text_file)
+    stream = UncheckedCharStream(text_file)
 
     state = State.NORMAL
 

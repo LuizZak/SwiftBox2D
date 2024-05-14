@@ -214,7 +214,7 @@ class TypeGeneratorRequest:
     symbol_name_generator: SymbolNameGenerator
     doccomment_manager: DoccommentManager
     directory_manager: DirectoryStructureManager
-    swift_decl_generator: SwiftDeclGenerator | None = None
+    swift_decl_generator: SwiftDeclGenerator
 
     @classmethod
     def from_config(
@@ -245,7 +245,7 @@ class TypeGeneratorRequest:
             doccomment_manager=DoccommentManager.from_config(config.docComments),
         )
 
-def label_time_ns(ns):
+def _label_time_ns(ns):
     def format(value, suffix):
         return f"{value:0.3f}{suffix}"
 
@@ -279,7 +279,7 @@ def generate_types(request: TypeGeneratorRequest) -> int:
     result = _generate_types(request)
     duration = time.perf_counter_ns() - start
 
-    print(f"Completed request in: {label_time_ns(duration)}")
+    print(f"Completed request in: {_label_time_ns(duration)}")
 
     return result
 
@@ -305,16 +305,7 @@ def _generate_types(request: TypeGeneratorRequest) -> int:
     visitor = DeclCollectorVisitor(prefixes=request.prefixes)
     visitor.visit(ast)
 
-    if request.swift_decl_generator is not None:
-        converter = request.swift_decl_generator
-    else:
-        converter = SwiftDeclGenerator(
-            prefixes=request.prefixes,
-            symbol_filter=request.symbol_filter,
-            symbol_name_generator=request.symbol_name_generator,
-            conformances=[],
-            methodMappers=[]
-        )
+    converter = request.swift_decl_generator
 
     swift_decls = converter.generate_from_list(visitor.decls, ast)
 
