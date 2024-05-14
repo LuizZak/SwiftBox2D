@@ -93,7 +93,7 @@ public extension B2WheelJoint {
     }
     
     /// Get the current wheel joint constraint force
-    func getConstraintForce() -> b2Vec2 {
+    func getConstraintForce() -> B2Vec2 {
         b2WheelJoint_GetConstraintForce(id)
     }
     

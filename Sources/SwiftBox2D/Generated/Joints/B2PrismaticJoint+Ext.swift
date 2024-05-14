@@ -94,7 +94,7 @@ public extension B2PrismaticJoint {
     }
     
     /// Get the current constraint force for a prismatic joint
-    func getConstraintForce() -> b2Vec2 {
+    func getConstraintForce() -> B2Vec2 {
         b2PrismaticJoint_GetConstraintForce(id)
     }
     

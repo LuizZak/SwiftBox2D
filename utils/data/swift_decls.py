@@ -10,6 +10,7 @@ from utils.data.c_decl_kind import CDeclKind
 from utils.data.compound_symbol_name import CompoundSymbolName
 from utils.data.swift_decl_visit_result import SwiftDeclVisitResult
 from utils.data.swift_decl_visitor import SwiftDeclVisitor
+from utils.data.swift_type import SwiftType
 from utils.doccomment.doccomment_block import DoccommentBlock
 
 
@@ -24,8 +25,94 @@ class SwiftAccessLevel(Enum):
     PUBLIC = "public"
     OPEN = "open"
 
+    @classmethod
+    def resolve(cls, access: "SwiftAccessLevel | None"):
+        """
+        Resolves an optional access level by returning `SwiftAccessLevel.INTERNAL`
+        if `access is None`, and returning `access` itself, otherwise, mimicking
+        how Swift itself selects access levels for symbols that don't specify them.
+        """
+        return access if access is not None else SwiftAccessLevel.INTERNAL
+
     def write(self, stream: SyntaxStream):
         stream.write(self.name.lower())
+
+    def is_more_visible(self, other: "SwiftAccessLevel"):
+        """
+        Returns `True` if `self` represents a higher visibility than `other`.
+        Returns `False` if `self` is open or public, since these are the highest
+        visibility levels in Swift.
+        """
+        a = SwiftAccessLevel
+        match (self, other):
+            # private
+            case (a.PRIVATE, _):
+                return False
+            # fileprivate > private
+            case (a.FILEPRIVATE, a.PRIVATE):
+                return True
+            case (a.FILEPRIVATE, _):
+                return False
+            # internal > fileprivate > private
+            case (a.INTERNAL, a.PRIVATE) | (a.INTERNAL, a.FILEPRIVATE):
+                return True
+            case (a.INTERNAL, _):
+                return False
+            # public > internal > fileprivate > private
+            case (
+                (a.PUBLIC, a.PRIVATE)
+                | (a.PUBLIC, a.FILEPRIVATE)
+                | (a.PUBLIC, a.INTERNAL)
+            ):
+                return True
+            case (a.PUBLIC, _):
+                return False
+            # open > internal > fileprivate > private
+            case (a.OPEN, a.PRIVATE) | (a.OPEN, a.FILEPRIVATE) | (a.OPEN, a.INTERNAL):
+                return True
+            case (a.OPEN, _):
+                return False
+
+    def less_visible(self, other: "SwiftAccessLevel"):
+        "Returns the less visible access level between `self` and `other`."
+        if self.is_more_visible(other):
+            return other
+        return self
+
+    @classmethod
+    def resolve_member_outside(
+        cls,
+        type_access: "SwiftAccessLevel | None",
+        member_access: "SwiftAccessLevel | None",
+    ) -> "SwiftAccessLevel":
+        """
+        Resolves access level of a member of a type outside of that type using
+        Swift-like resolution rules according to the given pseudo-code:
+
+        ```
+        match (type, member):
+            (None, None):
+                Internal
+            (None, not None):
+                member
+            (not None, None):
+                type
+            (not None, not None):
+                least visible between type and member
+        ```
+        """
+
+        match (type_access, member_access):
+            case (None, None):
+                return cls.INTERNAL
+            case (type, None) if type is not None:
+                return type
+            case (None, member) if member is not None:
+                return member
+            case (type, member) if type is not None and member is not None:
+                return cls.less_visible(type, member)
+
+        return cls.INTERNAL
 
 
 @dataclass(slots=True)
@@ -161,12 +248,22 @@ class SwiftMemberFunctionDecl(SwiftMemberDecl):
     A Swift function member declaration.
     """
 
-    ARG_TYPE = tuple[str | None, str, str]
+    @dataclass
+    class ParameterType:
+        label: str | None
+        name: str
+        decorations: str | None
+        type: SwiftType
 
-    arguments: list[ARG_TYPE] = field(default_factory=lambda: [])
-    "List of function arguments, as (label, name, type)."
+        def copy(self):
+            return SwiftMemberFunctionDecl.ParameterType(
+                self.label, self.name, self.decorations, type
+            )
 
-    return_type: str | None = None
+    parameters: list[ParameterType] = field(default_factory=lambda: [])
+    "List of function parameters."
+
+    return_type: SwiftType | None = None
     "Return type of function. None produces no return type (implicit Void)"
 
     body: list[str] = field(default_factory=lambda: [])
@@ -183,22 +280,26 @@ class SwiftMemberFunctionDecl(SwiftMemberDecl):
         stream.write(backticked_term(self.name.to_string()))
 
         # (<argument list>)
-        def arg_str(arg: tuple[str | None, str, str]) -> str:
+        def arg_str(arg: SwiftMemberFunctionDecl.ParameterType) -> str:
             result = ""
-            if arg[0] is not None:
-                result += f"{arg[0]} "
+            if arg.label is not None:
+                result += f"{arg.label} "
             else:
                 result += "_ "
-            result += f"{arg[1]}: "
-            result += arg[2]
+            result += f"{arg.name}: "
+            if arg.decorations is not None:
+                result += f"{arg.decorations} "
+            result += arg.type.to_string()
             return result
 
         stream.write("(")
-        stream.write(", ".join(map(arg_str, self.arguments)))
+        stream.write(", ".join(map(arg_str, self.parameters)))
         stream.write(") ")
 
-        if self.return_type is not None and self.return_type != "Void":
-            stream.write(f"-> {self.return_type} ")
+        if self.return_type is not None and not SwiftType.is_equivalent(
+            self.return_type, SwiftType.type_void()
+        ):
+            stream.write(f"-> {self.return_type.to_string()} ")
 
         self.write_body(stream)
 
@@ -219,7 +320,7 @@ class SwiftMemberFunctionDecl(SwiftMemberDecl):
             origin=self.origin,
             c_kind=self.c_kind,
             doccomment=self.doccomment,
-            arguments=self.arguments,
+            parameters=[p.copy() for p in self.parameters],
             return_type=self.return_type,
             body=list(self.body),
             is_static=self.is_static,

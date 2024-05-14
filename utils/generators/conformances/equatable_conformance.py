@@ -5,6 +5,7 @@ from utils.data.swift_decls import (
     SwiftMemberDecl,
     SwiftMemberFunctionDecl,
 )
+from utils.data.swift_type import SwiftType
 from utils.generators.swift_conformance_generator import SwiftConformanceGenerator
 from pycparser import c_ast
 
@@ -77,11 +78,15 @@ class SwiftEquatableConformance(SwiftConformanceGenerator):
                 c_kind=CDeclKind.NONE,
                 doccomment=None,
                 is_static=True,
-                arguments=[
-                    (None, "lhs", "Self"),
-                    (None, "rhs", "Self"),
+                parameters=[
+                    SwiftMemberFunctionDecl.ParameterType(
+                        None, "lhs", None, SwiftType.type_name("Self")
+                    ),
+                    SwiftMemberFunctionDecl.ParameterType(
+                        None, "rhs", None, SwiftType.type_name("Self")
+                    ),
                 ],
-                return_type="Bool",
+                return_type=SwiftType.type_bool(),
                 body=body,
             )
         ]

@@ -25,12 +25,12 @@ public extension B2Joint {
     }
     
     /// Get local anchor on bodyA
-    func getLocalAnchorA() -> b2Vec2 {
+    func getLocalAnchorA() -> B2Vec2 {
         b2Joint_GetLocalAnchorA(id)
     }
     
     /// Get local anchor on bodyB
-    func getLocalAnchorB() -> b2Vec2 {
+    func getLocalAnchorB() -> B2Vec2 {
         b2Joint_GetLocalAnchorB(id)
     }
     

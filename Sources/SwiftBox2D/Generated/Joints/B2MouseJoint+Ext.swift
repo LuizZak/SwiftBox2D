@@ -5,12 +5,12 @@ import box2d
 
 public extension B2MouseJoint {
     /// Set the target for a mouse joint
-    func setTarget(_ target: b2Vec2) {
+    func setTarget(_ target: B2Vec2) {
         b2MouseJoint_SetTarget(id, target)
     }
     
     /// - returns: the target for a mouse joint
-    func getTarget() -> b2Vec2 {
+    func getTarget() -> B2Vec2 {
         b2MouseJoint_GetTarget(id)
     }
     

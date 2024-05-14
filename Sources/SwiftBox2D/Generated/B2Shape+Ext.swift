@@ -114,17 +114,17 @@ public extension B2Shape {
     }
     
     /// Test a point for overlap with a shape
-    func testPoint(_ point: b2Vec2) -> Bool {
+    func testPoint(_ point: B2Vec2) -> Bool {
         b2Shape_TestPoint(id, point)
     }
     
     /// Ray cast a shape directly
-    func rayCast(_ origin: b2Vec2, _ translation: b2Vec2) -> b2CastOutput {
+    func rayCast(_ origin: B2Vec2, _ translation: B2Vec2) -> b2CastOutput {
         b2Shape_RayCast(id, origin, translation)
     }
     
     /// Access the circle geometry of a shape. Asserts the type is correct.
-    func getCircle() -> b2Circle {
+    func getCircle() -> B2Circle {
         b2Shape_GetCircle(id)
     }
     
@@ -190,12 +190,12 @@ public extension B2Shape {
     }
     
     /// Get the current world AABB
-    func getAABB() -> b2AABB {
+    func getAABB() -> B2AABB {
         b2Shape_GetAABB(id)
     }
     
     /// Get the closest point on a shape to a target point. Target and result are in world space.
-    func getClosestPoint(_ target: b2Vec2) -> b2Vec2 {
+    func getClosestPoint(_ target: B2Vec2) -> B2Vec2 {
         b2Shape_GetClosestPoint(id, target)
     }
 }

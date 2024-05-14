@@ -95,7 +95,7 @@ public extension B2RevoluteJoint {
     }
     
     /// Get the current constraint force for a revolute joint
-    func getConstraintForce() -> b2Vec2 {
+    func getConstraintForce() -> B2Vec2 {
         b2RevoluteJoint_GetConstraintForce(id)
     }
     

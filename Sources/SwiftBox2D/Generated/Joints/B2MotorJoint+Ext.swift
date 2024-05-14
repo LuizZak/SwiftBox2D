@@ -5,12 +5,12 @@ import box2d
 
 public extension B2MotorJoint {
     /// Set/Get the linear offset target for a motor joint
-    func setLinearOffset(_ linearOffset: b2Vec2) {
+    func setLinearOffset(_ linearOffset: B2Vec2) {
         b2MotorJoint_SetLinearOffset(id, linearOffset)
     }
     
     /// - returns: the linear offset target for a motor joint
-    func getLinearOffset() -> b2Vec2 {
+    func getLinearOffset() -> B2Vec2 {
         b2MotorJoint_GetLinearOffset(id)
     }
     
@@ -55,7 +55,7 @@ public extension B2MotorJoint {
     }
     
     /// Get the current constraint force for a motor joint
-    func getConstraintForce() -> b2Vec2 {
+    func getConstraintForce() -> B2Vec2 {
         b2MotorJoint_GetConstraintForce(id)
     }
     

@@ -1,7 +1,8 @@
+import io
 from dataclasses import dataclass
 from typing import Iterable
+
 from utils.converters.syntax_stream import SyntaxStream
-import io
 
 
 @dataclass(slots=True)
@@ -11,7 +12,17 @@ class SwiftType:
     # Type factories
 
     @classmethod
-    def typeName(cls, name: str) -> "NominalSwiftType":
+    def type_bool(cls) -> "NominalSwiftType":
+        "Returns the built-in Bool Swift type."
+        return cls.type_name("Bool")
+
+    @classmethod
+    def type_void(cls) -> "TupleSwiftType":
+        "Creates the Void Swift type, i.e. `()`."
+        return TupleSwiftType([])
+
+    @classmethod
+    def type_name(cls, name: str) -> "NominalSwiftType":
         "Creates a nominal Swift type, e.g. `Int`."
         return NominalSwiftType(name)
 
@@ -20,68 +31,63 @@ class SwiftType:
         cls, name: str, params: Iterable["SwiftType | str"]
     ) -> "NominalSwiftType":
         "Creates a generic Swift type, e.g. `MyType<Int>`."
-        return NominalSwiftType(name, cls._processTypes(params))
+        return NominalSwiftType(name, cls._process_types(params))
 
     @classmethod
     def optional(cls, type: "SwiftType | str") -> "OptionalSwiftType":
         "Creates an Optional sugar Swift type, e.g. `Int?`"
-        return OptionalSwiftType(cls._processType(type))
+        return OptionalSwiftType(cls._process_type(type))
 
     @classmethod
     def implicitly_unwrapped_optional(
         cls, type: "SwiftType | str"
     ) -> "ImplicitlyUnwrappedOptionalSwiftType":
         "Creates an implicitly-unwrapped Optional sugar Swift type, e.g. `Int!`"
-        return ImplicitlyUnwrappedOptionalSwiftType(cls._processType(type))
+        return ImplicitlyUnwrappedOptionalSwiftType(cls._process_type(type))
 
     @classmethod
     def array(cls, type: "SwiftType | str") -> "ArraySwiftType":
         "Creates an Array sugar Swift type, e.g. `[Int]`."
-        return ArraySwiftType(cls._processType(type))
+        return ArraySwiftType(cls._process_type(type))
 
     @classmethod
     def dictionary(
         cls, key: "SwiftType | str", value: "SwiftType | str"
     ) -> "DictionarySwiftType":
         "Creates a Dictionary sugar Swift type, e.g. `[Int: String]`."
-        return DictionarySwiftType(cls._processType(key), cls._processType(value))
+        return DictionarySwiftType(cls._process_type(key), cls._process_type(value))
 
     @classmethod
     def function(
-        cls, parameters: Iterable["SwiftType | str"], returnType: "SwiftType | str"
+        cls, parameters: Iterable["SwiftType | str"], return_type: "SwiftType | str"
     ) -> "FunctionSwiftType":
         "Creates a Function Swift type, e.g. `(Int) -> String`."
         return FunctionSwiftType(
-            cls._processTypes(parameters), cls._processType(returnType)
+            cls._process_types(parameters), cls._process_type(return_type)
         )
-
-    @classmethod
-    def void(cls) -> "TupleSwiftType":
-        "Creates the Void Swift type, i.e. `()`."
-        return TupleSwiftType([])
 
     @classmethod
     def tuple(cls, types: Iterable["SwiftType | str"]) -> "TupleSwiftType":
         "Creates a tuple Swift type, e.g. `(Int, String)`."
-        return TupleSwiftType(cls._processTypes(types))
+        return TupleSwiftType(cls._process_types(types))
 
     @classmethod
-    def protocolComposition(
+    def protocol_composition(
         cls, components: Iterable["NominalSwiftType | NestedSwiftType"]
     ) -> "ProtocolCompositionSwiftType":
         "Creates a protocol composition Swift type, e.g. `Protocol1 & Protocol2`."
         return ProtocolCompositionSwiftType(components)
 
     @classmethod
-    def _processType(cls, type: "SwiftType | str") -> "SwiftType":
+    def _process_type(cls, type: "SwiftType | str") -> "SwiftType":
         if isinstance(type, SwiftType):
             return type
 
         return NominalSwiftType(type)
 
     @classmethod
-    def _processTypes(cls, types: Iterable["SwiftType | str"]) -> list["SwiftType"]:
-        return [cls._processType(type) for type in types]
+    def _process_types(cls, types: Iterable["SwiftType | str"]) -> list["SwiftType"]:
+        return [cls._process_type(type) for type in types]
 
     # Methods
 
@@ -100,7 +106,7 @@ class SwiftType:
     def is_generic_type(self):
         "Returns `True` if `self` describes a Nominal type with generic arguments."
         if isinstance(self, NominalSwiftType):
-            return self.genericParameters is not None
+            return self.generic_parameters is not None
         return False
 
     def is_protocol_composition_type(self):
@@ -143,8 +149,8 @@ class SwiftType:
 
     def as_generic_type(self):
         "Returns type-cast `self` and a list of generic arguments if `self` describes a Nominal type with generic arguments, otherwise returns `None`."
-        if isinstance(self, NominalSwiftType) and self.genericParameters is not None:
-            return (self, self.genericParameters)
+        if isinstance(self, NominalSwiftType) and self.generic_parameters is not None:
+            return (self, self.generic_parameters)
         return None
 
     def as_protocol_composition_type(self):
@@ -193,6 +199,9 @@ class SwiftType:
             self.write(stream)
             return buffer.getvalue()
 
+    def __str__(self):
+        return self.to_string()
+
     def requires_parenthesis(self) -> bool:
         """
         Returns True if parenthesis are required to make this type optional or
@@ -201,7 +210,7 @@ class SwiftType:
         """
         return False
 
-    def isEquivalent(self, other: "SwiftType") -> bool:
+    def is_equivalent(self, other: "SwiftType") -> bool:
         """
         Returns `True` if `self` and `other` map to the same canonical Swift type
         declaration.
@@ -209,13 +218,13 @@ class SwiftType:
         This can be used to check for type equivalence across syntax-sugared type
         combinations, e.g. `Int?` and `Optional<Int>`.
         """
-        return self.desugared()._isEquivalent(other.desugared())
+        return self.desugared()._is_equivalent(other.desugared())
 
     def desugared(self) -> "SwiftType":
         "Returns the desugared representation of this type, e.g. `[Int?]` -> `Array<Optional<Int>>`."
         raise NotImplementedError("Must be overridden by subclasses.")
 
-    def _isEquivalent(self, other: "SwiftType") -> bool:
+    def _is_equivalent(self, other: "SwiftType") -> bool:
         raise NotImplementedError("Must be overridden by subclasses.")
 
 
@@ -224,49 +233,53 @@ class NominalSwiftType(SwiftType):
     "A nominal Swift type, e.g. `Int` or `Array<Int>`."
 
     name: str
-    genericParameters: list[SwiftType] | None
+    generic_parameters: list[SwiftType] | None
 
-    def __init__(self, name, genericParameters: Iterable[SwiftType] | None = None):
+    def __init__(self, name, generic_parameters: Iterable[SwiftType] | None = None):
         self.name = name
-        self.genericParameters = (
-            list(genericParameters) if genericParameters is not None else None
+        self.generic_parameters = (
+            list(generic_parameters) if generic_parameters is not None else None
         )
 
     def write(self, stream: SyntaxStream):
         stream.write(self.name)
-        if self.genericParameters is not None and len(self.genericParameters) > 0:
+        if self.generic_parameters is not None and len(self.generic_parameters) > 0:
             stream.write("<")
-            stream.with_separator(", ", self.genericParameters, lambda s, p: p.write(s))
+            stream.with_separator(
+                ", ", self.generic_parameters, lambda s, p: p.write(s)
+            )
             stream.write(">")
 
     def desugared(self) -> "NominalSwiftType":
         return NominalSwiftType(
             self.name,
-            map(lambda t: t.desugared(), self.genericParameters)
-            if self.genericParameters is not None and len(self.genericParameters) > 0
+            map(lambda t: t.desugared(), self.generic_parameters)
+            if self.generic_parameters is not None and len(self.generic_parameters) > 0
             else None,
         )
 
-    def _isEquivalent(self, other: SwiftType) -> bool:
+    def _is_equivalent(self, other: SwiftType) -> bool:
         if isinstance(other, NominalSwiftType):
-            return self.__isEqual(other)
+            return self.__is_equal(other)
 
         return False
 
-    def __isEqual(self, other: "NominalSwiftType") -> bool:
+    def __is_equal(self, other: "NominalSwiftType") -> bool:
         if self.name != other.name:
             return False
 
-        selfParams = (
-            self.genericParameters if self.genericParameters is not None else []
+        self_params = (
+            self.generic_parameters if self.generic_parameters is not None else []
         )
-        otherParams = (
-            other.genericParameters if other.genericParameters is not None else []
+        other_params = (
+            other.generic_parameters if other.generic_parameters is not None else []
         )
-        if len(selfParams) != len(otherParams):
+        if len(self_params) != len(other_params):
             return False
 
-        return all(lhs._isEquivalent(rhs) for lhs, rhs in zip(selfParams, otherParams))
+        return all(
+            lhs._is_equivalent(rhs) for lhs, rhs in zip(self_params, other_params)
+        )
 
 
 @dataclass(slots=True)
@@ -290,17 +303,17 @@ class NestedSwiftType(SwiftType):
     def desugared(self) -> "NestedSwiftType":
         return NestedSwiftType(map(lambda t: t.desugared(), self.types))
 
-    def _isEquivalent(self, other: SwiftType) -> bool:
+    def _is_equivalent(self, other: SwiftType) -> bool:
         if isinstance(other, NestedSwiftType):
-            return self.__isEqual(other)
+            return self.__is_equal(other)
 
         return False
 
-    def __isEqual(self, other: "NestedSwiftType") -> bool:
+    def __is_equal(self, other: "NestedSwiftType") -> bool:
         if len(self.types) != len(other.types):
             return False
 
-        return all(lhs._isEquivalent(rhs) for lhs, rhs in zip(self.types, other.types))
+        return all(lhs._is_equivalent(rhs) for lhs, rhs in zip(self.types, other.types))
 
 
 @dataclass(slots=True)
@@ -323,18 +336,18 @@ class ProtocolCompositionSwiftType(SwiftType):
             map(lambda t: t.desugared(), self.components)
         )
 
-    def _isEquivalent(self, other: SwiftType) -> bool:
+    def _is_equivalent(self, other: SwiftType) -> bool:
         if isinstance(other, ProtocolCompositionSwiftType):
-            return self.__isEqual(other)
+            return self.__is_equal(other)
 
         return False
 
-    def __isEqual(self, other: "ProtocolCompositionSwiftType") -> bool:
+    def __is_equal(self, other: "ProtocolCompositionSwiftType") -> bool:
         if len(self.components) != len(other.components):
             return False
 
         return all(
-            lhs._isEquivalent(rhs)
+            lhs._is_equivalent(rhs)
             for lhs, rhs in zip(self.components, other.components)
         )
 
@@ -359,21 +372,21 @@ class TupleSwiftType(SwiftType):
 
     def desugared(self) -> "TupleSwiftType | NominalSwiftType":
         if len(self.types) == 0:
-            return SwiftType.typeName("Void")
+            return SwiftType.type_name("Void")
 
         return TupleSwiftType(map(lambda t: t.desugared(), self.types))
 
-    def _isEquivalent(self, other: SwiftType) -> bool:
+    def _is_equivalent(self, other: SwiftType) -> bool:
         if isinstance(other, TupleSwiftType):
-            return self.__isEqual(other)
+            return self.__is_equal(other)
 
         return False
 
-    def __isEqual(self, other: "TupleSwiftType") -> bool:
+    def __is_equal(self, other: "TupleSwiftType") -> bool:
         if len(self.types) != len(other.types):
             return False
 
-        return all(lhs._isEquivalent(rhs) for lhs, rhs in zip(self.types, other.types))
+        return all(lhs._is_equivalent(rhs) for lhs, rhs in zip(self.types, other.types))
 
 
 @dataclass(slots=True)
@@ -381,17 +394,17 @@ class FunctionSwiftType(SwiftType):
     "A type of a function, closure or method in Swift, e.g. `(Int, Bool) -> String`."
 
     parameters: list[SwiftType]
-    returnType: SwiftType
+    return_type: SwiftType
 
-    def __init__(self, parameters: Iterable[SwiftType], returnType: SwiftType):
+    def __init__(self, parameters: Iterable[SwiftType], return_type: SwiftType):
         self.parameters = list(parameters)
-        self.returnType = returnType
+        self.return_type = return_type
 
     def write(self, stream: SyntaxStream):
         stream.write("(")
         stream.with_separator(", ", self.parameters, lambda s, t: t.write(s))
         stream.write(") -> ")
-        self.returnType.write(stream)
+        self.return_type.write(stream)
 
     def requires_parenthesis(self) -> bool:
         return True
@@ -399,23 +412,23 @@ class FunctionSwiftType(SwiftType):
     def desugared(self) -> "FunctionSwiftType":
         return FunctionSwiftType(
             parameters=map(lambda t: t.desugared(), self.parameters),
-            returnType=self.returnType.desugared(),
+            return_type=self.return_type.desugared(),
         )
 
-    def _isEquivalent(self, other: SwiftType) -> bool:
+    def _is_equivalent(self, other: SwiftType) -> bool:
         if isinstance(other, FunctionSwiftType):
-            return self.__isEqual(other)
+            return self.__is_equal(other)
 
         return False
 
-    def __isEqual(self, other: "FunctionSwiftType") -> bool:
+    def __is_equal(self, other: "FunctionSwiftType") -> bool:
         if len(self.parameters) != len(other.parameters):
             return False
-        if not self.returnType._isEquivalent(other.returnType):
+        if not self.return_type._is_equivalent(other.return_type):
             return False
 
         return all(
-            lhs._isEquivalent(rhs)
+            lhs._is_equivalent(rhs)
             for lhs, rhs in zip(self.parameters, other.parameters)
         )
 
@@ -448,14 +461,14 @@ class OptionalSwiftType(SwiftType):
     def desugared(self) -> NominalSwiftType:
         return NominalSwiftType("Optional", [self.type.desugared()])
 
-    def _isEquivalent(self, other: SwiftType) -> bool:
+    def _is_equivalent(self, other: SwiftType) -> bool:
         if isinstance(other, OptionalSwiftType):
-            return self.__isEqual(other)
+            return self.__is_equal(other)
 
         return False
 
-    def __isEqual(self, other: "OptionalSwiftType") -> bool:
-        return self.type._isEquivalent(other.type)
+    def __is_equal(self, other: "OptionalSwiftType") -> bool:
+        return self.type._is_equivalent(other.type)
 
 
 @dataclass(slots=True)
@@ -486,14 +499,14 @@ class ImplicitlyUnwrappedOptionalSwiftType(SwiftType):
     def desugared(self) -> "SwiftType":
         return ImplicitlyUnwrappedOptionalSwiftType(self.type.desugared())
 
-    def _isEquivalent(self, other: SwiftType) -> bool:
+    def _is_equivalent(self, other: SwiftType) -> bool:
         if isinstance(other, ImplicitlyUnwrappedOptionalSwiftType):
-            return self.__isEqual(other)
+            return self.__is_equal(other)
 
         return False
 
-    def __isEqual(self, other: "ImplicitlyUnwrappedOptionalSwiftType") -> bool:
-        return self.type._isEquivalent(other.type)
+    def __is_equal(self, other: "ImplicitlyUnwrappedOptionalSwiftType") -> bool:
+        return self.type._is_equivalent(other.type)
 
 
 @dataclass(slots=True)
@@ -518,14 +531,14 @@ class ArraySwiftType(SwiftType):
     def desugared(self) -> "ArraySwiftType":
         return ArraySwiftType(self.type.desugared())
 
-    def _isEquivalent(self, other: SwiftType) -> bool:
+    def _is_equivalent(self, other: SwiftType) -> bool:
         if isinstance(other, ArraySwiftType):
-            return self.__isEqual(other)
+            return self.__is_equal(other)
 
         return False
 
-    def __isEqual(self, other: "ArraySwiftType") -> bool:
-        return self.type._isEquivalent(other.type)
+    def __is_equal(self, other: "ArraySwiftType") -> bool:
+        return self.type._is_equivalent(other.type)
 
 
 @dataclass(slots=True)
@@ -556,13 +569,13 @@ class DictionarySwiftType(SwiftType):
             key=self.key.desugared(), value=self.value.desugared()
         )
 
-    def _isEquivalent(self, other: SwiftType) -> bool:
+    def _is_equivalent(self, other: SwiftType) -> bool:
         if isinstance(other, DictionarySwiftType):
-            return self.__isEqual(other)
+            return self.__is_equal(other)
 
         return False
 
-    def __isEqual(self, other: "DictionarySwiftType") -> bool:
-        return self.key._isEquivalent(other.key) and self.value._isEquivalent(
+    def __is_equal(self, other: "DictionarySwiftType") -> bool:
+        return self.key._is_equivalent(other.key) and self.value._is_equivalent(
             other.value
         )

@@ -156,12 +156,12 @@ class SwiftDeclMerger:
                     f"Found two member function symbols that have different bodies defined: {decl1.name.to_string()} ({decl1.body}) and {decl2.name.to_string()} ({decl2.body})"
                 )
 
-        if decl1.arguments != decl2.arguments:
-            if len(decl1.arguments) == 0:
-                result.arguments = list(decl2.arguments)
-            elif len(decl2.arguments) != 0:
+        if decl1.parameters != decl2.parameters:
+            if len(decl1.parameters) == 0:
+                result.parameters = list(decl2.parameters)
+            elif len(decl2.parameters) != 0:
                 raise BaseException(
-                    f"Found two member function symbols that have different argument sets defined: {decl1.name.to_string()} ({decl1.arguments}) and {decl2.name.to_string()} ({decl2.arguments})"
+                    f"Found two member function symbols that have different argument sets defined: {decl1.name.to_string()} ({decl1.parameters}) and {decl2.name.to_string()} ({decl2.parameters})"
                 )
 
         if decl1.return_type != decl2.return_type:

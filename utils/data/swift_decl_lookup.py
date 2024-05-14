@@ -6,7 +6,7 @@ from utils.data.swift_decls import SwiftDecl, SwiftDeclWalker
 
 class _PreCachingVisitor(SwiftDeclVisitor):
     decl_stack: list[SwiftDecl]
-    _cached_results: dict[str, str]
+    _cached_results: dict[str, tuple[str, SwiftDecl]]
 
     def __init__(self):
         self.decl_stack = list()
@@ -21,7 +21,7 @@ class _PreCachingVisitor(SwiftDeclVisitor):
                 map(lambda s: s.name.to_string(), self.decl_stack + [decl])
             )
 
-            self._cached_results[c_name.lower()] = fully_qualified
+            self._cached_results[c_name.lower()] = (fully_qualified, decl)
 
         self.decl_stack.append(decl)
         return SwiftDeclVisitResult.VISIT_CHILDREN
@@ -35,7 +35,7 @@ class SwiftDeclLookup:
     Supports looking up Swift symbol names based on original C symbols.
     """
 
-    _cached_results: dict[str, str]
+    _cached_results: dict[str, tuple[str, SwiftDecl]]
 
     def __init__(self, decls: Iterable[SwiftDecl]):
         self._cached_results = dict()
@@ -60,6 +60,17 @@ class SwiftDeclLookup:
         'A_C_ENUM' -> 'ACEnum'
         'A_C_ENUM_CASE' -> 'ACEnum.aCEnumCase'
         ```
+        """
+
+        if result := self._cached_results.get(c_symbol.lower()):
+            return result[0]
+
+        return None
+
+    def lookup_c_symbol_decl(self, c_symbol: str) -> tuple[str, SwiftDecl] | None:
+        """
+        Looks up C symbol names, returning the partially-qualified Swift declaration
+        name and the `SwiftDecl` that corresponds to the symbol.
         """
 
         return self._cached_results.get(c_symbol.lower())

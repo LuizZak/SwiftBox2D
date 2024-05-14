@@ -5,6 +5,7 @@ from utils.data.swift_decls import (
     SwiftMemberDecl,
     SwiftMemberFunctionDecl,
 )
+from utils.data.swift_type import SwiftType
 from utils.generators.swift_conformance_generator import SwiftConformanceGenerator
 from pycparser import c_ast
 
@@ -70,8 +71,10 @@ class SwiftHashableConformance(SwiftConformanceGenerator):
                 original_node=None,
                 c_kind=CDeclKind.NONE,
                 doccomment=None,
-                arguments=[
-                    ("into", "hasher", "inout Hasher"),
+                parameters=[
+                    SwiftMemberFunctionDecl.ParameterType(
+                        "into", "hasher", "inout", SwiftType.type_name("Hasher")
+                    ),
                 ],
                 body=body,
             )

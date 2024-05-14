@@ -8,6 +8,7 @@ from utils.cutils.cutils import declarationFromType
 from utils.data.c_decl_kind import CDeclKind
 from utils.data.compound_symbol_name import CompoundSymbolName
 from utils.data.generator_config import GeneratorConfig
+from utils.data.swift_decl_lookup import SwiftDeclLookup
 from utils.data.swift_decls import (
     SourceLocation,
     SwiftAccessLevel,
@@ -16,6 +17,7 @@ from utils.data.swift_decls import (
     SwiftMemberFunctionDecl,
     SwiftMemberVarDecl,
 )
+from utils.data.swift_type import SwiftType
 from utils.generators.known_conformance_generators import get_conformance_generator
 from utils.generators.symbol_generator_filter import SymbolGeneratorFilter
 from utils.generators.symbol_name_generator import SymbolNameGenerator
@@ -77,10 +79,10 @@ class SwiftDeclGenerator:
             if len(node.args.params) < 1:
                 return None
 
-            def map_argument(p) -> tuple[SwiftMemberFunctionDecl.ARG_TYPE, str]:
+            def map_argument(p) -> tuple[SwiftMemberFunctionDecl.ParameterType, str]:
                 decl = declarationFromType(p.type)
                 type = context.type_mapper.map_to_swift_type(p.type, context.ast)
-                type_str = type.to_string() if type is not None else "?"
+                type_decorator: str | None = None
                 invocation = decl[0] if decl is not None else "?"
 
                 # Ensure function pointer arguments are converted into appropriate
@@ -91,12 +93,16 @@ class SwiftDeclGenerator:
                             typename.name, context.ast
                         ):
                             if f_type := unaliased.as_function_type():
-                                # args = ", ".join(f"${i}" for i in range(len(fType.parameters)))
-                                type_str = f"@convention(c) {f_type.to_string()}"
-                                # invocation = f"{{ {invocation}({args}) }}"
+                                type = f_type
+                                type_decorator = "@convention(c)"
 
                 return (
-                    (None, decl[0] if decl is not None else "?", type_str),
+                    SwiftMemberFunctionDecl.ParameterType(
+                        None,
+                        decl[0] if decl is not None else "?",
+                        type_decorator,
+                        type if type is not None else SwiftType.type_name("?"),
+                    ),
                     invocation,
                 )
 
@@ -112,10 +118,8 @@ class SwiftDeclGenerator:
                 c_kind=CDeclKind.FUNC,
                 name=func_name,
                 original_name=node.type.declname,
-                arguments=[a[0] for a in arguments],
-                return_type=return_type.to_string()
-                if return_type is not None
-                else None,
+                parameters=[a[0] for a in arguments],
+                return_type=return_type,
                 origin=coord_to_location(node.coord),
                 original_node=node,
                 doccomment=None,
@@ -391,5 +395,33 @@ class SwiftDeclGenerator:
             for conformance in sorted(decl.conformances):
                 if gen := get_conformance_generator(conformance):
                     decl.members.extend(gen.generate_members(decl, decl.original_node))
+
+        # Convert types in method/properties signatures to Swift aliased types,
+        # if possible
+        lookup = SwiftDeclLookup(decls)
+        for decl in decls:
+            if not isinstance(decl, SwiftExtensionDecl):
+                continue
+
+            for member in decl.members:
+                if isinstance(member, SwiftMemberFunctionDecl):
+                    if ret_type := member.return_type:
+                        if ret_type_name := ret_type.as_typename_type():
+                            if resolved := lookup.lookup_c_symbol_decl(
+                                ret_type_name.name
+                            ):
+                                member.return_type = SwiftType.type_name(resolved[0])
+
+                    for i in range(len(member.parameters)):
+                        arg = member.parameters[i]
+                        if (type_name := arg.type.as_typename_type()) is None:
+                            continue
+
+                        if (
+                            resolved := lookup.lookup_c_symbol_decl(type_name.name)
+                        ) is None:
+                            continue
+
+                        member.parameters[i].type = SwiftType.type_name(resolved[0])
 
         return decls

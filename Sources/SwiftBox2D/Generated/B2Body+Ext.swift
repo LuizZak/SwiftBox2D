@@ -26,12 +26,12 @@ public extension B2Body {
     }
     
     /// Get the world position of a body. This is the location of the body origin.
-    func getPosition() -> b2Vec2 {
+    func getPosition() -> B2Vec2 {
         b2Body_GetPosition(id)
     }
     
     /// Get the world rotation of a body as a sine/cosine pair.
-    func getRotation() -> b2Rot {
+    func getRotation() -> B2Rot {
         b2Body_GetRotation(id)
     }
     
@@ -41,37 +41,37 @@ public extension B2Body {
     }
     
     /// Get the world transform of a body.
-    func getTransform() -> b2Transform {
+    func getTransform() -> B2Transform {
         b2Body_GetTransform(id)
     }
     
     /// Set the world transform of a body. This acts as a teleport and is fairly expensive.
-    func setTransform(_ position: b2Vec2, _ angle: Float) {
+    func setTransform(_ position: B2Vec2, _ angle: Float) {
         b2Body_SetTransform(id, position, angle)
     }
     
     /// Get a local point on a body given a world point
-    func getLocalPoint(_ worldPoint: b2Vec2) -> b2Vec2 {
+    func getLocalPoint(_ worldPoint: B2Vec2) -> B2Vec2 {
         b2Body_GetLocalPoint(id, worldPoint)
     }
     
     /// Get a world point on a body given a local point
-    func getWorldPoint(_ localPoint: b2Vec2) -> b2Vec2 {
+    func getWorldPoint(_ localPoint: B2Vec2) -> B2Vec2 {
         b2Body_GetWorldPoint(id, localPoint)
     }
     
     /// Get a local vector on a body given a world vector
-    func getLocalVector(_ worldVector: b2Vec2) -> b2Vec2 {
+    func getLocalVector(_ worldVector: B2Vec2) -> B2Vec2 {
         b2Body_GetLocalVector(id, worldVector)
     }
     
     /// Get a world vector on a body given a local vector
-    func getWorldVector(_ localVector: b2Vec2) -> b2Vec2 {
+    func getWorldVector(_ localVector: B2Vec2) -> B2Vec2 {
         b2Body_GetWorldVector(id, localVector)
     }
     
     /// Get the linear velocity of a body's center of mass
-    func getLinearVelocity() -> b2Vec2 {
+    func getLinearVelocity() -> B2Vec2 {
         b2Body_GetLinearVelocity(id)
     }
     
@@ -81,7 +81,7 @@ public extension B2Body {
     }
     
     /// Set the linear velocity of a body
-    func setLinearVelocity(_ linearVelocity: b2Vec2) {
+    func setLinearVelocity(_ linearVelocity: B2Vec2) {
         b2Body_SetLinearVelocity(id, linearVelocity)
     }
     
@@ -96,14 +96,14 @@ public extension B2Body {
     /// - param force: the world force vector, usually in Newtons (N).
     /// - param point: the world position of the point of application.
     /// - param wake: also wake up the body
-    func applyForce(_ force: b2Vec2, _ point: b2Vec2, _ wake: Bool) {
+    func applyForce(_ force: B2Vec2, _ point: B2Vec2, _ wake: Bool) {
         b2Body_ApplyForce(id, force, point, wake)
     }
     
     /// Apply a force to the center of mass. This wakes up the body.
     /// - param force: the world force vector, usually in Newtons (N).
     /// - param wake: also wake up the body
-    func applyForceToCenter(_ force: b2Vec2, _ wake: Bool) {
+    func applyForceToCenter(_ force: B2Vec2, _ wake: Bool) {
         b2Body_ApplyForceToCenter(id, force, wake)
     }
     
@@ -123,7 +123,7 @@ public extension B2Body {
     /// - param impulse: the world impulse vector, usually in N-seconds or kg-m/s.
     /// - param point: the world position of the point of application.
     /// - param wake: also wake up the body
-    func applyLinearImpulse(_ impulse: b2Vec2, _ point: b2Vec2, _ wake: Bool) {
+    func applyLinearImpulse(_ impulse: B2Vec2, _ point: B2Vec2, _ wake: Bool) {
         b2Body_ApplyLinearImpulse(id, impulse, point, wake)
     }
     
@@ -132,7 +132,7 @@ public extension B2Body {
     /// use a force instead, which will work better with the sub-stepping solver.
     /// - param impulse: the world impulse vector, usually in N-seconds or kg-m/s.
     /// - param wake: also wake up the body
-    func applyLinearImpulseToCenter(_ impulse: b2Vec2, _ wake: Bool) {
+    func applyLinearImpulseToCenter(_ impulse: B2Vec2, _ wake: Bool) {
         b2Body_ApplyLinearImpulseToCenter(id, impulse, wake)
     }
     
@@ -157,12 +157,12 @@ public extension B2Body {
     }
     
     /// Get the center of mass position of the body in local space.
-    func getLocalCenterOfMass() -> b2Vec2 {
+    func getLocalCenterOfMass() -> B2Vec2 {
         b2Body_GetLocalCenterOfMass(id)
     }
     
     /// Get the center of mass position of the body in world space.
-    func getWorldCenterOfMass() -> b2Vec2 {
+    func getWorldCenterOfMass() -> B2Vec2 {
         b2Body_GetWorldCenterOfMass(id)
     }
     
@@ -324,7 +324,7 @@ public extension B2Body {
     
     /// Get the current world AABB that contains all the attached shapes. Note that this may not emcompass the body origin.
     /// If there are no shapes attached then the returned AABB is empty and centered on the body origin.
-    func computeAABB() -> b2AABB {
+    func computeAABB() -> B2AABB {
         b2Body_ComputeAABB(id)
     }
 }
