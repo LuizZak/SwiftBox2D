@@ -75,7 +75,7 @@ def main() -> int:
     swift_target_path = (
         args.path
         if args.path is not None
-        else paths.srcroot_path("Sources", "SwiftBox2D", "Generated")
+        else paths.project_path("Sources", "SwiftBox2D", "Generated")
     )
     if not swift_target_path.exists() or not swift_target_path.is_dir():
         print(f"Error: No target directory with name '{swift_target_path}' found.")
