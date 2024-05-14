@@ -1,12 +1,11 @@
 from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 from typing import Sequence
 from utils.data.swift_decl_visitor import SwiftDeclCallableVisitor
+import io
 
 from utils.data.swift_decls import SwiftDecl, SwiftDeclWalker
 from utils.doccomment.doccomment_block import DoccommentBlock
-from utils.text.char_stream import UncheckedCharStream
 
 
 class DoccommentLookup:
@@ -74,7 +73,7 @@ class DoccommentLookup:
 
         with open(file_path) as file:
             comments = _split_doccomment_lines(
-                file_path, file.read(), self.doccomment_patterns
+                file_path, file, self.doccomment_patterns
             )
             cache_file = self._CachedFile(file_path, comments)
 
@@ -129,116 +128,112 @@ class DoccommentLookup:
 
 
 def _split_doccomment_lines(
-    path: Path, text_file: str, doccomment_patterns: list[str]
+    path: Path, text_stream: io.TextIOBase, doccomment_patterns: list[str]
 ) -> list[DoccommentBlock]:
     """
-    Returns a list of comments of an input string that represent C-based single
-    and multi-lined doc comments.
+    Returns a list of doc comments that match a given set of doc comment patterns,
+    parsed from the given text stream.
+
+    Returns comments ordered as they where found in the stream.
     """
 
-    @dataclass
-    class TemporaryComment:
-        line: int
-        column: int
-        index: int
+    def close_current(line: int, column: int, contents: str):
+        for pattern in doccomment_patterns:
+            if not contents.startswith(pattern):
+                continue
 
-    class State(Enum):
-        NORMAL = 0
-        STRING = 1
-        SINGLE_LINE = 2
-        MULTI_LINE = 3
+            contents = contents[len(pattern) :]
+
+            return DoccommentBlock(
+                file=path,
+                line=line,
+                column=column + len(pattern),
+                comment_contents=contents,
+                line_count=contents.count("\n") + 1,
+            )
+
+        return None
 
     result: list[DoccommentBlock] = []
-
-    if len(text_file) < 2:
-        return result
-
-    stream = UncheckedCharStream(text_file)
-
-    state = State.NORMAL
 
     line = 1
     column = 0
 
-    current = TemporaryComment(1, 1, 0)
+    current_line = 0
+    current_column = 0
+    current_contents = ""
 
-    def current_start() -> int:
-        return current.index
+    state_default = 0
+    state_line_comment = 1
+    state_multi_line_comment = 2
+    state_string = 3
 
-    def start_current(index: int):
-        current.line = line
-        current.column = column
-        current.index = index
+    state = state_default
 
-    def close_current(end_index: int):
-        contents = stream.buffer[current_start() : end_index]
-
-        for pattern in doccomment_patterns:
-            if contents.startswith(pattern):
-                contents = contents[len(pattern) :]
-
-                final = DoccommentBlock(
-                    file=path,
-                    line=current.line,
-                    column=current.column + len(pattern),
-                    comment_contents=contents,
-                    line_count=contents.count("\n") + 1,
-                )
-
-                result.append(final)
-
-                break
-
-    while not stream.is_eof():
-        char = stream.next()
-
-        if char == "\n":
+    last_char = ""
+    index = 0
+    while (next := text_stream.read(1)) != "":
+        index += 1
+        if next == "\n":
             column = 0
             line += 1
         else:
             column += 1
 
-        match state:
-            case State.NORMAL:
-                if char == '"':
-                    state = State.STRING
-                    continue
-
-                if char != "/":
-                    continue
-
-                if stream.is_eof():
-                    continue
-
-                next = stream.peek()
+        if state == state_default:  # Regular JSON structure stream
+            if next == '"':
+                # Start of string literal
+                state = state_string
+            elif last_char == "/":
+                # Keep recording the indices regardless of whether this is a
+                # comment or not to reduce duplication
+                current_line = line
+                current_column = column
 
                 if next == "/":
-                    state = State.SINGLE_LINE
-                    start_current(stream.index - 1)
+                    # Line comment
+                    state = state_line_comment
+                    current_contents = "//"
                 elif next == "*":
-                    state = State.MULTI_LINE
-                    start_current(stream.index - 1)
+                    # Multi-line comment
+                    state = state_multi_line_comment
+                    current_contents = "/*"
+        elif state == state_line_comment:  # Inside line comment
+            if next == "\n":
+                # End of comment; back to regular JSON stream
+                state = state_default
 
-            case State.STRING:
-                if char == '"':
-                    state = State.NORMAL
+                if new_comment := close_current(
+                    current_line, current_column, current_contents
+                ):
+                    result.append(new_comment)
+            else:
+                current_contents += next
+        elif state == state_multi_line_comment:  # Inside multi-line comment
+            if next == "/" and last_char == "*":
+                # Explicit end of comment block; back to regular JSON stream
+                state = state_default
+                current_contents += "*/"
 
-            case State.SINGLE_LINE:
-                # End of single line
-                if char == "\n":
-                    close_current(stream.index - 1)
-                    state = State.NORMAL
+                if new_comment := close_current(
+                    current_line, current_column, current_contents
+                ):
+                    result.append(new_comment)
+            else:
+                current_contents += next
+        elif state == state_string:  # Inside string literal
+            if next == '"' and last_char != "\\":  # Escaped string terminator check
+                # End of string; back to regular JSON stream
+                state = state_default
 
-            case State.MULTI_LINE:
-                # End of multi-line
-                if char == "*" and not stream.is_eof() and stream.peek() == "/":
-                    close_current(stream.index - 1)
-                    state = State.NORMAL
+        last_char = next
 
     # Finish any existing comment
-    if state == State.SINGLE_LINE:
-        close_current(stream.index - 1)
-    elif state == State.MULTI_LINE:
-        close_current(stream.index - 1)
+    if state == state_line_comment or state == state_multi_line_comment:
+        close_current(
+            current_line,
+            current_column,
+            current_contents,
+        )
 
     return result
