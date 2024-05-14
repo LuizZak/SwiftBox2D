@@ -3,9 +3,11 @@
 
 import box2d
 
-extension b2Circle: CustomStringConvertible, Equatable, Hashable { }
+public typealias B2Circle = b2Circle
 
-public extension b2Circle {
+extension B2Circle: CustomStringConvertible, Equatable, Hashable { }
+
+public extension B2Circle {
     var description: String {
         "b2Circle(center: \(center), radius: \(radius))"
     }

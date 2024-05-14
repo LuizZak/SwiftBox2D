@@ -5,9 +5,11 @@ import box2d
 
 /// 2D rotation
 /// This is similar to using a complex number for rotation
-extension b2Rot: CustomStringConvertible, Equatable, Hashable { }
+public typealias B2Rot = b2Rot
 
-public extension b2Rot {
+extension B2Rot: CustomStringConvertible, Equatable, Hashable { }
+
+public extension B2Rot {
     var description: String {
         "b2Rot(c: \(c), s: \(s))"
     }

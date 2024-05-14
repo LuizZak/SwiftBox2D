@@ -3,21 +3,22 @@
 
 import box2d
 
-/// 2D vector
-/// This can be used to represent a point or free vector
-extension b2Vec2: CustomStringConvertible, Equatable, Hashable { }
+/// A 2-by-2 Matrix
+public typealias B2Mat22 = b2Mat22
 
-public extension b2Vec2 {
+extension B2Mat22: CustomStringConvertible, Equatable, Hashable { }
+
+public extension B2Mat22 {
     var description: String {
-        "b2Vec2(x: \(x), y: \(y))"
+        "b2Mat22(cx: \(cx), cy: \(cy))"
     }
     
     static func == (_ lhs: Self, _ rhs: Self) -> Bool {
-        lhs.x == rhs.x && lhs.y == rhs.y
+        lhs.cx == rhs.cx && lhs.cy == rhs.cy
     }
     
     func hash(into hasher: inout Hasher) {
-        hasher.combine(x)
-        hasher.combine(y)
+        hasher.combine(cx)
+        hasher.combine(cy)
     }
 }

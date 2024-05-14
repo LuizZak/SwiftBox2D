@@ -4,9 +4,11 @@
 import box2d
 
 /// Axis-aligned bounding box
-extension b2AABB: CustomStringConvertible, Equatable, Hashable { }
+public typealias B2AABB = b2AABB
 
-public extension b2AABB {
+extension B2AABB: CustomStringConvertible, Equatable, Hashable { }
+
+public extension B2AABB {
     var description: String {
         "b2AABB(lowerBound: \(lowerBound), upperBound: \(upperBound))"
     }

@@ -3,20 +3,22 @@
 
 import box2d
 
-/// A 2-by-2 Matrix
-extension b2Mat22: CustomStringConvertible, Equatable, Hashable { }
+/// A 2D rigid transform
+public typealias B2Transform = b2Transform
 
-public extension b2Mat22 {
+extension B2Transform: CustomStringConvertible, Equatable, Hashable { }
+
+public extension B2Transform {
     var description: String {
-        "b2Mat22(cx: \(cx), cy: \(cy))"
+        "b2Transform(p: \(p), q: \(q))"
     }
     
     static func == (_ lhs: Self, _ rhs: Self) -> Bool {
-        lhs.cx == rhs.cx && lhs.cy == rhs.cy
+        lhs.p == rhs.p && lhs.q == rhs.q
     }
     
     func hash(into hasher: inout Hasher) {
-        hasher.combine(cx)
-        hasher.combine(cy)
+        hasher.combine(p)
+        hasher.combine(q)
     }
 }

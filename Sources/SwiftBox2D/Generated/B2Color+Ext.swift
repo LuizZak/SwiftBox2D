@@ -4,9 +4,11 @@
 import box2d
 
 /// Color for debug drawing. Each value has the range [0,1].
-extension b2Color: CustomStringConvertible, Equatable, Hashable { }
+public typealias B2Color = b2Color
 
-public extension b2Color {
+extension B2Color: CustomStringConvertible, Equatable, Hashable { }
+
+public extension B2Color {
     var description: String {
         "b2Color(r: \(r), g: \(g), b: \(b), a: \(a))"
     }
