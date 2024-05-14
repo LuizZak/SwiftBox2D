@@ -142,7 +142,9 @@
             "msvc",
             "pycparser",
             "swiftpm",
-            "unaliased",
+            "typedefs",
+            "unalias",
+            "unaliased"
         ],
         "C_Cpp.default.includePath": [
             "${workspaceFolder}/Sources/box2d/**"

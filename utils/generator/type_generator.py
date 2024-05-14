@@ -300,14 +300,13 @@ def _generate_types(request: TypeGeneratorRequest) -> int:
 
     ast = pycparser.parse_file(output_path, use_cpp=False)
 
-    print_stage_name("Collecting Swift type candidates...")
+    print_stage_name("Collecting Swift symbol candidates...")
 
     visitor = DeclCollectorVisitor(prefixes=request.prefixes)
     visitor.visit(ast)
 
-    converter = request.swift_decl_generator
-
-    swift_decls = converter.generate_from_list(visitor.decls, ast)
+    decl_generator = request.swift_decl_generator
+    swift_decls = decl_generator.generate_from_list(visitor.decls, ast)
 
     print(f"Found {ConsoleColor.CYAN(len(swift_decls))} potential declarations")
 
@@ -322,7 +321,7 @@ def _generate_types(request: TypeGeneratorRequest) -> int:
 
     print(f"Merged down to {ConsoleColor.CYAN(len(swift_decls))} declarations")
 
-    swift_decls = converter.post_merge(swift_decls)
+    swift_decls = decl_generator.post_merge(swift_decls)
 
     if request.doccomment_manager.should_format:
         print_stage_name("Formatting doc comments...")
@@ -343,7 +342,7 @@ def _generate_types(request: TypeGeneratorRequest) -> int:
 
     # Warn about entries in type protocol conformance entries that where not matched
     # against a type
-    for conformance in converter.conformances:
+    for conformance in decl_generator.conformances:
         if conformance.satisfied:
             continue
 

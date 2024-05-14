@@ -27,6 +27,11 @@ def coord_to_location(coord) -> SourceLocation:
 
 
 class SwiftDeclGenerator:
+    @dataclass(slots=True)
+    class DeclGenerateContext:
+        ast: c_ast.FileAST
+        type_mapper: SwiftTypeMapper
+
     class MemberMethodGenerator:
         methodPrefix: str
         classToMap: CompoundSymbolName
@@ -63,10 +68,9 @@ class SwiftDeclGenerator:
 
         def transform(
             self,
-            typeMapper: SwiftTypeMapper,
             node: c_ast.FuncDecl,
             fName: CompoundSymbolName,
-            context: c_ast.FileAST
+            context: "SwiftDeclGenerator.DeclGenerateContext"
         ) -> SwiftMemberFunctionDecl | None:
 
             if len(node.args.params) < 1:
@@ -74,7 +78,7 @@ class SwiftDeclGenerator:
             
             def mapArgument(p) -> tuple[SwiftMemberFunctionDecl.ARG_TYPE, str]:
                 decl = declarationFromType(p.type)
-                type = typeMapper.map_to_swift_type(p.type, context)
+                type = context.type_mapper.map_to_swift_type(p.type, context.ast)
                 type_str = type.to_string() if type is not None else "?"
                 invocation = decl[0] if decl is not None else "?"
 
@@ -82,7 +86,7 @@ class SwiftDeclGenerator:
                 # `@convention(c)` closure parameters
                 if type is not None:
                     if typename := type.as_typename_type():
-                        if unaliased := typeMapper.unalias_type(typename.name, context):
+                        if unaliased := context.type_mapper.unalias_type(typename.name, context.ast):
                             if fType := unaliased.as_function_type():
                                 # args = ", ".join(f"${i}" for i in range(len(fType.parameters)))
                                 type_str = f"@convention(c) {fType.to_string()}"
@@ -98,7 +102,7 @@ class SwiftDeclGenerator:
             arguments = [mapArgument(a) for a in node.args.params[1:]]
 
             cCallArgs = [self.firstArgumentMember] + [a[1] for a in arguments]
-            returnType = typeMapper.map_to_swift_type(node.type.type, context)
+            returnType = context.type_mapper.map_to_swift_type(node.type.type, context.ast)
 
             return SwiftMemberFunctionDecl(
                 c_kind=CDeclKind.FUNC,
@@ -128,7 +132,7 @@ class SwiftDeclGenerator:
                 symbolName=config.cName,
                 conformances=config.conformances
             )
-
+    
     def __init__(
         self,
         prefixes: Iterable[str],
@@ -141,8 +145,7 @@ class SwiftDeclGenerator:
         self.symbol_filter = symbol_filter
         self.symbol_name_generator = symbol_name_generator
         self.conformances = list(conformances)
-        self.methodMappers = list(methodMappers)
-        self.typeMapper = SwiftTypeMapper()
+        self.method_mappers = list(methodMappers)
 
     @classmethod
     def from_config(cls, config: GeneratorConfig.Declarations):
@@ -161,7 +164,7 @@ class SwiftDeclGenerator:
         enum_name: CompoundSymbolName,
         enum_original_name: str,
         node: c_ast.Enumerator,
-        context: c_ast.FileAST
+        context: DeclGenerateContext
     ) -> SwiftMemberVarDecl | None:
 
         value = self.symbol_name_generator.generate_original_enum_case(node.name).to_string()
@@ -179,7 +182,7 @@ class SwiftDeclGenerator:
             initial_value=value
         )
 
-    def generate_enum(self, node: c_ast.Enum, context: c_ast.FileAST) -> SwiftExtensionDecl | None:
+    def generate_enum(self, node: c_ast.Enum, context: DeclGenerateContext) -> SwiftExtensionDecl | None:
         enum_name = self.symbol_name_generator.generate_enum_name(node.name)
 
         members = []
@@ -204,14 +207,14 @@ class SwiftDeclGenerator:
             access_level=SwiftAccessLevel.PUBLIC
         )
 
-        if conformances := self.propose_conformances(decl):
+        if conformances := self._propose_conformances(decl):
             decl.conformances.extend(conformances)
         
         return decl
 
     # Struct
 
-    def generate_struct(self, node: c_ast.Struct, context: c_ast.FileAST) -> SwiftExtensionDecl | None:
+    def generate_struct(self, node: c_ast.Struct, context: DeclGenerateContext) -> SwiftExtensionDecl | None:
         struct_name = self.symbol_name_generator.generate_struct_name(node.name)
 
         decl = SwiftExtensionDecl(
@@ -226,14 +229,14 @@ class SwiftDeclGenerator:
             access_level=SwiftAccessLevel.PUBLIC
         )
 
-        if conformances := self.propose_conformances(decl):
+        if conformances := self._propose_conformances(decl):
             decl.conformances.extend(conformances)
 
         return decl
     
     # Function
 
-    def generate_funcDecl(self, node: c_ast.FuncDecl, context: c_ast.FileAST) -> SwiftDecl | None:
+    def generate_funcDecl(self, node: c_ast.FuncDecl, context: DeclGenerateContext) -> SwiftDecl | None:
         if node.args is None:
             return None
         
@@ -251,7 +254,7 @@ class SwiftDeclGenerator:
 
         fName = self.symbol_name_generator.generate_funcDecl_name(interimName)
 
-        method = transformer.transform(self.typeMapper, node, fName, context)
+        method = transformer.transform(node, fName, context)
         if method is None:
             return None
         access_level = method.access_level if method.access_level is not None else SwiftAccessLevel.PUBLIC
@@ -278,13 +281,13 @@ class SwiftDeclGenerator:
         if len(args.params) < 1:
             return None
         
-        for map in self.methodMappers:
+        for map in self.method_mappers:
             if cName.startswith(map.methodPrefix):
                 return map
         
         return None
     
-    def propose_conformances(self, decl: SwiftExtensionDecl) -> list[str] | None:
+    def _propose_conformances(self, decl: SwiftExtensionDecl) -> list[str] | None:
         result = []
         
         # Match required protocols
@@ -304,7 +307,7 @@ class SwiftDeclGenerator:
     
     #
 
-    def generate(self, node: c_ast.Node, context: c_ast.FileAST) -> SwiftDecl | None:
+    def generate(self, node: c_ast.Node, context: DeclGenerateContext) -> SwiftDecl | None:
         match node:
             case c_ast.Enum():
                 decl = self.generate_enum(node, context)
@@ -331,9 +334,16 @@ class SwiftDeclGenerator:
                     return fDecl
         
         return None
+    
+    # MARK: Entry point
 
-    def generate_from_list(self, nodes: list[c_ast.Node], context: c_ast.FileAST) -> list[SwiftDecl]:
+    def generate_from_list(self, nodes: list[c_ast.Node], ast: c_ast.FileAST) -> list[SwiftDecl]:
         result = []
+
+        type_mapper = SwiftTypeMapper()
+        type_mapper.enable_caching(ast)
+        context = self.DeclGenerateContext(ast=ast, type_mapper=type_mapper)
+
         for node in nodes:
             decl = self.generate(node, context)
             if decl is not None:

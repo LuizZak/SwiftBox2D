@@ -45,7 +45,7 @@ class SwiftAccessLevel(Enum):
         stream.write(self.name.lower())
 
 
-@dataclass
+@dataclass(slots=True)
 class SourceLocation(object):
     file: Path
     line: int
