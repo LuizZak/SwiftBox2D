@@ -9,7 +9,7 @@ from utils.cli.cli_printing import print_stage_name
 from utils.cli.console_color import ConsoleColor
 from utils.data.generator_config import GeneratorConfig
 
-from utils.generator.type_generator import (
+from utils.type_generator import (
     DeclGeneratorTarget,
     DeclFileGeneratorStdoutTarget,
     DeclFileGeneratorDiskTarget,

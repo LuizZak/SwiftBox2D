@@ -16,9 +16,9 @@ from utils.data.swift_decls import (
     SwiftMemberFunctionDecl,
     SwiftMemberVarDecl,
 )
-from utils.generator.known_conformance_generators import get_conformance_generator
-from utils.generator.symbol_generator_filter import SymbolGeneratorFilter
-from utils.generator.symbol_name_generator import SymbolNameGenerator
+from utils.generators.known_conformance_generators import get_conformance_generator
+from utils.generators.symbol_generator_filter import SymbolGeneratorFilter
+from utils.generators.symbol_name_generator import SymbolNameGenerator
 
 
 # Visitor / declaration collection

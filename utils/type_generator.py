@@ -22,10 +22,10 @@ from utils.data.swift_decl_lookup import SwiftDeclLookup
 from utils.data.swift_decl_visitor import SwiftDeclVisitor
 from utils.doccomment.doccomment_formatter import DoccommentFormatter
 from utils.doccomment.doccomment_manager import DoccommentManager
-from utils.generator.swift_decl_merger import SwiftDeclMerger
-from utils.generator.swift_decl_generator import SwiftDeclGenerator
-from utils.generator.symbol_generator_filter import SymbolGeneratorFilter
-from utils.generator.symbol_name_generator import SymbolNameGenerator
+from utils.generators.swift_decl_merger import SwiftDeclMerger
+from utils.generators.swift_decl_generator import SwiftDeclGenerator
+from utils.generators.symbol_generator_filter import SymbolGeneratorFilter
+from utils.generators.symbol_name_generator import SymbolNameGenerator
 from utils.data.swift_decls import (
     SwiftDecl,
     SwiftDeclVisitResult,

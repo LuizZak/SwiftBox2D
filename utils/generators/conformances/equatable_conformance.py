@@ -5,7 +5,7 @@ from utils.data.swift_decls import (
     SwiftMemberDecl,
     SwiftMemberFunctionDecl,
 )
-from utils.generator.swift_conformance_generator import SwiftConformanceGenerator
+from utils.generators.swift_conformance_generator import SwiftConformanceGenerator
 from pycparser import c_ast
 
 
