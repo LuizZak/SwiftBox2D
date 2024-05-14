@@ -156,7 +156,7 @@ class SwiftTypeMapper:
 
         return None
     
-    def _map_compound_name(self, names: list[str], context: c_ast.FileAST, flags=_Flags()) -> _InternalTypeResult | None:
+    def _map_compound_name(self, names: list[str], context: c_ast.FileAST) -> _InternalTypeResult | None:
         full = " ".join(names)
         for (swiftType, aliases) in self.__simpleTypes:
             if isinstance(aliases, str):
@@ -202,7 +202,7 @@ class SwiftTypeMapper:
             SwiftType.generic(pointer_type, [unaliased]).wrap_optional(),
         )
     
-    def _expand_type_def(self, type_name: str, context: c_ast.FileAST, flags=_Flags()) -> _InternalTypeResult | None:
+    def _expand_type_def(self, type_name: str, context: c_ast.FileAST) -> _InternalTypeResult | None:
         if self.__cached_typedef_resolves is not None:
             if cached := self.__cached_typedef_resolves.get(type_name):
                 return cached
@@ -215,7 +215,7 @@ class SwiftTypeMapper:
         
         return self.__expand_type_def(type_name, context)
 
-    def __expand_type_def(self, type_name: str, context: c_ast.FileAST, flags=_Flags()) -> _InternalTypeResult | None:
+    def __expand_type_def(self, type_name: str, context: c_ast.FileAST) -> _InternalTypeResult | None:
         if self.__cached_typedefs is not None:
             if not (decl := self.__cached_typedefs.get(type_name)):
                 return None
