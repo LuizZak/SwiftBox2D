@@ -3,7 +3,6 @@
 
 import box2d
 
-/// Joint identifier validation. Provides validation for up to 64K allocations.
 public extension B2Joint {
     /// Joint identifier validation. Provides validation for up to 64K allocations.
     func isValid() -> Bool {

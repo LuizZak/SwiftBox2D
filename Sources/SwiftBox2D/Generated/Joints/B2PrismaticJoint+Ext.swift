@@ -3,7 +3,6 @@
 
 import box2d
 
-/// Enable/disable the joint spring.
 public extension B2PrismaticJoint {
     /// Enable/disable the joint spring.
     func enableSpring(_ enableSpring: Bool) {

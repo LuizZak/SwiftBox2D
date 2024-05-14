@@ -3,7 +3,6 @@
 
 import box2d
 
-/// Set weld joint linear stiffness in Hertz. 0 is rigid.
 public extension B2WeldJoint {
     /// Set weld joint linear stiffness in Hertz. 0 is rigid.
     func setLinearHertz(_ hertz: Float) {

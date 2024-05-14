@@ -266,8 +266,8 @@ class SwiftDeclGenerator:
         return SwiftExtensionDecl(
             name=transformer.classToMap,
             original_name=None,
-            origin=coord_to_location(node.coord),
-            original_node=node,
+            origin=None,
+            original_node=None,
             c_kind=CDeclKind.FUNC,
             doccomment=None,
             members=[

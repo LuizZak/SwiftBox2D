@@ -3,7 +3,6 @@
 
 import box2d
 
-/// World identifier validation. Provides validation for up to 64K allocations.
 public extension B2World {
     /// World identifier validation. Provides validation for up to 64K allocations.
     func isValid() -> Bool {

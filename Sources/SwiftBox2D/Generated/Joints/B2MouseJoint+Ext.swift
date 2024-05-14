@@ -3,7 +3,6 @@
 
 import box2d
 
-/// Set the target for a mouse joint
 public extension B2MouseJoint {
     /// Set the target for a mouse joint
     func setTarget(_ target: b2Vec2) {

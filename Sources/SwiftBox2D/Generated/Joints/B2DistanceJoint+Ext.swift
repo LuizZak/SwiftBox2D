@@ -3,7 +3,6 @@
 
 import box2d
 
-/// Get the constraint force on a distance joint
 public extension B2DistanceJoint {
     /// Get the constraint force on a distance joint
     func getConstraintForce(_ timeStep: Float) -> Float {

@@ -3,7 +3,6 @@
 
 import box2d
 
-/// Set/Get the linear offset target for a motor joint
 public extension B2MotorJoint {
     /// Set/Get the linear offset target for a motor joint
     func setLinearOffset(_ linearOffset: b2Vec2) {

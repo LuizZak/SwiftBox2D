@@ -3,7 +3,6 @@
 
 import box2d
 
-/// Enable/disable the joint spring.
 public extension B2RevoluteJoint {
     /// Enable/disable the joint spring.
     func enableSpring(_ enableSpring: Bool) {

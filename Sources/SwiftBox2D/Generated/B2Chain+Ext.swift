@@ -3,7 +3,6 @@
 
 import box2d
 
-/// Set the friction of a chain. Normally this is set in b2ChainDef.
 public extension B2Chain {
     /// Set the friction of a chain. Normally this is set in b2ChainDef.
     func setFriction(_ friction: Float) {
