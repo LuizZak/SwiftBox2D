@@ -32,9 +32,8 @@ class UncheckedCharStream:
 
     def next(self) -> str:
         "Returns the next character in the stream, advancing its position by 1."
-        char = self.peek()
-        self.advance()
-        return char
+        self.index += 1
+        return self.buffer[self.index - 1]
 
     def next_l(self, length: int) -> str:
         "Returns the next `length` characters in the stream, advancing its position by `length`."
