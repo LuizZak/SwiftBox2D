@@ -12,13 +12,13 @@ class SwiftType:
     # Type factories
 
     @classmethod
-    def type_bool(cls) -> "NominalSwiftType":
+    def bool_type(cls) -> "NominalSwiftType":
         "Returns the built-in Bool Swift type."
         return cls.type_name("Bool")
 
     @classmethod
-    def type_void(cls) -> "TupleSwiftType":
-        "Creates the Void Swift type, i.e. `()`."
+    def void_type(cls) -> "TupleSwiftType":
+        "Returns the built-in Void Swift type, i.e. `()`."
         return TupleSwiftType([])
 
     @classmethod

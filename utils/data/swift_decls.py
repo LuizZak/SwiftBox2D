@@ -297,7 +297,7 @@ class SwiftMemberFunctionDecl(SwiftMemberDecl):
         stream.write(") ")
 
         if self.return_type is not None and not SwiftType.is_equivalent(
-            self.return_type, SwiftType.type_void()
+            self.return_type, SwiftType.void_type()
         ):
             stream.write(f"-> {self.return_type.to_string()} ")
 

@@ -229,7 +229,7 @@ class SwiftTypeMapper:
         self, pointee: SwiftType, unaliased: SwiftType, flags: _Flags
     ) -> _InternalTypeResult:
         # void* should map to UnsafeMutableRawPointer/UnsafeRawPointer
-        if pointee.is_equivalent(SwiftType.type_void()):
+        if pointee.is_equivalent(SwiftType.void_type()):
             pointer_type = (
                 self.__const_void_pointer_type
                 if flags.is_constant

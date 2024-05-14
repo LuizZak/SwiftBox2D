@@ -2,7 +2,7 @@ from pycparser import c_ast
 from pycparser import c_generator
 
 
-def identifierFromType(typ: c_ast.TypeDecl) -> str | None:
+def identifier_from_type(typ: c_ast.TypeDecl) -> str | None:
     inner = typ.type
     if not isinstance(inner, c_ast.IdentifierType):
         return None
@@ -13,7 +13,7 @@ def identifierFromType(typ: c_ast.TypeDecl) -> str | None:
     return inner.names[0]
 
 
-def declarationFromType(typ: c_ast.Decl) -> tuple[str, str] | None:
+def declaration_from_type(typ: c_ast.Decl) -> tuple[str, str] | None:
     """
     Returns a type and identifier from a given c_ast.Decl, in case it matches
     the type of a declaration.
@@ -22,9 +22,9 @@ def declarationFromType(typ: c_ast.Decl) -> tuple[str, str] | None:
         if typ.declname is None:
             return None
 
-        return (typ.declname, cStringFromNode(typ.type))
+        return (typ.declname, c_string_from_node(typ.type))
     if isinstance(typ, c_ast.PtrDecl):
-        inner = declarationFromType(typ.type)
+        inner = declaration_from_type(typ.type)
         if inner is None:
             return None
 
@@ -35,5 +35,5 @@ def declarationFromType(typ: c_ast.Decl) -> tuple[str, str] | None:
     return None
 
 
-def cStringFromNode(node: c_ast.Node) -> str:
+def c_string_from_node(node: c_ast.Node) -> str:
     return c_generator.CGenerator(True).visit(node)

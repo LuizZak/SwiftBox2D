@@ -86,7 +86,7 @@ class SwiftEquatableConformance(SwiftConformanceGenerator):
                         None, "rhs", None, SwiftType.type_name("Self")
                     ),
                 ],
-                return_type=SwiftType.type_bool(),
+                return_type=SwiftType.bool_type(),
                 body=body,
             )
         ]

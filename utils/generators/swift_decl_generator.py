@@ -4,7 +4,7 @@ from typing import Iterable
 
 from pycparser import c_ast
 from utils.converters.swift_type_mapper import SwiftTypeMapper
-from utils.cutils.cutils import declarationFromType
+from utils.cutils.cutils import declaration_from_type
 from utils.data.c_decl_kind import CDeclKind
 from utils.data.compound_symbol_name import CompoundSymbolName
 from utils.data.generator_config import GeneratorConfig
@@ -80,7 +80,7 @@ class SwiftDeclGenerator:
                 return None
 
             def map_argument(p) -> tuple[SwiftMemberFunctionDecl.ParameterType, str]:
-                decl = declarationFromType(p.type)
+                decl = declaration_from_type(p.type)
                 type = context.type_mapper.map_to_swift_type(p.type, context.ast)
                 type_decorator: str | None = None
                 invocation = decl[0] if decl is not None else "?"
