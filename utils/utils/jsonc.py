@@ -1,9 +1,14 @@
+if __name__ == "__main__":
+    import sys
+    import pathlib
+
+    sys.path.insert(0, str(pathlib.Path(__file__).joinpath("../../../").resolve()))
+
 from enum import Enum
 from os import PathLike
 import json
 from pathlib import Path
-
-from utils.text.char_stream import CharStream
+import io
 
 
 def jsonc_load(path: PathLike):
@@ -28,70 +33,84 @@ def jsonc_loads(string: str | bytes | bytearray):
 def jsonc_strip_comments(source: str | Path) -> str:
     "Strips C-style comments from a given JSON string or JSON file's contents, returning a string capable of being parsed with `json.loads(<str>)`"
 
+    if isinstance(source, Path):
+        with open(source, "r") as f:
+            return _jsonc_strip_comments(f)
+    else:
+        stream = io.StringIO(source)
+        return _jsonc_strip_comments(stream)
+
+
+def _jsonc_strip_comments(stream: io.TextIOBase) -> str:
     class State(Enum):
         DEFAULT = 0
         LINE_COMMENT = 1
         MULTI_LINE_COMMENT = 2
         STRING = 3
 
-    #
-
-    string: str
-    if isinstance(source, Path):
-        with open(source, "r") as f:
-            string = f.read()
-    else:
-        string = source
-
     state = State.DEFAULT
 
-    stream = CharStream(string)
     new_json = ""
-
-    while not stream.is_eof():
+    last_char = ""
+    while (next := stream.read(1)) != "":
         match state:
             case State.DEFAULT:  # Regular JSON structure stream
-                if stream.advance_if_next('"'):
+                if next == '"':
                     # Start of string literal
                     state = State.STRING
                     new_json += '"'
-                elif stream.advance_if_next("//"):
+                elif last_char == "/" and next == "/":
                     # Start of line comment
                     state = State.LINE_COMMENT
-                    new_json += "  "  # Insert dummy placeholders for line/column keeping purposes
-                elif stream.advance_if_next("/*"):
+                    new_json += " "  # Insert dummy placeholders for line/column keeping purposes
+                elif last_char == "/" and next == "*":
                     # Start of multi-line comment
                     state = State.MULTI_LINE_COMMENT
-                    new_json += "  "
+                    new_json += " "
+                elif next == "/":
+                    # Withhold on // so we can detect comments without parsing the forward slash as a JSON character
+                    pass
                 else:
                     # Regular JSON structure character
-                    new_json += stream.next()
+                    if last_char == "/":
+                        new_json += last_char
+                    new_json += next
             case State.LINE_COMMENT:  # Inside line comment
-                if stream.advance_if_next("\n"):
+                if next == "\n":
                     # End of comment; back to regular JSON stream
                     state = State.DEFAULT
                     new_json += "\n"
                 else:
-                    stream.advance()
                     new_json += " "
             case State.MULTI_LINE_COMMENT:  # Inside multi-line comment
-                if stream.advance_if_next("*/"):
+                if next == "/" and last_char == "*":
                     # Explicit end of comment block; back to regular JSON stream
                     state = State.DEFAULT
-                    new_json += "  "
-                else:
-                    stream.advance()
                     new_json += " "
+                    next = " "  # Prevent re-capturing final forward slash
+                else:
+                    new_json += "\n" if next == "\n" else " "
             case State.STRING:  # Inside string literal
-                if stream.advance_if_next(r"\""):
-                    # Escaped string terminator; continue reading as a string still
-                    new_json += r"\""
-                elif stream.advance_if_next('"'):
+                new_json += next
+                if next == '"' and last_char != "\\":  # Escaped string terminator check
                     # End of string; back to regular JSON stream
                     state = State.DEFAULT
-                    new_json += '"'
-                else:
-                    # String contents
-                    new_json += stream.next()
+
+        last_char = next
 
     return new_json
+
+
+if __name__ == "__main__":
+    testJson = """
+    {
+        "field0": 0,
+        // Line comment
+        "field1": "a /* commented // */ string",
+        "fie\\"ld2":
+            /* Multi-lined comment
+            */ "abc"
+    }
+    """
+    print(testJson)
+    print(jsonc_strip_comments(testJson))
