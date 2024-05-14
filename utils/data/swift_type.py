@@ -2,7 +2,7 @@ import io
 from dataclasses import dataclass
 from typing import Iterable
 
-from utils.converters.syntax_stream import SyntaxStream
+from utils.text.syntax_stream import SyntaxStream
 
 
 @dataclass(slots=True)

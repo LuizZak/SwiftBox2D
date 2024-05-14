@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from utils.converters.syntax_stream import SyntaxStream
+from utils.text.syntax_stream import SyntaxStream
 from utils.data.swift_decls import SwiftDecl
 
 

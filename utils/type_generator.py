@@ -16,7 +16,7 @@ from contextlib import contextmanager
 from utils.cli.cli_printing import print_stage_name
 from utils.cli.console_color import ConsoleColor
 
-from utils.converters.syntax_stream import SyntaxStream
+from utils.text.syntax_stream import SyntaxStream
 from utils.data.generator_config import GeneratorConfig
 from utils.data.swift_decl_lookup import SwiftDeclLookup
 from utils.data.swift_decl_visitor import SwiftDeclVisitor

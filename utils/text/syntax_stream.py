@@ -5,6 +5,8 @@ T = TypeVar("T")
 
 
 class SyntaxStream:
+    "Class used to generate Swift syntax strings."
+
     def __init__(self, destination: TextIO):
         self.destination = destination
         self.indent_depth = 0
@@ -20,11 +22,15 @@ class SyntaxStream:
         return "    " * self.indent_depth
 
     def line(self, text: str = ""):
+        """
+        Writes an indented line of text with contents of `text` before emitting
+        a newline.
+        """
         self.pre_line()
         self.write_then_line(text)
 
     def pre_line(self):
-        "Prints the indentation for a line"
+        "Emits the indentation for a line."
         self.write(f"{self.indent_str()}")
 
     def indent(self):
@@ -66,6 +72,24 @@ class SyntaxStream:
 
     @contextmanager
     def block(self, line: str):
+        """
+        Starts a block context by emitting an indented line with contents `line`,
+        followed by a newline, then allowing a block with indented syntax to be
+        generated via `yield` before de-indenting and emitting a close brace.
+
+        ```
+        with stream.block("if true {"):
+            stream.line("print()")
+        ```
+
+        Produces:
+
+        ```swift
+        if true {
+            print()
+        }
+        ```
+        """
         self.line(line)
         self.indent()
 
@@ -76,6 +100,26 @@ class SyntaxStream:
 
     @contextmanager
     def inline_block(self, line: str, close_brace: str = "}"):
+        """
+        Starts a block context by emitting `line`, followed by a newline, then
+        allowing a block with indented syntax to be generated via `yield` before
+        de-indenting and emitting a close brace.
+
+        ```
+        stream.pre_line()
+        stream.write("let list = ")
+        with stream.block("[", close_brace="]"):
+            stream.line("0, 1, 2")
+        ```
+
+        Produces:
+
+        ```swift
+        let list = [
+            0, 1, 2
+        ]
+        ```
+        """
         self.write_then_line(line)
         self.indent()
 

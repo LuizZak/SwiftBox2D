@@ -4,7 +4,7 @@ from typing import List
 from pathlib import Path
 
 from pycparser import c_ast
-from utils.converters.syntax_stream import SyntaxStream
+from utils.text.syntax_stream import SyntaxStream
 from utils.converters.backticked_term import backticked_term
 from utils.data.c_decl_kind import CDeclKind
 from utils.data.compound_symbol_name import CompoundSymbolName
