@@ -3,7 +3,7 @@ from typing import Iterable
 from utils.converters.syntax_stream import SyntaxStream
 import io
 
-@dataclass
+@dataclass(slots=True)
 class SwiftType:
     "Base class for Swift types."
 
@@ -205,7 +205,7 @@ class SwiftType:
     def _isEquivalent(self, other: "SwiftType") -> bool:
         raise NotImplementedError("Must be overridden by subclasses.")
 
-@dataclass
+@dataclass(slots=True)
 class NominalSwiftType(SwiftType):
     "A nominal Swift type, e.g. `Int` or `Array<Int>`."
     name: str
@@ -249,7 +249,7 @@ class NominalSwiftType(SwiftType):
         
         return all(lhs._isEquivalent(rhs) for lhs, rhs in zip(selfParams, otherParams))
 
-@dataclass
+@dataclass(slots=True)
 class NestedSwiftType(SwiftType):
     "A nested Swift type, e.g. `Dictionary<String, Int>.Key`"
     types: list[NominalSwiftType]
@@ -281,7 +281,7 @@ class NestedSwiftType(SwiftType):
         
         return all(lhs._isEquivalent(rhs) for lhs, rhs in zip(self.types, other.types))
 
-@dataclass
+@dataclass(slots=True)
 class ProtocolCompositionSwiftType(SwiftType):
     "A protocol composition Swift type, e.g. `Protocol1 & Protocol2`."
     components: list[NominalSwiftType | NestedSwiftType]
@@ -316,7 +316,7 @@ class ProtocolCompositionSwiftType(SwiftType):
         
         return all(lhs._isEquivalent(rhs) for lhs, rhs in zip(self.components, other.components))
 
-@dataclass
+@dataclass(slots=True)
 class TupleSwiftType(SwiftType):
     """
     A Tuple Swift type, e.g. `(Int, String)` or `()`.
@@ -357,7 +357,7 @@ class TupleSwiftType(SwiftType):
         
         return all(lhs._isEquivalent(rhs) for lhs, rhs in zip(self.types, other.types))
 
-@dataclass
+@dataclass(slots=True)
 class FunctionSwiftType(SwiftType):
     "A type of a function, closure or method in Swift, e.g. `(Int, Bool) -> String`."
     parameters: list[SwiftType]
@@ -396,7 +396,7 @@ class FunctionSwiftType(SwiftType):
         
         return all(lhs._isEquivalent(rhs) for lhs, rhs in zip(self.parameters, other.parameters))
 
-@dataclass
+@dataclass(slots=True)
 class OptionalSwiftType(SwiftType):
     """
     An optional Swift type, e.g. `String?`.
@@ -432,7 +432,7 @@ class OptionalSwiftType(SwiftType):
     def __isEqual(self, other: "OptionalSwiftType") -> bool:
         return self.type._isEquivalent(other.type)
 
-@dataclass
+@dataclass(slots=True)
 class ImplicitlyUnwrappedOptionalSwiftType(SwiftType):
     """
     An implicitly optional Swift type, e.g. `String!`.
@@ -468,7 +468,7 @@ class ImplicitlyUnwrappedOptionalSwiftType(SwiftType):
     def __isEqual(self, other: "ImplicitlyUnwrappedOptionalSwiftType") -> bool:
         return self.type._isEquivalent(other.type)
 
-@dataclass
+@dataclass(slots=True)
 class ArraySwiftType(SwiftType):
     """
     A Swift array type, e.g. `[Int]`.
@@ -498,7 +498,7 @@ class ArraySwiftType(SwiftType):
     def __isEqual(self, other: "ArraySwiftType") -> bool:
         return self.type._isEquivalent(other.type)
 
-@dataclass
+@dataclass(slots=True)
 class DictionarySwiftType(SwiftType):
     """
     A Swift dictionary type, e.g. `[Int: String]`.
