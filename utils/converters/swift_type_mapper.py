@@ -51,9 +51,11 @@ class SwiftTypeMapper:
         ("CUnsignedChar", ["unsigned char"]),
         ("Int8", ["int8_t"]),
         ("UInt8", ["uint8_t"]),
-        ("Int32", ["int32_t", "intptr_t", "int", "long", "long int", "signed int", "signed long", "signed long int"]),
-        ("UInt32", ["uint32_t", "unsigned int"]),
-        ("Int64", ["int64_t", "long long", "long long int", "signed long long", "signed long long int"]),
+        ("Int16", ["short", "short int", "signed short int", "short signed int"]),
+        ("UInt16", ["unsigned short", "unsigned short int", "short unsigned int"]),
+        ("Int32", ["int32_t", "intptr_t", "int", "long", "long int", "signed int", "int signed", "signed long", "signed long int", "long signed int", "long int signed"]),
+        ("UInt32", ["uint32_t", "unsigned int", "unsigned long", "unsigned long int", "long unsigned int", "long int unsigned"]),
+        ("Int64", ["int64_t", "long long", "long long int", "signed long long", "signed long long int", "long long signed int", "long long int signed"]),
         ("UInt64", ["uint64_t", "unsigned long long", "unsigned long long int"]),
     ]
 
@@ -263,6 +265,8 @@ if __name__ == "__main__":
     typedef struct { int b; } i;
     void j(i a);
     const int *k;
+    long unsigned int l;
+    short signed int m;
     """
 
     parser = pycparser.CParser()
