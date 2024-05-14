@@ -1,4 +1,3 @@
-from utils.converters.default_symbol_name_formatter import DefaultSymbolNameFormatter
 from utils.converters.symbol_name_formatter import SymbolNameFormatter
 from utils.data.c_decl_kind import CDeclKind
 from utils.data.compound_symbol_name import CompoundSymbolName
@@ -20,7 +19,7 @@ class SymbolNameGenerator:
     @classmethod
     def from_config(cls, config: GeneratorConfig.Declarations):
         return cls(
-            formatter=DefaultSymbolNameFormatter.from_config(config.formatter),
+            formatter=SymbolNameFormatter.from_config(config.formatter),
             symbol_casting_settings=config.symbol_casing_settings,
         )
 
