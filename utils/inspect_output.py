@@ -1,4 +1,4 @@
-# Allows inspection of #include trees in blend2d.i file.
+# Allows inspection of #include trees in box2d.i file.
 # Usage:
 #
 #     python inspect_output.py absolute <line-number>
@@ -12,17 +12,20 @@
 #
 # Sample usage:
 #
-# > python utils/inspect_output.py --file utils/blend2d.i relative stdarg.h 14
-# blend2d.h:21 (@ utils/blend2d.i:8)
-# blend2d.h:46 (@ utils/blend2d.i:10)
-# api.h:15 (@ utils/blend2d.i:12)
-# stdarg.h:14 (@ utils/blend2d.i:14)
+# > python utils/inspect_output.py --file utils/box2d.i relative stdarg.h 14
+# box2d.h:21 (@ utils/box2d.i:8)
+# box2d.h:46 (@ utils/box2d.i:10)
+# api.h:15 (@ utils/box2d.i:12)
+# stdarg.h:14 (@ utils/box2d.i:14)
 #
 
 import argparse
+import os
 import re
 from pathlib import Path
 from typing import Callable, List, Optional, TypeVar
+
+from cli.console_color import ConsoleStyle, colored
 
 T = TypeVar("T")
 
@@ -61,13 +64,16 @@ class FileWalker(object):
         if not file.is_absolute():
             file = Path.cwd().joinpath(file)
 
-        visit = FileVisit(file, line, absolute_line)
+        visit = FileVisit(file, line - 1, absolute_line)
 
         self.visits.append(visit)
 
         return visit
 
     def walk_to_relative(self, target_file_name: str, target_line_number: int) -> bool:
+        is_absolute = Path(target_file_name).is_absolute()
+        target_file_name_resolved = Path(target_file_name).resolve()
+
         self.visits = []
 
         current_visit = FileVisit(self.file_name, 1, 1)
@@ -81,10 +87,15 @@ class FileWalker(object):
                     current_visit.line += 1
                     current_visit.absolute_line += 1
 
-                if (
-                    current_visit.file_path.name == target_file_name
-                    and current_visit.line == target_line_number
-                ):
+                if is_absolute:
+                    paths_match = (
+                        Path(current_visit.file_path).resolve()
+                        == target_file_name_resolved
+                    )
+                else:
+                    paths_match = current_visit.file_path.name == target_file_name
+
+                if paths_match and current_visit.line == target_line_number:
                     return True
 
         return False
@@ -127,6 +138,27 @@ class FileWalker(object):
         return visit_stack
 
 
+def pretty_path(path: Path, line: int | None = None) -> str:
+    if len(path.parts) == 1:
+        contents = path.name
+    else:
+        contents = (
+            f"{colored(path.parent, style=ConsoleStyle.FAINT)}{os.sep}{path.name}"
+        )
+    if line is not None:
+        contents += f":{colored(line, style=ConsoleStyle.BOLD)}"
+    return contents
+
+
+def file_has_line_number(path: Path, line: int) -> bool:
+    with open(path, "r") as file:
+        for _ in range(line):
+            if file.readline() == "":
+                return False
+
+    return True
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Allows inspection of #include trees in a pre-processed C header file."
@@ -136,8 +168,8 @@ if __name__ == "__main__":
         "--file",
         dest="file_name",
         type=str,
-        default="blend2d.i",
-        help="File to inspect. Defaults to 'blend2d.i' if not provided.",
+        default="box2d.i",
+        help="File to inspect. Defaults to 'box2d.i' if not provided.",
     )
     parser.add_argument(
         "--full-paths",
@@ -159,7 +191,7 @@ if __name__ == "__main__":
     # relative line
     relative_parser = subparsers.add_parser(
         "relative",
-        help="Inspects the input file by a relative .h file and line number, as dictated by #line directives.",
+        help="Inspects the input file by a relative .h file and line number, as dictated by #line directives. Path can either be a filename+ext format, or a full path to compare to.",
     )
     relative_parser.add_argument(
         "relative_file_name",
@@ -178,26 +210,42 @@ if __name__ == "__main__":
 
     file_visits: list[FileVisit] = []
 
+    if args.command is None:
+        print("Error: Command name required.")
+        parser.print_help()
+        exit(1)
+
     if args.command == "absolute":
         walker.walk_to_absolute(args.line_number)
 
         file_visits = walker.min_visits()
     elif args.command == "relative":
         if not walker.walk_to_relative(args.relative_file_name, args.line_number):
+            file_path = Path(args.relative_file_name)
             print(
-                f'Did not find file "{args.relative_file_name}" line {args.line_number}'
+                f'Did not find file "{pretty_path(file_path)}" line {args.line_number}'
+                + "\nIt is possible the line was elided by the pre-processor because it contained comments and/or pre-processor directives."
             )
-            exit(0)
+            exit(1)
     else:
-        print(f'Unrecognized command "{args.command}"')
+        print(f'Error: Unrecognized command "{args.command}"')
         exit(1)
 
     file_visits = walker.min_visits()
 
+    depth = 0
     for visit in file_visits:
         if args.full_paths:
-            file_name = str(visit.file_path)
+            file_name = visit.file_path.resolve()
         else:
-            file_name = visit.file_path.name
+            file_name = Path(visit.file_path.name)
 
-        print(f"{file_name}:{visit.line} (@ {args.file_name}:{visit.absolute_line})")
+        if depth == 0:
+            indent = ""
+        else:
+            indent = ("   " * (depth - 1)) + "└─ "
+        depth += 1
+
+        print(
+            f"{indent}{pretty_path(file_name, visit.line)} (@ {pretty_path(Path(args.file_name), visit.absolute_line)})"
+        )
