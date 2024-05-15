@@ -64,8 +64,7 @@ class DoccommentLookup:
         decl.doccomment = self._find_doccomment(decl)
 
     def _fetch_file(self, file_path: Path) -> _CachedFile | None:
-        cached_file = self._cached_files.get(file_path)
-        if cached_file is not None:
+        if cached_file := self._cached_files.get(file_path):
             return cached_file
 
         if not (file_path.exists() and file_path.is_file()):
@@ -89,9 +88,7 @@ class DoccommentLookup:
         decl_file_path = decl.origin.file
         decl_line_num = decl.origin.line
 
-        cached_file = self._fetch_file(decl_file_path)
-
-        if cached_file is None:
+        if (cached_file := self._fetch_file(decl_file_path)) is None:
             return None
 
         # Attempt to intercept comments that are inline with the declaration

@@ -88,7 +88,7 @@ class SymbolNameFormatter:
         name = self.pre_capitalization(name, decl)
 
         # Split/capitalize
-        components = flatten(map(self.split_and_capitalize, name.components))
+        components = flatten(self.split_and_capitalize(c) for c in name.components)
 
         if len(name.components) > 0:
             is_camel_case = name.components[0].to_string(False)[0].islower()

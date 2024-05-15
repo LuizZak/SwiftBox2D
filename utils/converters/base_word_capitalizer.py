@@ -47,25 +47,19 @@ class WordCapitalizer(BaseWordCapitalizer):
 
     def __init__(self, word: str) -> None:
         self.word = word
+        self.pattern = re.compile(f"({self.word})", flags=re.IGNORECASE)
 
     def suggest_capitalization(
         self, string: str, has_leading_string: bool
     ) -> tuple[str, int, int] | None:
-        pattern = re.compile(f"({self.word})", flags=re.IGNORECASE)
+        if match := self.pattern.search(string):
+            return (
+                match.group(1).upper(),
+                match.start(1),
+                match.end(1),
+            )
 
-        leftmost_interval = None
-
-        for match in pattern.finditer(string):
-            if leftmost_interval is None or match.start() < leftmost_interval[1]:
-                leftmost_interval = (
-                    self.word,
-                    match.start(),
-                    match.end(),
-                )
-            else:
-                break
-
-        return leftmost_interval
+        return None
 
 
 class PatternCapitalizer(BaseWordCapitalizer):
@@ -77,7 +71,7 @@ class PatternCapitalizer(BaseWordCapitalizer):
     the '-i' in 'recti', but not 'rect-'.
     """
 
-    pattern: str | re.Pattern
+    pattern: re.Pattern
     """
     A regex pattern with at least one capture group to which capitalization will be done.
     """
@@ -92,7 +86,9 @@ class PatternCapitalizer(BaseWordCapitalizer):
     def __init__(
         self, pattern: str | re.Pattern, ignore_if_is_leading_string: bool = False
     ) -> None:
-        self.pattern = pattern
+        self.pattern = (
+            pattern if isinstance(pattern, re.Pattern) else re.compile(pattern)
+        )
         self.ignore_if_is_leading_string = ignore_if_is_leading_string
 
     def suggest_capitalization(
@@ -103,13 +99,7 @@ class PatternCapitalizer(BaseWordCapitalizer):
         if self.ignore_if_is_leading_string and not has_leading_string:
             return None
 
-        pat: re.Pattern = (
-            self.pattern
-            if isinstance(self.pattern, re.Pattern)
-            else re.compile(self.pattern)
-        )
-
-        for match in pat.finditer(string):
+        for match in self.pattern.finditer(string):
             if leftmost_interval is None or match.start() < leftmost_interval[1]:
                 leftmost_interval = (
                     match.group(1).upper(),
