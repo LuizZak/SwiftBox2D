@@ -126,7 +126,7 @@ class SwiftDeclGenerator:
                 doccomment=None,
                 body=[
                     # Default body just calls the C decl using a configured first argument and the rest of the arguments from the original function
-                    f"{node.type.declname}({', '.join(c_call_args)})"
+                    f"{node.type.declname}({", ".join(c_call_args)})"
                 ],
                 access_level=self.access_level,
             )

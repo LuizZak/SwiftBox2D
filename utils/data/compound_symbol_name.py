@@ -361,7 +361,7 @@ class CompoundSymbolName(Sequence["CompoundSymbolName.Component"], Hashable):
         if len(self.components) == 0:
             return "CompoundSymbolName(components=[])"
 
-        body = ",\n    ".join(map(lambda c: f"{c}", self.components))
+        body = ",\n    ".join(f"{c}" for c in self.components)
         return f"CompoundSymbolName(components=[\n    {body}\n])"
 
     def __add__(self, value: "CompoundSymbolName") -> "CompoundSymbolName":

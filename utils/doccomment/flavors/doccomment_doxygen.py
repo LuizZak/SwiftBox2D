@@ -59,7 +59,7 @@ class DoccommentFlavorDoxygen(DoccommentFlavor):
             "param",
             lambda range: (
                 range.extend_whitespace(),
-                range.replace("- param " + str(range.extend(r"\w+")) + ":"),
+                range.replace(f"- param {range.extend(r"\w+")}:"),
             ),
         )
         # Reword '@return' with '- returns:'
