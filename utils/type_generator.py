@@ -251,15 +251,22 @@ class TypeGeneratorRequest:
 
 class _SwiftDeclCounterVisitor(SwiftDeclVisitor):
     num_extensions = 0
+    num_typealiases = 0
     num_properties = 0
     num_methods = 0
 
     @property
     def num_total(self):
-        return self.num_extensions + self.num_properties + self.num_methods
+        return (
+            self.num_typealiases
+            + self.num_extensions
+            + self.num_properties
+            + self.num_methods
+        )
 
     def reset(self):
         self.num_extensions = 0
+        self.num_typealiases = 0
         self.num_properties = 0
         self.num_methods = 0
 
@@ -269,12 +276,13 @@ class _SwiftDeclCounterVisitor(SwiftDeclVisitor):
                 return
 
             print(
-                f"  > {ConsoleColor.CYAN(value)} {name_singular if value == 0 else name_plural}"
+                f"  > {ConsoleColor.GREEN(value)} {name_singular if value == 0 else name_plural}"
             )
 
         cond_print(self.num_extensions, "extension", "extensions")
         cond_print(self.num_methods, "method", "methods")
         cond_print(self.num_properties, "property", "properties")
+        cond_print(self.num_typealiases, "typealias", "typealiases")
 
     def walk_all(self, decls: Iterable[SwiftDecl]):
         for decl in decls:
@@ -282,6 +290,10 @@ class _SwiftDeclCounterVisitor(SwiftDeclVisitor):
 
     def visit_SwiftExtensionDecl(self, _):  # noqa: N802
         self.num_extensions += 1
+        return SwiftDeclVisitResult.VISIT_CHILDREN
+
+    def visit_SwiftTypealiasDecl(self, _):  # noqa: N802
+        self.num_typealiases += 1
         return SwiftDeclVisitResult.VISIT_CHILDREN
 
     def visit_SwiftMemberVarDecl(self, _):  # noqa: N802
@@ -346,7 +358,9 @@ def _generate_types(request: TypeGeneratorRequest) -> int:
     with open(output_path, "wb") as f:
         f.write(output_file)
 
-    print_stage_name("Parsing generated header file...")
+    print_stage_name(
+        f"Parsing generated header file '{ConsoleColor.CYAN(output_path.name)}'..."
+    )
 
     ast = pycparser.parse_file(output_path, use_cpp=False)
 
@@ -366,7 +380,7 @@ def _generate_types(request: TypeGeneratorRequest) -> int:
     count_visitor.reset()
     count_visitor.walk_all(swift_decls)
 
-    print(f"Found {ConsoleColor.CYAN(count_visitor.num_total)} potential declarations")
+    print(f"Found {ConsoleColor.GREEN(count_visitor.num_total)} potential declarations")
 
     count_visitor.show_results()
 
@@ -396,7 +410,7 @@ def _generate_types(request: TypeGeneratorRequest) -> int:
     count_visitor.walk_all(swift_decls)
 
     print(
-        f"Merged/synthesized into {ConsoleColor.CYAN(count_visitor.num_total)} declarations"
+        f"Merged/synthesized into {ConsoleColor.GREEN(count_visitor.num_total)} declarations"
     )
 
     count_visitor.show_results()

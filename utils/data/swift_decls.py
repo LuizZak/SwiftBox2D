@@ -346,6 +346,37 @@ class SwiftMemberFunctionDecl(SwiftMemberDecl):
 
 
 @dataclass
+class SwiftTypealiasDecl(SwiftDecl):
+    access_level: SwiftAccessLevel
+
+    def write(self, stream: SyntaxStream):
+        super().write(stream)
+
+        self.access_level.write(stream)
+        stream.line(f" typealias {self.name.to_string()} = {self.original_name}")
+
+    def copy(self):
+        return SwiftTypealiasDecl(
+            name=self.name,
+            original_name=self.original_name,
+            origin=self.origin,
+            original_node=self.original_node,
+            c_kind=self.c_kind,
+            doccomment=self.doccomment,
+            access_level=self.access_level,
+        )
+
+    def accept(self, visitor: SwiftDeclVisitor) -> SwiftDeclVisitResult:
+        return visitor.visit(self)
+
+    def accept_post(self, visitor: SwiftDeclVisitor):
+        return visitor.post_visit(self)
+
+    def children(self) -> list["SwiftDecl"]:
+        return []
+
+
+@dataclass
 class SwiftExtensionDecl(SwiftDecl):
     access_level: SwiftAccessLevel
     members: List[SwiftMemberDecl]
@@ -355,12 +386,6 @@ class SwiftExtensionDecl(SwiftDecl):
         super().write(stream)
 
         name = self.name.to_string()
-
-        # TODO: Make typealias generation configurable and/or explicit
-        if self.original_name is not None and name != self.original_name:
-            self.access_level.write(stream)
-            stream.line(f" typealias {name} = {self.original_name}")
-            stream.line()
 
         # Emit conformances, with no access control specifier so the code compiles
         # properly
@@ -394,7 +419,7 @@ class SwiftExtensionDecl(SwiftDecl):
             original_node=self.original_node,
             c_kind=self.c_kind,
             doccomment=self.doccomment,
-            members=list(map(lambda c: c.copy(), self.members)),
+            members=list(m.copy() for m in self.members),
             conformances=self.conformances,
             access_level=self.access_level,
         )

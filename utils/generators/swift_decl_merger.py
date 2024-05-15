@@ -40,7 +40,6 @@ class SwiftDeclMerger:
                 raise BaseException(
                     f"Found two symbols that share the same name but are of different types or access levels: {existing_name} (type: {type(existing)}) (originally: {existing_original}) and {decl_name} (type: {type(decl)}) (originally: {decl_original})"
                 )
-
             else:
                 decl_dict[decl_name] = decl
 

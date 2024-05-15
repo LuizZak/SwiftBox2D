@@ -16,6 +16,7 @@ from utils.data.swift_decls import (
     SwiftExtensionDecl,
     SwiftMemberFunctionDecl,
     SwiftMemberVarDecl,
+    SwiftTypealiasDecl,
 )
 from utils.data.swift_type import SwiftType
 from utils.generators.known_conformance_generators import get_conformance_generator
@@ -401,6 +402,38 @@ class SwiftDeclGenerator:
 
     def post_merge(self, decls: list[SwiftDecl]) -> list[SwiftDecl]:
         "Applies post-type merge operations to a list of Swift declarations"
+        decls = list(decls)  # Copy internally first
+
+        def _generate_typealiases(decls: list[SwiftDecl]):
+            # Generate typealiases for C symbols, if necessary
+            typealiases: list[SwiftDecl] = []
+
+            for decl in decls:
+                if not isinstance(decl, SwiftExtensionDecl) or not (
+                    isinstance(decl.original_node, c_ast.Struct)
+                    or isinstance(decl.original_node, c_ast.Enum)
+                ):
+                    continue
+
+                if (
+                    decl.original_name is not None
+                    and decl.name.to_string() != decl.original_name
+                ):
+                    type_alias = SwiftTypealiasDecl(
+                        name=decl.name,
+                        original_name=decl.original_name,
+                        original_node=decl.original_node,
+                        origin=decl.origin,
+                        c_kind=decl.c_kind,
+                        access_level=decl.access_level,
+                        doccomment=decl.doccomment,
+                    )
+                    decl.doccomment = None  # Erase doc comment from original declaration in favor of the typealias
+                    typealiases.append(type_alias)
+
+            return typealiases
+
+        decls = _generate_typealiases(decls) + decls
 
         # Use proposed conformances to generate required members
         for decl in decls:

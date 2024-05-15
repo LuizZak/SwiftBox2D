@@ -100,9 +100,12 @@ class DirectoryStructureManager:
 
         for decl in decls:
             path = self.path_for_decl(decl)
-            file = result.get(path, SwiftFile(path, [], []))
+
+            if (file := result.get(path)) is None:
+                file = SwiftFile(path, [], [])
+                file.header_lines.extend(self.global_header_lines)
+
             file.add_decl(decl)
-            file.header_lines.extend(self.global_header_lines)
 
             result[path] = file
 
@@ -112,6 +115,16 @@ class DirectoryStructureManager:
         file_path = self.file_for_decl(decl)
 
         return file_path
+
+    def file_for_decl(self, decl: SwiftDecl) -> Path:
+        file_name = self.file_name_for_decl(decl)
+
+        return self.folder_for_file(file_name).joinpath(file_name)
+
+    def file_name_for_decl(self, decl: SwiftDecl) -> str:
+        return escape_path_component(
+            f"{decl.name.to_string()}{self.global_file_suffix}.swift"
+        )
 
     def folder_for_file(self, file_name: str) -> Path:
         def matches(
@@ -154,13 +167,3 @@ class DirectoryStructureManager:
                 )
 
         return dir_path.joinpath(*(escape_path_component(c) for c in longest_path))
-
-    def file_for_decl(self, decl: SwiftDecl) -> Path:
-        file_name = self.file_name_for_decl(decl)
-
-        return self.folder_for_file(file_name).joinpath(file_name)
-
-    def file_name_for_decl(self, decl: SwiftDecl) -> str:
-        return escape_path_component(
-            f"{decl.name.to_string()}{self.global_file_suffix}.swift"
-        )

@@ -143,9 +143,10 @@
             "msvc",
             "pycparser",
             "swiftpm",
+            "typealiases",
             "typedefs",
             "unalias",
-            "unaliased",
+            "unaliased"
         ],
         
         "files.associations": {
