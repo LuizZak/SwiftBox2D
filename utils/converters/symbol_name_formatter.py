@@ -72,8 +72,10 @@ class SymbolNameFormatter:
             ), "Found formatter pattern to split that has a single group; this leads to recursion errors"
             return regex
 
-        capitalizers = map(BaseWordCapitalizer.from_string, config.capitalize_terms)
-        splitter_patterns = map(splitter_pattern, config.patterns_to_split)
+        capitalizers = [
+            BaseWordCapitalizer.from_string(p) for p in config.capitalize_terms
+        ]
+        splitter_patterns = [splitter_pattern(p) for p in config.patterns_to_split]
         snake_case_terms = config.snake_case_after_terms
 
         return cls(
@@ -165,20 +167,20 @@ class SymbolNameFormatter:
 
     def split_component_inplace(self, string: str, output: list[str]):
         for pattern in self.words_to_split:
-            if pattern.search(string):
-                filtered = list(
-                    filter(
-                        lambda x: x is not None and len(x) > 0, pattern.split(string)
-                    )
-                )
+            if not pattern.search(string):
+                continue
 
-                if len(filtered) == 1 and filtered[0] == string:
-                    break
+            filtered = [
+                x for x in pattern.split(string) if x is not None and len(x) > 0
+            ]
 
-                for word in filtered:
-                    self.split_component_inplace(word, output)
+            if len(filtered) == 1 and filtered[0] == string:
+                break
 
-                return
+            for word in filtered:
+                self.split_component_inplace(word, output)
+
+            return
 
         output.append(string)
 
