@@ -193,34 +193,37 @@ class SwiftDeclGenerator:
         node: c_ast.Enum,
         context: DeclGenerateContext,
     ) -> SwiftExtensionDecl | None:
-        enum_name = self.symbol_name_generator.generate_enum_name(node.name)
+        decl_name = node.name
+        enum_name = self.symbol_name_generator.generate_enum_name(decl_name)
+
+        conformances = self._propose_conformances(decl_name)
 
         members = []
         if node.values is not None:
             for case_node in node.values:
                 case_decl = self.generate_enum_case(
-                    enum_name, node.name, case_node, context
+                    enum_name, decl_name, case_node, context
                 )
                 if case_decl is None:
                     continue
 
-                if self.symbol_filter.should_gen_enum_var_member(case_node, case_decl):
+                if self.symbol_filter.should_gen_enum_var_member(case_node, decl_name):
                     members.append(case_decl)
 
         decl = SwiftExtensionDecl(
             enum_name,
-            node.name,
+            decl_name,
             coord_to_location(node.coord),
             original_node=node,
             c_kind=CDeclKind.ENUM,
             doccomment=None,
             members=list(members),
-            conformances=[],
+            conformances=conformances,
             access_level=SwiftAccessLevel.PUBLIC,
         )
 
-        if conformances := self._propose_conformances(decl):
-            decl.conformances.extend(conformances)
+        if decl.is_empty():
+            return None
 
         return decl
 
@@ -231,22 +234,26 @@ class SwiftDeclGenerator:
         node: c_ast.Struct,
         context: DeclGenerateContext,
     ) -> SwiftExtensionDecl | None:
-        struct_name = self.symbol_name_generator.generate_struct_name(node.name)
+        decl_name = node.name
+
+        conformances = self._propose_conformances(decl_name)
+
+        struct_name = self.symbol_name_generator.generate_struct_name(decl_name)
 
         decl = SwiftExtensionDecl(
             struct_name,
-            node.name,
+            decl_name,
             coord_to_location(node.coord),
             original_node=node,
             c_kind=CDeclKind.STRUCT,
             doccomment=None,
             members=[],
-            conformances=[],
+            conformances=conformances,
             access_level=SwiftAccessLevel.PUBLIC,
         )
 
-        if conformances := self._propose_conformances(decl):
-            decl.conformances.extend(conformances)
+        if decl.is_empty():
+            return None
 
         return decl
 
@@ -313,16 +320,12 @@ class SwiftDeclGenerator:
 
         return None
 
-    def _propose_conformances(self, decl: SwiftExtensionDecl) -> list[str] | None:
+    def _propose_conformances(self, c_decl_name: str) -> list[str]:
         result = []
 
         # Match required protocols
         for req in self.conformances:
-            if decl.original_name is None:
-                continue
-
-            c_name = decl.original_name
-            if req.symbol_name != c_name:
+            if req.symbol_name != c_decl_name:
                 continue
 
             req.satisfied = True
@@ -331,6 +334,18 @@ class SwiftDeclGenerator:
 
         return list(set(result))
 
+    def _name_from_decl(self, c_decl: c_ast.Node) -> str | None:
+        if isinstance(c_decl, c_ast.FuncDecl):
+            return c_decl.type.declname
+        if isinstance(c_decl, c_ast.Typedef):
+            return c_decl.name
+        if isinstance(c_decl, c_ast.Struct):
+            return c_decl.name
+        if isinstance(c_decl, c_ast.Enum):
+            return c_decl.name
+
+        return None
+
     #
 
     def generate(
@@ -338,26 +353,28 @@ class SwiftDeclGenerator:
         node: c_ast.Node,
         context: DeclGenerateContext,
     ) -> SwiftDecl | None:
+        decl_name = self._name_from_decl(node)
+
         match node:
             case c_ast.Enum():
-                if (decl := self.generate_enum(node, context)) is None:
+                if not self.symbol_filter.should_gen_enum_extension(node, decl_name):
                     return None
 
-                if self.symbol_filter.should_gen_enum_extension(node, decl):
+                if (decl := self.generate_enum(node, context)) is not None:
                     return decl
 
             case c_ast.Struct():
-                if (decl := self.generate_struct(node, context)) is None:
+                if not self.symbol_filter.should_gen_struct_extension(node, decl_name):
                     return None
 
-                if self.symbol_filter.should_gen_struct_extension(node, decl):
+                if (decl := self.generate_struct(node, context)) is not None:
                     return decl
 
             case c_ast.FuncDecl():
-                if (f_decl := self.generate_func_decl(node, context)) is None:
+                if not self.symbol_filter.should_gen_func_decl(node, decl_name):
                     return None
 
-                if self.symbol_filter.should_gen_func_decl(node, f_decl):
+                if (f_decl := self.generate_func_decl(node, context)) is not None:
                     return f_decl
 
         return None

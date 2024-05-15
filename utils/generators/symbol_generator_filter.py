@@ -4,12 +4,6 @@ from typing import Iterable
 from pycparser import c_ast
 
 from utils.data.generator_config import GeneratorConfig
-from utils.data.swift_decls import (
-    SwiftDecl,
-    SwiftExtensionDecl,
-    SwiftMemberDecl,
-    SwiftMemberVarDecl,
-)
 
 
 class SymbolGeneratorFilter:
@@ -52,56 +46,49 @@ class SymbolGeneratorFilter:
                 config.filters.methods,
             )
         )
-        instance.implicit.extend(map(lambda c: c.c_name, config.conformances))
+        instance.implicit.extend(c.c_name for c in config.conformances)
 
         return instance
 
     def should_gen_enum_extension(
-        self, node: c_ast.Enum, decl: SwiftExtensionDecl
+        self, node: c_ast.Enum, decl_name: str | None
     ) -> bool:
-        if decl.is_empty():
-            return False
-
-        return self.apply_filters(self.enum_filters, node, decl)
+        return self.apply_filters(self.enum_filters, node, decl_name)
 
     def should_gen_enum_member(
-        self, node: c_ast.Enumerator, decl: SwiftMemberDecl
+        self, node: c_ast.Enumerator, decl_name: str | None
     ) -> bool:
-        return self.apply_filters(self.enum_member_filters, node, decl)
+        return self.apply_filters(self.enum_member_filters, node, decl_name)
 
     def should_gen_enum_var_member(
-        self, node: c_ast.Enumerator, decl: SwiftMemberVarDecl
+        self, node: c_ast.Enumerator, decl_name: str | None
     ) -> bool:
-        return self.should_gen_enum_member(node, decl)
+        return self.should_gen_enum_member(node, decl_name)
 
     def should_gen_struct_extension(
-        self, node: c_ast.Struct, decl: SwiftExtensionDecl
+        self, node: c_ast.Struct, decl_name: str | None
     ) -> bool:
-        if decl.is_empty():
-            return False
+        return self.apply_filters(self.struct_filters, node, decl_name)
 
-        return self.apply_filters(self.struct_filters, node, decl)
-
-    def should_gen_func_decl(self, node: c_ast.FuncDecl, decl: SwiftDecl) -> bool:
-        # An extension method generation?
-        if isinstance(decl, SwiftExtensionDecl) and len(decl.members) > 0:
-            return self.apply_filters(self.method_filters, node, decl.members[0])
-
-        return self.apply_filters(self.method_filters, node, decl)
+    def should_gen_func_decl(self, node: c_ast.FuncDecl, decl_name: str | None) -> bool:
+        return self.apply_filters(self.method_filters, node, decl_name)
 
     def apply_filters(
-        self, filters: Iterable["DeclarationFilter"], node: c_ast.Node, decl: SwiftDecl
+        self,
+        filters: Iterable["DeclarationFilter"],
+        node: c_ast.Node,
+        decl_name: str | None,
     ):
         result = SymbolGeneratorFilter.DeclarationFilterResult.NEITHER
 
         # Verify implicit filters
-        if decl.original_name is not None:
-            original_name = decl.original_name
+        if decl_name is not None:
+            original_name = decl_name
             if original_name in self.implicit:
                 result = SymbolGeneratorFilter.DeclarationFilterResult.ACCEPT
 
         for filter in filters:
-            result = result.combine(filter.filter_decl(node, decl))
+            result = result.combine(filter.filter_decl(node, decl_name))
 
         return result == SymbolGeneratorFilter.DeclarationFilterResult.ACCEPT
 
@@ -154,7 +141,7 @@ class SymbolGeneratorFilter:
             self.positive_result = SymbolGeneratorFilter.DeclarationFilterResult.ACCEPT
 
         def filter_decl(
-            self, node: c_ast.Node, decl: SwiftDecl
+            self, node: c_ast.Node, decl_name: str | None
         ) -> "SymbolGeneratorFilter.DeclarationFilterResult":
             return SymbolGeneratorFilter.DeclarationFilterResult.NEITHER
 
@@ -180,11 +167,11 @@ class SymbolGeneratorFilter:
             filter.positive_result = positive_result
             return filter
 
-        def filter_decl(self, node: c_ast.Node, decl: SwiftDecl):
-            if decl.original_name is None:
+        def filter_decl(self, node: c_ast.Node, decl_name: str | None):
+            if decl_name is None:
                 return self.neutral_result
 
-            if self.pattern.match(decl.original_name) is not None:
+            if self.pattern.match(decl_name) is not None:
                 return self.positive_result
 
             return self.neutral_result
