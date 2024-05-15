@@ -46,7 +46,7 @@ class SymbolNameFormatter:
     def __init__(
         self,
         symbol_case_settings: GeneratorConfig.Declarations.SymbolCasingSettings,
-        capitalizers: Iterable[BaseWordCapitalizer] = None,
+        capitalizers: Iterable[BaseWordCapitalizer] | None = None,
         words_to_split: Iterable[re.Pattern] | None = None,
         terms_to_snake_case_after: Iterable[str] | None = None,
     ):
