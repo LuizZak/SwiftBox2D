@@ -12,41 +12,48 @@ class SymbolGeneratorFilter:
     declarations.
     """
 
-    enum_filters: list["DeclarationFilter"] = []
-    enum_member_filters: list["DeclarationFilter"] = []
-    struct_filters: list["DeclarationFilter"] = []
-    method_filters: list["DeclarationFilter"] = []
-    implicit: list[str] = []
+    enum_filters: list["DeclarationFilter"]
+    enum_member_filters: list["DeclarationFilter"]
+    struct_filters: list["DeclarationFilter"]
+    method_filters: list["DeclarationFilter"]
+    implicit: list[str]
     "List of implicit typename filters that indicate a typename should be allowed, if no denying filters match the typename."
+
+    def __init__(
+        self,
+        enum_filters,
+        enum_member_filters,
+        struct_filters,
+        method_filters,
+        implicit,
+    ):
+        self.enum_filters = list(enum_filters)
+        self.enum_member_filters = list(enum_member_filters)
+        self.struct_filters = list(struct_filters)
+        self.method_filters = list(method_filters)
+        self.implicit = list(implicit)
 
     @classmethod
     def from_config(cls, config: GeneratorConfig.Declarations):
-        instance = cls()
-        instance.enum_filters.extend(
-            map(
-                SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
-                config.filters.enums,
-            )
+        instance = cls(
+            (
+                SymbolGeneratorFilter.RegexDeclarationFilter.from_string(s)
+                for s in config.filters.enums
+            ),
+            (
+                SymbolGeneratorFilter.RegexDeclarationFilter.from_string(s)
+                for s in config.filters.enum_members
+            ),
+            (
+                SymbolGeneratorFilter.RegexDeclarationFilter.from_string(s)
+                for s in config.filters.structs
+            ),
+            (
+                SymbolGeneratorFilter.RegexDeclarationFilter.from_string(s)
+                for s in config.filters.methods
+            ),
+            [c.c_name for c in config.conformances],
         )
-        instance.enum_member_filters.extend(
-            map(
-                SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
-                config.filters.enum_members,
-            )
-        )
-        instance.struct_filters.extend(
-            map(
-                SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
-                config.filters.structs,
-            )
-        )
-        instance.method_filters.extend(
-            map(
-                SymbolGeneratorFilter.RegexDeclarationFilter.from_string,
-                config.filters.methods,
-            )
-        )
-        instance.implicit.extend(c.c_name for c in config.conformances)
 
         return instance
 
