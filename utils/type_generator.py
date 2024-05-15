@@ -1,42 +1,41 @@
 # Utility to extract Swift-styled aliases of DirectX C types.
 
-import sys
 import os
-import subprocess
 import shutil
-from dataclasses import dataclass
+import subprocess
+import sys
 import time
-from typing import Generator
+from contextlib import contextmanager
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterable
 
 import pycparser
-
-from pathlib import Path
 from pycparser import c_ast
-from contextlib import contextmanager
+
 from utils.cli.cli_printing import print_stage_name
 from utils.cli.console_color import ConsoleColor
-
-from utils.text.syntax_stream import SyntaxStream
 from utils.data.generator_config import GeneratorConfig
 from utils.data.swift_decl_lookup import SwiftDeclLookup
 from utils.data.swift_decl_visitor import SwiftDeclVisitor
-from utils.doccomment.doccomment_formatter import DoccommentFormatter
-from utils.doccomment.doccomment_manager import DoccommentManager
-from utils.generators.swift_decl_merger import SwiftDeclMerger
-from utils.generators.swift_decl_generator import SwiftDeclGenerator
-from utils.generators.symbol_generator_filter import SymbolGeneratorFilter
-from utils.generators.symbol_name_generator import SymbolNameGenerator
 from utils.data.swift_decls import (
     SwiftDecl,
     SwiftDeclVisitResult,
 )
+from utils.data.swift_file import SwiftFile
 from utils.directory_structure.directory_structure_manager import (
     DirectoryStructureManager,
 )
-from utils.data.swift_file import SwiftFile
+from utils.doccomment.doccomment_formatter import DoccommentFormatter
+from utils.doccomment.doccomment_manager import DoccommentManager
+from utils.generators.swift_decl_generator import SwiftDeclGenerator
+from utils.generators.swift_decl_merger import SwiftDeclMerger
+from utils.generators.symbol_generator_filter import SymbolGeneratorFilter
+from utils.generators.symbol_name_generator import SymbolNameGenerator
 
 # Utils
 from utils.paths import paths
+from utils.text.syntax_stream import SyntaxStream
 
 
 def run_cl(input_path: Path) -> bytes:
@@ -75,8 +74,12 @@ class DeclGeneratorTarget:
     def prepare(self):
         pass
 
+    def write_file(self, file: SwiftFile):
+        with self.create_stream(file.path) as stream:
+            file.write(stream)
+
     @contextmanager
-    def create_stream(self, _: Path) -> Generator:
+    def create_stream(self, _: Path):
         raise NotImplementedError("Must be overridden by subclasses.")
 
 
@@ -100,7 +103,7 @@ class DeclFileGeneratorDiskTarget(DeclGeneratorTarget):
             os.mkdir(self.destination_folder)
 
     @contextmanager
-    def create_stream(self, path: Path) -> Generator:
+    def create_stream(self, path: Path):
         path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(path, "w", buffering=1, newline="\n") as file:
@@ -110,13 +113,15 @@ class DeclFileGeneratorDiskTarget(DeclGeneratorTarget):
 
 class DeclFileGeneratorStdoutTarget(DeclGeneratorTarget):
     @contextmanager
-    def create_stream(self, path: Path) -> Generator:
+    def create_stream(self, path: Path):
         stream = SyntaxStream(sys.stdout)
         stream.write_then_line(f"[Create file at: {ConsoleColor.CYAN(path.resolve())}]")
         yield stream
 
 
 class DeclFileGenerator:
+    "Class used to write `SwiftDecl` declarations into files."
+
     def __init__(
         self,
         destination_folder: Path,
@@ -133,10 +138,6 @@ class DeclFileGenerator:
         self.includes = includes
         self.verbose = verbose
 
-    def generate_file(self, file: SwiftFile):
-        with self.target.create_stream(file.path) as stream:
-            file.write(stream)
-
     def generate(self):
         self.target.prepare()
 
@@ -144,7 +145,7 @@ class DeclFileGenerator:
 
         for file in files:
             file.includes = self.includes
-            self.generate_file(file)
+            self.target.write_file(file)
 
             if self.verbose:
                 rel_path = file.path.relative_to(self.destination_folder)
@@ -248,6 +249,50 @@ class TypeGeneratorRequest:
         )
 
 
+class _SwiftDeclCounterVisitor(SwiftDeclVisitor):
+    num_extensions = 0
+    num_properties = 0
+    num_methods = 0
+
+    @property
+    def num_total(self):
+        return self.num_extensions + self.num_properties + self.num_methods
+
+    def reset(self):
+        self.num_extensions = 0
+        self.num_properties = 0
+        self.num_methods = 0
+
+    def show_results(self):
+        def cond_print(value: int, name_singular: str, name_plural: str):
+            if value == 0:
+                return
+
+            print(
+                f"  > {ConsoleColor.CYAN(value)} {name_singular if value == 0 else name_plural}"
+            )
+
+        cond_print(self.num_extensions, "extension", "extensions")
+        cond_print(self.num_methods, "method", "methods")
+        cond_print(self.num_properties, "property", "properties")
+
+    def walk_all(self, decls: Iterable[SwiftDecl]):
+        for decl in decls:
+            decl.walk(self)
+
+    def visit_SwiftExtensionDecl(self, _):  # noqa: N802
+        self.num_extensions += 1
+        return SwiftDeclVisitResult.VISIT_CHILDREN
+
+    def visit_SwiftMemberVarDecl(self, _):  # noqa: N802
+        self.num_properties += 1
+        return SwiftDeclVisitResult.VISIT_CHILDREN
+
+    def visit_SwiftMemberFunctionDecl(self, _):  # noqa: N802
+        self.num_methods += 1
+        return SwiftDeclVisitResult.VISIT_CHILDREN
+
+
 def _label_time_ns(ns):
     def format(value, suffix):
         return f"{value:0.3f}{suffix}"
@@ -305,6 +350,8 @@ def _generate_types(request: TypeGeneratorRequest) -> int:
 
     ast = pycparser.parse_file(output_path, use_cpp=False)
 
+    # Collect symbols
+
     print_stage_name("Collecting Swift symbol candidates...")
 
     visitor = DeclCollectorVisitor(prefixes=request.prefixes)
@@ -313,25 +360,55 @@ def _generate_types(request: TypeGeneratorRequest) -> int:
     decl_generator = request.swift_decl_generator
     swift_decls = decl_generator.generate_from_list(visitor.decls, ast)
 
-    print(f"Found {ConsoleColor.CYAN(len(swift_decls))} potential declarations")
+    # Report number of symbols found
+
+    count_visitor = _SwiftDeclCounterVisitor()
+    count_visitor.reset()
+    count_visitor.walk_all(swift_decls)
+
+    print(f"Found {ConsoleColor.CYAN(count_visitor.num_total)} potential declarations")
+
+    count_visitor.show_results()
+
+    if count_visitor.num_total == 0:
+        # No symbols to synthesize?
+        print(
+            f"{ConsoleColor.YELLOW('NOTE')}: Found no declarations to synthesize? This may be a mistake - check your configuration files."
+        )
+        print(ConsoleColor.GREEN("Success!"))
+        return 0
+
+    # Optional doc comment fetching
 
     if request.doccomment_manager.should_collect:
         print_stage_name("Generating doc comments...")
         request.doccomment_manager.populate(swift_decls)
 
-    print_stage_name("Merging generated Swift type declarations...")
+    # Merge symbols
+
+    print_stage_name("Merging/synthesizing on generated Swift type declarations...")
 
     merger = SwiftDeclMerger()
     swift_decls = merger.merge(swift_decls)
-
-    print(f"Merged down to {ConsoleColor.CYAN(len(swift_decls))} declarations")
-
     swift_decls = decl_generator.post_merge(swift_decls)
+
+    count_visitor.reset()
+    count_visitor.walk_all(swift_decls)
+
+    print(
+        f"Merged/synthesized into {ConsoleColor.CYAN(count_visitor.num_total)} declarations"
+    )
+
+    count_visitor.show_results()
+
+    # Optional doc comment formatting
 
     if request.doccomment_manager.should_format:
         print_stage_name("Formatting doc comments...")
 
         request.doccomment_manager.format(swift_decls)
+
+    # Save declaration to files
 
     print_stage_name("Generating files...")
 

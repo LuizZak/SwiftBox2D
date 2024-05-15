@@ -147,23 +147,15 @@ class SymbolNameFormatter:
 
         # Capitalize
         split_components_str = flatten(
-            map(
-                lambda p: self.capitalize_component_string(p[1], has_prev=p[0] > 0),
-                enumerate(split_string),
-            )
+            self.capitalize_component_string(p[1], has_prev=p[0] > 0)
+            for p in enumerate(split_string)
         )
 
-        # Rejoin
-        split_components = list(
-            map(
-                lambda t: component.with_string(t[0]).with_string_case(
-                    component.string_case | t[1]
-                ),
-                split_components_str,
-            )
+        # Rejoin and end
+        return list(
+            component.with_string(t[0]).with_string_case(component.string_case | t[1])
+            for t in split_components_str
         )
-
-        return split_components
 
     def split_component_inplace(self, string: str, output: list[str]):
         "Performs recursive in-place splitting of `string` along `self.words_to_split` boundaries into `output`."

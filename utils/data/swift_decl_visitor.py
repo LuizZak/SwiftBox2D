@@ -16,6 +16,7 @@ class SwiftDeclVisitor(object):
 
         def visit_SwiftExtensionDecl(self, node):
             self.exts.append(node.value)
+            return SwiftDeclVisitResult.SKIP_CHILDREN
 
     Creates a list of all the extension nodes encountered below the given
     node. To use it:

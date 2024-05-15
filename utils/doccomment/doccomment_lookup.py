@@ -1,39 +1,42 @@
+import io
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
-from utils.data.swift_decl_visitor import SwiftDeclCallableVisitor
-import io
 
+from utils.data.swift_decl_visitor import SwiftDeclCallableVisitor
 from utils.data.swift_decls import SwiftDecl, SwiftDeclWalker
 from utils.doccomment.doccomment_block import DoccommentBlock
+
+
+@dataclass(init=False)
+class _CachedFile:
+    "A cached entry in `DoccommentLookup`."
+
+    path: Path
+    doccomments: list[DoccommentBlock]
+    doccomment_line_map: dict[int, DoccommentBlock]
+
+    def __init__(self, path, doccomments: Sequence[DoccommentBlock]):
+        self.path = path
+        self.doccomments = list(doccomments)
+
+        # Populate line cache
+        self.doccomment_line_map = dict()
+        for comment in self.doccomments:
+            for line in range(comment.line, comment.end_line()):
+                self.doccomment_line_map[line] = comment
+
+    def has_comment_on_line(self, line: int):
+        return line in self.doccomment_line_map
+
+    def comment_on_line(self, line: int):
+        return self.doccomment_line_map.get(line)
 
 
 class DoccommentLookup:
     """
     Performs parsing and lookup of doc comments using `SwiftDecl.origin.path`.
     """
-
-    @dataclass(init=False)
-    class _CachedFile:
-        path: Path
-        doccomments: list[DoccommentBlock]
-        doccomment_line_map: dict[int, DoccommentBlock]
-
-        def __init__(self, path, doccomments):
-            self.path = path
-            self.doccomments = doccomments
-
-            # Populate line cache
-            self.doccomment_line_map = dict()
-            for comment in self.doccomments:
-                for line in range(comment.line, comment.end_line()):
-                    self.doccomment_line_map[line] = comment
-
-        def has_comment_on_line(self, line: int):
-            return line in self.doccomment_line_map
-
-        def comment_on_line(self, line: int):
-            return self.doccomment_line_map.get(line)
 
     _cached_files: dict[Path, _CachedFile]
 
@@ -53,8 +56,9 @@ class DoccommentLookup:
 
     def populate_doc_comments_inplace(self, decls: Sequence[SwiftDecl]):
         "Populates doc comments for a provided sequence of Swift declarations, modifying each declaration in-place."
-        visitor = SwiftDeclCallableVisitor(self._populate)
+        self._pre_fetch_files(decls)
 
+        visitor = SwiftDeclCallableVisitor(self._populate)
         walker = SwiftDeclWalker(visitor)
 
         for decl in decls:
@@ -63,22 +67,22 @@ class DoccommentLookup:
     def _populate(self, decl: SwiftDecl):
         decl.doccomment = self._find_doccomment(decl)
 
-    def _fetch_file(self, file_path: Path) -> _CachedFile | None:
-        if cached_file := self._cached_files.get(file_path):
-            return cached_file
+    def _pre_fetch_files(self, decls: Sequence[SwiftDecl]):
+        """
+        Pre-populates the doc comments cache based on the paths referenced by each
+        declaration in `decls`.
+        """
+        paths: set[Path] = set()
+        for decl in decls:
+            if origin := decl.origin:
+                paths.add(origin.file)
 
-        if not (file_path.exists() and file_path.is_file()):
-            return None
+        for path in paths:
+            result = _fetch_as_cached_file(path, self.doccomment_patterns)
+            if result is None:
+                continue
 
-        with open(file_path) as file:
-            comments = _split_doccomment_lines(
-                file_path, file, self.doccomment_patterns
-            )
-            cache_file = self._CachedFile(file_path, comments)
-
-            self._cached_files[file_path] = cache_file
-
-            return cache_file
+            self._cached_files[result.path] = result
 
     def _find_doccomment(self, decl: SwiftDecl) -> DoccommentBlock | None:
         # The original node is required for this lookup.
@@ -88,7 +92,7 @@ class DoccommentLookup:
         decl_file_path = decl.origin.file
         decl_line_num = decl.origin.line
 
-        if (cached_file := self._fetch_file(decl_file_path)) is None:
+        if (cached_file := self._fetch_file_cached(decl_file_path)) is None:
             return None
 
         # Attempt to intercept comments that are inline with the declaration
@@ -122,6 +126,38 @@ class DoccommentLookup:
         self, cached_file: _CachedFile, line: int
     ) -> DoccommentBlock | None:
         return cached_file.comment_on_line(line)
+
+    def _fetch_file_cached(self, file_path: Path) -> _CachedFile | None:
+        if cached_file := self._cached_files.get(file_path):
+            return cached_file
+
+        if (
+            cache_file := _fetch_as_cached_file(file_path, self.doccomment_patterns)
+        ) is None:
+            return None
+
+        self._cached_files[file_path] = cache_file
+
+        return cache_file
+
+
+def _fetch_as_cached_file(
+    file_path: Path, doccomment_patterns: list[str]
+) -> _CachedFile | None:
+    if (comments := _fetch_file(file_path, doccomment_patterns)) is None:
+        return None
+
+    return _CachedFile(file_path, comments)
+
+
+def _fetch_file(
+    file_path: Path, doccomment_patterns: list[str]
+) -> list[DoccommentBlock] | None:
+    if not (file_path.exists() and file_path.is_file()):
+        return None
+
+    with open(file_path) as file:
+        return _split_doccomment_lines(file_path, file, doccomment_patterns)
 
 
 def _split_doccomment_lines(

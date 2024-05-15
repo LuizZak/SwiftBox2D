@@ -151,6 +151,14 @@ class SwiftDecl(object):
     def copy(self):
         raise NotImplementedError("Must be implemented by subclasses.")
 
+    def walk(self, visitor: SwiftDeclVisitor):
+        """
+        Starts walking with a generic declaration walker within this declaration
+        with a given visitor.
+        """
+        walker = SwiftDeclWalker(visitor)
+        walker.walk_decl(self)
+
     def accept(self, visitor: SwiftDeclVisitor) -> SwiftDeclVisitResult:
         raise NotImplementedError("Must be implemented by subclasses.")
 

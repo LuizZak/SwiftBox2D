@@ -51,11 +51,10 @@ class DirectoryStructureManager:
                 return value
 
             split_path = Path(config.path).parts
-            patterns = map(parse_pattern, config.patterns)
 
             return cls(
-                path_components=list(map(escape_path_component, split_path)),
-                patterns=list(patterns),
+                path_components=[escape_path_component(c) for c in split_path],
+                patterns=[parse_pattern(p) for p in config.patterns],
             )
 
     base_path: Path
@@ -95,6 +94,8 @@ class DirectoryStructureManager:
         )
 
     def make_declaration_files(self, decls: Iterable[SwiftDecl]) -> list[SwiftFile]:
+        "Merges a given list of declarations into Swift files."
+
         result: dict[Path, SwiftFile] = dict()
 
         for decl in decls:
@@ -152,7 +153,7 @@ class DirectoryStructureManager:
                     f"Expected suggested paths to contain only alphanumeric values for file {file_name}, found {component} (full: {longest_path})"
                 )
 
-        return dir_path.joinpath(*map(escape_path_component, longest_path))
+        return dir_path.joinpath(*(escape_path_component(c) for c in longest_path))
 
     def file_for_decl(self, decl: SwiftDecl) -> Path:
         file_name = self.file_name_for_decl(decl)
