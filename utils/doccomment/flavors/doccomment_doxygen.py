@@ -136,7 +136,7 @@ if __name__ == "__main__":
         c_kind=CDeclKind.STRUCT,
         doccomment=None,
     )
-    lookup = SwiftDeclLookup([dummy_decl])
+    lookup = SwiftDeclLookup.from_decls([dummy_decl])
 
     test_comment = DoccommentBlock(
         Path("dummy"),

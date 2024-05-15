@@ -55,7 +55,7 @@ class DoccommentManager:
         if not self.should_format:
             return
 
-        swift_lookup = SwiftDeclLookup(decls)
+        swift_lookup = SwiftDeclLookup.from_decls(decls)
         visitor = SwiftDeclCallableVisitor(
             lambda decl: self.__format(decl, swift_lookup)
         )

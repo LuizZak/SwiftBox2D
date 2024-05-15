@@ -37,16 +37,18 @@ class SwiftDeclLookup:
 
     _cached_results: dict[str, tuple[str, SwiftDecl]]
 
-    def __init__(self, decls: Iterable[SwiftDecl]):
-        self._cached_results = dict()
+    def __init__(self, cache: dict[str, tuple[str, SwiftDecl]]):
+        self._cached_results = cache
 
+    @classmethod
+    def from_decls(cls, decls: Iterable[SwiftDecl]):
         visitor = _PreCachingVisitor()
         walker = SwiftDeclWalker(visitor)
 
         for decl in decls:
             walker.walk_decl(decl)
 
-        self._cached_results = visitor._cached_results
+        return cls(visitor._cached_results)
 
     def lookup_c_symbol(self, c_symbol: str) -> str | None:
         """
@@ -67,7 +69,7 @@ class SwiftDeclLookup:
 
         return None
 
-    def lookup_c_symbol_decl(self, c_symbol: str) -> tuple[str, SwiftDecl] | None:
+    def _lookup_c_symbol_decl(self, c_symbol: str) -> tuple[str, SwiftDecl] | None:
         """
         Looks up C symbol names, returning the partially-qualified Swift declaration
         name and the `SwiftDecl` that corresponds to the symbol.

@@ -415,7 +415,7 @@ class SwiftDeclGenerator:
 
         # Convert types in method/properties signatures to Swift aliased types,
         # if possible
-        lookup = SwiftDeclLookup(decls)
+        lookup = SwiftDeclLookup.from_decls(decls)
         for decl in decls:
             if not isinstance(decl, SwiftExtensionDecl):
                 continue
@@ -424,21 +424,17 @@ class SwiftDeclGenerator:
                 if isinstance(member, SwiftMemberFunctionDecl):
                     if ret_type := member.return_type:
                         if ret_type_name := ret_type.as_typename_type():
-                            if resolved := lookup.lookup_c_symbol_decl(
-                                ret_type_name.name
-                            ):
-                                member.return_type = SwiftType.type_name(resolved[0])
+                            if resolved := lookup.lookup_c_symbol(ret_type_name.name):
+                                member.return_type = SwiftType.type_name(resolved)
 
                     for i in range(len(member.parameters)):
                         arg = member.parameters[i]
                         if (type_name := arg.type.as_typename_type()) is None:
                             continue
 
-                        if (
-                            resolved := lookup.lookup_c_symbol_decl(type_name.name)
-                        ) is None:
+                        if (resolved := lookup.lookup_c_symbol(type_name.name)) is None:
                             continue
 
-                        member.parameters[i].type = SwiftType.type_name(resolved[0])
+                        member.parameters[i].type = SwiftType.type_name(resolved)
 
         return decls

@@ -16,5 +16,10 @@ class DoccommentFlavor:
     def transform_doccomment(
         self, comment: DoccommentBlock | None, decl: SwiftDecl, lookup: SwiftDeclLookup
     ) -> DoccommentBlock | None:
-        "Transforms doc comments using this flavor's specification. Must be overridden by subclasses."
+        """
+        Transforms doc comments using this flavor's specification.
+        Must be overridden by subclasses.
+        A callee expects that no mutation occur in `decl` or `comment` during this
+        method.
+        """
         raise NotImplementedError()
