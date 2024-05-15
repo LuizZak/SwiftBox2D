@@ -103,7 +103,7 @@ class DeclFileGeneratorDiskTarget(DeclGeneratorTarget):
     def create_stream(self, path: Path) -> Generator:
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, "w", newline="\n") as file:
+        with open(path, "w", buffering=1, newline="\n") as file:
             stream = SyntaxStream(file)
             yield stream
 
