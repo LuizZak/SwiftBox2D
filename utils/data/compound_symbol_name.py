@@ -151,9 +151,9 @@ class CompoundSymbolName(Sequence["CompoundSymbolName.Component"], Hashable):
             self, string_case: ComponentCase | None = None
         ) -> "CompoundSymbolName.Component":
             """
-            Returns a copy of this component with the same self.string, but nil prefix, suffix, and joint_to_prev.
+            Returns a copy of this component with the same `self.string`, but no `prefix`, `suffix`, and `joint_to_prev`.
 
-            If string_case is specified, string_case of the return is assigned that value, otherwise keeps the case
+            If `string_case` is specified, string_case of the return is assigned that value, otherwise keeps the case
             of the current instance.
             """
             if string_case is None:

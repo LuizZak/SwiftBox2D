@@ -1,7 +1,6 @@
 import re
 from typing import Iterable, Tuple
 
-from utils.collection.collection_utils import flatten
 from utils.converters.base_word_capitalizer import BaseWordCapitalizer
 from utils.data.c_decl_kind import CDeclKind
 from utils.data.compound_symbol_name import ComponentCase, CompoundSymbolName
@@ -90,7 +89,9 @@ class SymbolNameFormatter:
         name = self.pre_capitalization(name, decl)
 
         # Split/capitalize
-        components = flatten(self.split_and_capitalize(c) for c in name.components)
+        components: list[CompoundSymbolName.Component] = []
+        for split in (self.split_and_capitalize(c) for c in name.components):
+            components.extend(split)
 
         if len(name.components) > 0:
             is_camel_case = name.components[0].to_string(False)[0].islower()
@@ -146,10 +147,12 @@ class SymbolNameFormatter:
         self.split_component_inplace(component.string, split_string)
 
         # Capitalize
-        split_components_str = flatten(
+        split_components_str: list[Tuple[str, ComponentCase]] = []
+        for c in (
             self.capitalize_component_string(p[1], has_prev=p[0] > 0)
             for p in enumerate(split_string)
-        )
+        ):
+            split_components_str.extend(c)
 
         # Rejoin and end
         return list(
