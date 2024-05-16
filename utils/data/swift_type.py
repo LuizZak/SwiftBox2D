@@ -7,75 +7,75 @@ from utils.text.syntax_stream import SyntaxStream
 
 @dataclass(slots=True)
 class SwiftType:
-    "Base class for Swift types."
+    """Base class for Swift types."""
 
     # Type factories
 
     @classmethod
     def bool_type(cls) -> "NominalSwiftType":
-        "Returns the built-in Bool Swift type."
+        """Returns the built-in Bool Swift type."""
         return cls.type_name("Bool")
 
     @classmethod
     def void_type(cls) -> "TupleSwiftType":
-        "Returns the built-in Void Swift type, i.e. `()`."
+        """Returns the built-in Void Swift type, i.e. `()`."""
         return TupleSwiftType([])
 
     @classmethod
     def type_name(cls, name: str) -> "NominalSwiftType":
-        "Creates a nominal Swift type, e.g. `Int`."
+        """Creates a nominal Swift type, e.g. `Int`."""
         return NominalSwiftType(name)
 
     @classmethod
     def generic(
         cls, name: str, params: Iterable["SwiftType | str"]
     ) -> "NominalSwiftType":
-        "Creates a generic Swift type, e.g. `MyType<Int>`."
+        """Creates a generic Swift type, e.g. `MyType<Int>`."""
         return NominalSwiftType(name, cls._process_types(params))
 
     @classmethod
     def optional(cls, type: "SwiftType | str") -> "OptionalSwiftType":
-        "Creates an Optional sugar Swift type, e.g. `Int?`"
+        """Creates an Optional sugar Swift type, e.g. `Int?`"""
         return OptionalSwiftType(cls._process_type(type))
 
     @classmethod
     def implicitly_unwrapped_optional(
         cls, type: "SwiftType | str"
     ) -> "ImplicitlyUnwrappedOptionalSwiftType":
-        "Creates an implicitly-unwrapped Optional sugar Swift type, e.g. `Int!`"
+        """Creates an implicitly-unwrapped Optional sugar Swift type, e.g. `Int!`"""
         return ImplicitlyUnwrappedOptionalSwiftType(cls._process_type(type))
 
     @classmethod
     def array(cls, type: "SwiftType | str") -> "ArraySwiftType":
-        "Creates an Array sugar Swift type, e.g. `[Int]`."
+        """Creates an Array sugar Swift type, e.g. `[Int]`."""
         return ArraySwiftType(cls._process_type(type))
 
     @classmethod
     def dictionary(
         cls, key: "SwiftType | str", value: "SwiftType | str"
     ) -> "DictionarySwiftType":
-        "Creates a Dictionary sugar Swift type, e.g. `[Int: String]`."
+        """Creates a Dictionary sugar Swift type, e.g. `[Int: String]`."""
         return DictionarySwiftType(cls._process_type(key), cls._process_type(value))
 
     @classmethod
     def function(
         cls, parameters: Iterable["SwiftType | str"], return_type: "SwiftType | str"
     ) -> "FunctionSwiftType":
-        "Creates a Function Swift type, e.g. `(Int) -> String`."
+        """Creates a Function Swift type, e.g. `(Int) -> String`."""
         return FunctionSwiftType(
             cls._process_types(parameters), cls._process_type(return_type)
         )
 
     @classmethod
     def tuple(cls, types: Iterable["SwiftType | str"]) -> "TupleSwiftType":
-        "Creates a tuple Swift type, e.g. `(Int, String)`."
+        """Creates a tuple Swift type, e.g. `(Int, String)`."""
         return TupleSwiftType(cls._process_types(types))
 
     @classmethod
     def protocol_composition(
         cls, components: Iterable["NominalSwiftType | NestedSwiftType"]
     ) -> "ProtocolCompositionSwiftType":
-        "Creates a protocol composition Swift type, e.g. `Protocol1 & Protocol2`."
+        """Creates a protocol composition Swift type, e.g. `Protocol1 & Protocol2`."""
         return ProtocolCompositionSwiftType(components)
 
     @classmethod
@@ -92,95 +92,95 @@ class SwiftType:
     # Methods
 
     def is_function_type(self):
-        "Returns `True` if `self` describes a Function type."
+        """Returns `True` if `self` describes a Function type."""
         return isinstance(self, FunctionSwiftType)
 
     def is_typename_type(self):
-        "Returns `True` if `self` describes a Nominal type."
+        """Returns `True` if `self` describes a Nominal type."""
         return isinstance(self, NominalSwiftType)
 
     def is_nested_type(self):
-        "Returns `True` if `self` describes a Nested Nominal type."
+        """Returns `True` if `self` describes a Nested Nominal type."""
         return isinstance(self, NestedSwiftType)
 
     def is_generic_type(self):
-        "Returns `True` if `self` describes a Nominal type with generic arguments."
+        """Returns `True` if `self` describes a Nominal type with generic arguments."""
         if isinstance(self, NominalSwiftType):
             return self.generic_parameters is not None
         return False
 
     def is_protocol_composition_type(self):
-        "Returns `True` if `self` describes a Protocol Composition type."
+        """Returns `True` if `self` describes a Protocol Composition type."""
         return isinstance(self, ProtocolCompositionSwiftType)
 
     def is_tuple_type(self):
-        "Returns `True` if `self` describes a Tuple type."
+        """Returns `True` if `self` describes a Tuple type."""
         return isinstance(self, TupleSwiftType)
 
     def is_optional_sugar_type(self):
-        "Returns `True` if `self` describes a sugared `Optional<T>` type (i.e. `T?`)."
+        """Returns `True` if `self` describes a sugared `Optional<T>` type (i.e. `T?`)."""
         return isinstance(self, OptionalSwiftType)
 
     def is_implicitly_unwrapped_optional_sugar_type(self):
-        "Returns `True` if `self` describes a sugared implicitly-unwrapped `Optional<T>` type (i.e. `T!`)."
+        """Returns `True` if `self` describes a sugared implicitly-unwrapped `Optional<T>` type (i.e. `T!`)."""
         return isinstance(self, ImplicitlyUnwrappedOptionalSwiftType)
 
     def is_array_sugar_type(self):
-        "Returns `True` if `self` describes a sugared `Array<T>` type (i.e. `[T]`)."
+        """Returns `True` if `self` describes a sugared `Array<T>` type (i.e. `[T]`)."""
         return isinstance(self, ArraySwiftType)
 
     def is_dictionary_sugar_type(self):
-        "Returns `True` if `self` describes a sugared `Dictionary<Key, Value>` type (i.e. `[Key: Value]`)."
+        """Returns `True` if `self` describes a sugared `Dictionary<Key, Value>` type (i.e. `[Key: Value]`)."""
         return isinstance(self, DictionarySwiftType)
 
     #
 
     def as_function_type(self):
-        "Returns type-cast `self` if `self` describes a Function type, otherwise returns `None`."
+        """Returns type-cast `self` if `self` describes a Function type, otherwise returns `None`."""
         return self if isinstance(self, FunctionSwiftType) else None
 
     def as_typename_type(self):
-        "Returns type-cast `self` if `self` describes a Nominal type, otherwise returns `None`."
+        """Returns type-cast `self` if `self` describes a Nominal type, otherwise returns `None`."""
         return self if isinstance(self, NominalSwiftType) else None
 
     def as_nested_type(self):
-        "Returns type-cast `self` if `self` describes a Nested Nominal type, otherwise returns `None`."
+        """Returns type-cast `self` if `self` describes a Nested Nominal type, otherwise returns `None`."""
         return self if isinstance(self, NestedSwiftType) else None
 
     def as_generic_type(self):
-        "Returns type-cast `self` and a list of generic arguments if `self` describes a Nominal type with generic arguments, otherwise returns `None`."
+        """Returns type-cast `self` and a list of generic arguments if `self` describes a Nominal type with generic arguments, otherwise returns `None`."""
         if isinstance(self, NominalSwiftType) and self.generic_parameters is not None:
-            return (self, self.generic_parameters)
+            return self, self.generic_parameters
         return None
 
     def as_protocol_composition_type(self):
-        "Returns type-cast `self` if `self` describes a Protocol Composition type, otherwise returns `None`."
+        """Returns type-cast `self` if `self` describes a Protocol Composition type, otherwise returns `None`."""
         return self if isinstance(self, ProtocolCompositionSwiftType) else None
 
     def as_tuple_type(self):
-        "Returns type-cast `self` if `self` describes a Tuple type, otherwise returns `None`."
+        """Returns type-cast `self` if `self` describes a Tuple type, otherwise returns `None`."""
         return self if isinstance(self, TupleSwiftType) else None
 
     def as_optional_sugar_type(self):
-        "Returns type-cast `self` if `self` describes a sugared `Optional<T>` type (i.e. `T?`), otherwise returns `None`."
+        """Returns type-cast `self` if `self` describes a sugared `Optional<T>` type (i.e. `T?`), otherwise returns `None`."""
         return self if isinstance(self, OptionalSwiftType) else None
 
     def as_implicitly_unwrapped_optional_sugar_type(self):
-        "Returns type-cast `self` if `self` describes a sugared implicitly-unwrapped `Optional<T>` type (i.e. `T!`), otherwise returns `None`."
+        """Returns type-cast `self` if `self` describes a sugared implicitly-unwrapped `Optional<T>` type (i.e. `T!`), otherwise returns `None`."""
         return self if isinstance(self, ImplicitlyUnwrappedOptionalSwiftType) else None
 
     def as_array_sugar_type(self):
-        "Returns type-cast `self` if `self` describes a sugared `Array<T>` type (i.e. `[T]`), otherwise returns `None`."
+        """Returns type-cast `self` if `self` describes a sugared `Array<T>` type (i.e. `[T]`), otherwise returns `None`."""
         return self if isinstance(self, ArraySwiftType) else None
 
     def as_dictionary_sugar_type(self):
-        "Returns type-cast `self` if `self` describes a sugared `Dictionary<Key, Value>` type (i.e. `[Key: Value]`), otherwise returns `None`."
+        """Returns type-cast `self` if `self` describes a sugared `Dictionary<Key, Value>` type (i.e. `[Key: Value]`), otherwise returns `None`."""
         return self if isinstance(self, DictionarySwiftType) else None
 
     #
 
     def wrap_optional(self):
-        "Wraps `self` into a sugared `T?` Swift type."
+        """Wraps `self` into a sugared `T?` Swift type."""
         return SwiftType.optional(self)
 
     #
@@ -193,7 +193,7 @@ class SwiftType:
         raise NotImplementedError()
 
     def to_string(self) -> str:
-        "Returns the string representation of this Swift type via `self.write(stream)`."
+        """Returns the string representation of this Swift type via `self.write(stream)`."""
         with io.StringIO() as buffer:
             stream = SyntaxStream(destination=buffer)
             self.write(stream)
@@ -221,7 +221,7 @@ class SwiftType:
         return self.desugared()._is_equivalent(other.desugared())
 
     def desugared(self) -> "SwiftType":
-        "Returns the desugared representation of this type, e.g. `[Int?]` -> `Array<Optional<Int>>`."
+        """Returns the desugared representation of this type, e.g. `[Int?]` -> `Array<Optional<Int>>`."""
         raise NotImplementedError("Must be overridden by subclasses.")
 
     def _is_equivalent(self, other: "SwiftType") -> bool:
@@ -230,7 +230,7 @@ class SwiftType:
 
 @dataclass(slots=True)
 class NominalSwiftType(SwiftType):
-    "A nominal Swift type, e.g. `Int` or `Array<Int>`."
+    """A nominal Swift type, e.g. `Int` or `Array<Int>`."""
 
     name: str
     generic_parameters: list[SwiftType] | None
@@ -260,11 +260,11 @@ class NominalSwiftType(SwiftType):
 
     def _is_equivalent(self, other: SwiftType) -> bool:
         if isinstance(other, NominalSwiftType):
-            return self.__is_equal(other)
+            return self._is_equal(other)
 
         return False
 
-    def __is_equal(self, other: "NominalSwiftType") -> bool:
+    def _is_equal(self, other: "NominalSwiftType") -> bool:
         if self.name != other.name:
             return False
 
@@ -284,7 +284,7 @@ class NominalSwiftType(SwiftType):
 
 @dataclass(slots=True)
 class NestedSwiftType(SwiftType):
-    "A nested Swift type, e.g. `Dictionary<String, Int>.Key`"
+    """A nested Swift type, e.g. `Dictionary<String, Int>.Key`"""
 
     types: list[NominalSwiftType]
 
@@ -318,7 +318,7 @@ class NestedSwiftType(SwiftType):
 
 @dataclass(slots=True)
 class ProtocolCompositionSwiftType(SwiftType):
-    "A protocol composition Swift type, e.g. `Protocol1 & Protocol2`."
+    """A protocol composition Swift type, e.g. `Protocol1 & Protocol2`."""
 
     components: list[NominalSwiftType | NestedSwiftType]
 
@@ -366,9 +366,9 @@ class TupleSwiftType(SwiftType):
         self.types = list(types)
 
     def write(self, stream: SyntaxStream):
-        stream.write("<")
+        stream.write("(")
         stream.with_separator(", ", self.types, lambda s, t: t.write(s))
-        stream.write(">")
+        stream.write(")")
 
     def desugared(self) -> "TupleSwiftType | NominalSwiftType":
         if len(self.types) == 0:
@@ -391,7 +391,7 @@ class TupleSwiftType(SwiftType):
 
 @dataclass(slots=True)
 class FunctionSwiftType(SwiftType):
-    "A type of a function, closure or method in Swift, e.g. `(Int, Bool) -> String`."
+    """A type of a function, closure or method in Swift, e.g. `(Int, Bool) -> String`."""
 
     parameters: list[SwiftType]
     return_type: SwiftType
