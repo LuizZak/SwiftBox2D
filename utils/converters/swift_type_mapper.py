@@ -110,7 +110,7 @@ class SwiftTypeMapper:
         self.__cached_typedef_resolves = dict()
 
     def disable_caching(self):
-        "Resets the cached typedef lookups back to default."
+        """Resets the cached typedef lookups back to default."""
         self.__cached_typedefs = None
         self.__cached_typedef_resolves = None
 
@@ -123,7 +123,7 @@ class SwiftTypeMapper:
         return None
 
     def unalias_type(self, type_name: str, context: c_ast.FileAST) -> SwiftType | None:
-        "Returns the fully resolved unaliased type of name `type_name`, if it is a typedef, returns `None` otherwise."
+        """Returns the fully resolved unaliased type of name `type_name`, if it is a typedef, returns `None` otherwise."""
         if expanded := self._expand_type_def(type_name, context):
             return expanded[0]
 
@@ -151,7 +151,7 @@ class SwiftTypeMapper:
     def _map(
         self, c_decl: c_ast.Node, context: c_ast.FileAST, flags=_Flags()
     ) -> _InternalTypeResult | None:
-        "Maps a C declaration node to an equivalent Swift type, un-aliasing any typedef along the way."
+        """Maps a C declaration node to an equivalent Swift type, un-aliasing any typedef along the way."""
 
         if isinstance(c_decl, c_ast.Decl):
             return self._map(c_decl.type, context, self._Flags.from_node(c_decl))
@@ -167,7 +167,7 @@ class SwiftTypeMapper:
             return self._map(c_decl.type, context)
         elif isinstance(c_decl, c_ast.Typedef):
             if type := self._map(c_decl.type, context):
-                return (type[0], SwiftType.type_name(c_decl.name))
+                return type[0], SwiftType.type_name(c_decl.name)
         elif isinstance(c_decl, c_ast.PtrDecl):
             inner = self._map(c_decl.type, context)
             if inner is None:
@@ -175,6 +175,21 @@ class SwiftTypeMapper:
             return self._make_pointer_type(inner[0], inner[1], flags)
         elif isinstance(c_decl, c_ast.IdentifierType):
             return self._map_compound_name(c_decl.names, context)
+        elif isinstance(c_decl, c_ast.ArrayDecl):
+            # Check if dimensions can be mapped to a constant number
+            if not isinstance(c_decl.dim, c_ast.Constant):
+                return None
+
+            if (dimension := int(c_decl.dim.value)) <= 0:
+                return None
+
+            if (base := self._map(c_decl.type, context, flags)) is None:
+                return None
+
+            return (
+                SwiftType.tuple([base[0]] * dimension),
+                SwiftType.tuple([base[1]] * dimension)
+            )
         elif isinstance(c_decl, c_ast.FuncDecl):
             ret_type = self._map_base(c_decl.type, context)
             if ret_type is None:
@@ -317,6 +332,8 @@ if __name__ == "__main__":
     const int *k;
     long unsigned int l;
     short signed int m;
+    int n[10];
+    long *p[5];
     """
 
     parser = pycparser.CParser()
