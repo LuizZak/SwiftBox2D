@@ -196,7 +196,7 @@ class SwiftMemberVarDecl(SwiftMemberDecl):
     A Swift variable member declaration.
     """
 
-    var_type: str | None = None
+    var_type: SwiftType | None = None
     initial_value: str | None = None
     accessor_block: list[str] | None = None
 
@@ -213,7 +213,7 @@ class SwiftMemberVarDecl(SwiftMemberDecl):
             stream.write(f"var {backticked_term(self.name.to_string())}")
 
         if self.var_type is not None:
-            stream.write(f": {self.var_type}")
+            stream.write(f": {self.var_type.to_string()}")
 
         if self.initial_value is not None:
             stream.write(f" = {self.initial_value}")

@@ -12,8 +12,6 @@
 #include "x86/avx2.h"
 #include "x86/fma.h"
 
-#include "box2d/color.h"
-
 // Soft contact constraints with sub-stepping support
 // http://mmacklin.com/smallsteps.pdf
 // https://box2d.org/files/ErinCatto_SoftConstraints_GDC2011.pdf
@@ -275,7 +273,7 @@ void b2SolveOverflowContacts(b2StepContext* context, bool useBias)
 			}
 			else if (useBias)
 			{
-				velocityBias = B2_MAX(softness.biasRate * s, -pushout);
+				velocityBias = b2MaxFloat(softness.biasRate * s, -pushout);
 				massScale = softness.massScale;
 				impulseScale = softness.impulseScale;
 			}
@@ -418,7 +416,7 @@ void b2ApplyOverflowRestitution(b2StepContext* context)
 
 				// clamp the accumulated impulse
 				// todo should this be stored?
-				float newImpulse = B2_MAX(cp->normalImpulse + impulse, 0.0f);
+				float newImpulse = b2MaxFloat(cp->normalImpulse + impulse, 0.0f);
 				impulse = newImpulse - cp->normalImpulse;
 				cp->normalImpulse = newImpulse;
 				cp->maxNormalImpulse = b2MaxFloat(cp->maxNormalImpulse, impulse);
@@ -576,7 +574,7 @@ static void b2ScatterBodies(b2BodyState* restrict states, int* restrict indices,
 	b2FloatW tt6 = simde_mm256_shuffle_ps(t5, t7, SIMDE_MM_SHUFFLE(1, 0, 1, 0));
 	b2FloatW tt7 = simde_mm256_shuffle_ps(t5, t7, SIMDE_MM_SHUFFLE(3, 2, 3, 2));
 
-	// I don't use any dummy body in the body array because this will lead to multi-threaded sharing and the
+	// I don't use any dummy body in the body array because this will lead to multithreaded sharing and the
 	// associated cache flushing.
 	if (indices[0] != B2_NULL_INDEX)
 		simde_mm256_store_ps((float*)(states + indices[0]), simde_mm256_permute2f128_ps(tt0, tt4, 0x20));

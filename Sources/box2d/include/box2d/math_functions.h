@@ -3,58 +3,112 @@
 
 #pragma once
 
-#include "api.h"
-#include "constants.h"
-#include "math_types.h"
+#include "base.h"
 
 #include <math.h>
 #include <stdbool.h>
 
-// todo these macros are not safe due to no sync point
+/**
+ * @defgroup math Math
+ * @brief Vector math types and functions
+ * @{
+ */
 
-/// Macro to get the maximum of two values
-#define B2_MAX(A, B) ((A) > (B) ? (A) : (B))
+/// https://en.wikipedia.org/wiki/Pi
+#define b2_pi 3.14159265359f
+
+/// 2D vector
+/// This can be used to represent a point or free vector
+typedef struct b2Vec2
+{
+	/// coordinates
+	float x, y;
+} b2Vec2;
+
+/// 2D rotation
+/// This is similar to using a complex number for rotation
+typedef struct b2Rot
+{
+	/// cosine and sine
+	float c, s;
+} b2Rot;
+
+/// A 2D rigid transform
+typedef struct b2Transform
+{
+	b2Vec2 p;
+	b2Rot q;
+} b2Transform;
+
+/// A 2-by-2 Matrix
+typedef struct b2Mat22
+{
+	/// columns
+	b2Vec2 cx, cy;
+} b2Mat22;
+
+/// Axis-aligned bounding box
+typedef struct b2AABB
+{
+	b2Vec2 lowerBound;
+	b2Vec2 upperBound;
+} b2AABB;
+
+/**@}*/
+
+/**
+ * @addtogroup math
+ * @{
+ */
 
 static const b2Vec2 b2Vec2_zero = {0.0f, 0.0f};
 static const b2Rot b2Rot_identity = {1.0f, 0.0f};
 static const b2Transform b2Transform_identity = {{0.0f, 0.0f}, {1.0f, 0.0f}};
 static const b2Mat22 b2Mat22_zero = {{0.0f, 0.0f}, {0.0f, 0.0f}};
 
+/// @return the minimum of two floats
 B2_INLINE float b2MinFloat(float a, float b)
 {
 	return a < b ? a : b;
 }
 
+/// @return the maximum of two floats
 B2_INLINE float b2MaxFloat(float a, float b)
 {
 	return a > b ? a : b;
 }
 
+/// @return the absolute value of a float
 B2_INLINE float b2AbsFloat(float a)
 {
 	return a < 0 ? -a : a;
 }
 
+/// @return a float clamped between a lower and upper bound
 B2_INLINE float b2ClampFloat(float a, float lower, float upper)
 {
 	return a < lower ? lower : (a > upper ? upper : a);
 }
 
+/// @return the minimum of two integers
 B2_INLINE int b2MinInt(int a, int b)
 {
 	return a < b ? a : b;
 }
 
+/// @return the maximum of two integers
 B2_INLINE int b2MaxInt(int a, int b)
 {
 	return a > b ? a : b;
 }
 
+/// @return the absolute value of an integer
 B2_INLINE int b2AbsInt(int a)
 {
 	return a < 0 ? -a : a;
 }
 
+/// @return an integer clamped between a lower and upper bound
 B2_INLINE int b2ClampInt(int a, int lower, int upper)
 {
 	return a < lower ? lower : (a > upper ? upper : a);
@@ -72,15 +126,13 @@ B2_INLINE float b2Cross(b2Vec2 a, b2Vec2 b)
 	return a.x * b.y - a.y * b.x;
 }
 
-/// Perform the cross product on a vector and a scalar. In 2D this produces
-/// a vector.
+/// Perform the cross product on a vector and a scalar. In 2D this produces a vector.
 B2_INLINE b2Vec2 b2CrossVS(b2Vec2 v, float s)
 {
 	return B2_LITERAL(b2Vec2){s * v.y, -s * v.x};
 }
 
-/// Perform the cross product on a scalar and a vector. In 2D this produces
-/// a vector.
+/// Perform the cross product on a scalar and a vector. In 2D this produces a vector.
 B2_INLINE b2Vec2 b2CrossSV(float s, b2Vec2 v)
 {
 	return B2_LITERAL(b2Vec2){-s * v.y, s * v.x};
@@ -174,7 +226,7 @@ B2_INLINE b2Vec2 b2Max(b2Vec2 a, b2Vec2 b)
 	return c;
 }
 
-/// Component-wise clamp vector so v into the range [a, b]
+/// Component-wise clamp vector v into the range [a, b]
 B2_INLINE b2Vec2 b2Clamp(b2Vec2 v, b2Vec2 a, b2Vec2 b)
 {
 	b2Vec2 c;
@@ -183,18 +235,19 @@ B2_INLINE b2Vec2 b2Clamp(b2Vec2 v, b2Vec2 a, b2Vec2 b)
 	return c;
 }
 
-/// Get the length of this vector (the norm).
+/// Get the length of this vector (the norm)
 B2_INLINE float b2Length(b2Vec2 v)
 {
 	return sqrtf(v.x * v.x + v.y * v.y);
 }
 
-/// Get the length squared of this vector.
+/// Get the length squared of this vector
 B2_INLINE float b2LengthSquared(b2Vec2 v)
 {
 	return v.x * v.x + v.y * v.y;
 }
 
+/// Get the distance between two points
 B2_INLINE float b2Distance(b2Vec2 a, b2Vec2 b)
 {
 	float dx = b.x - a.x;
@@ -263,8 +316,7 @@ B2_INLINE b2Rot b2IntegrateRotation(b2Rot q1, float deltaAngle)
 	return qn;
 }
 
-/// Compute the angular velocity necessary to rotate between two
-///	rotations over a give time
+/// Compute the angular velocity necessary to rotate between two rotations over a give time
 ///	@param q1 initial rotation
 ///	@param q2 final rotation
 ///	@param inv_h inverse time step
@@ -331,7 +383,7 @@ B2_INLINE b2Rot b2InvMulRot(b2Rot q, b2Rot r)
 	return qr;
 }
 
-// relative angle between b and a (rot_b * inv(rot_a))
+/// relative angle between b and a (rot_b * inv(rot_a))
 B2_INLINE float b2RelativeAngle(b2Rot b, b2Rot a)
 {
 	// sin(b - a) = bs * ac - bc * as
@@ -341,6 +393,7 @@ B2_INLINE float b2RelativeAngle(b2Rot b, b2Rot a)
 	return atan2f(s, c);
 }
 
+/// Convert an angle in the range [-2*pi, 2*pi] into the range [-pi, pi]
 B2_INLINE float b2UnwindAngle(float angle)
 {
 	if (angle < -b2_pi)
@@ -368,20 +421,20 @@ B2_INLINE b2Vec2 b2InvRotateVector(b2Rot q, b2Vec2 v)
 }
 
 /// Transform a point (e.g. local space to world space)
-B2_INLINE b2Vec2 b2TransformPoint(b2Transform xf, const b2Vec2 p)
+B2_INLINE b2Vec2 b2TransformPoint(b2Transform t, const b2Vec2 p)
 {
-	float x = (xf.q.c * p.x - xf.q.s * p.y) + xf.p.x;
-	float y = (xf.q.s * p.x + xf.q.c * p.y) + xf.p.y;
+	float x = (t.q.c * p.x - t.q.s * p.y) + t.p.x;
+	float y = (t.q.s * p.x + t.q.c * p.y) + t.p.y;
 
 	return B2_LITERAL(b2Vec2){x, y};
 }
 
 /// Inverse transform a point (e.g. world space to local space)
-B2_INLINE b2Vec2 b2InvTransformPoint(b2Transform xf, const b2Vec2 p)
+B2_INLINE b2Vec2 b2InvTransformPoint(b2Transform t, const b2Vec2 p)
 {
-	float vx = p.x - xf.p.x;
-	float vy = p.y - xf.p.y;
-	return B2_LITERAL(b2Vec2){xf.q.c * vx + xf.q.s * vy, -xf.q.s * vx + xf.q.c * vy};
+	float vx = p.x - t.p.x;
+	float vy = p.y - t.p.y;
+	return B2_LITERAL(b2Vec2){t.q.c * vx + t.q.s * vy, -t.q.s * vx + t.q.c * vy};
 }
 
 /// v2 = A.q.Rot(B.q.Rot(v1) + B.p) + A.p
@@ -481,15 +534,112 @@ B2_INLINE b2AABB b2AABB_Union(b2AABB a, b2AABB b)
 	return c;
 }
 
+/// Is this a valid number? Not NaN or infinity.
 B2_API bool b2IsValid(float a);
+
+/// Is this a valid vector? Not NaN or infinity.
 B2_API bool b2Vec2_IsValid(b2Vec2 v);
+
+/// Is this a valid rotation? Not NaN or infinity. Is normalized.
 B2_API bool b2Rot_IsValid(b2Rot q);
+
+/// Is this a valid bounding box? Not Nan or infinity. Upper bound greater than or equal to lower bound.
 B2_API bool b2AABB_IsValid(b2AABB aabb);
 
-/// Convert this vector into a unit vector
+/// Convert a vector into a unit vector if possible, otherwise returns the zero vector.
 B2_API b2Vec2 b2Normalize(b2Vec2 v);
 
-/// This asserts of the vector is too short
+/// Convert a vector into a unit vector if possible, otherwise asserts.
 B2_API b2Vec2 b2NormalizeChecked(b2Vec2 v);
 
+/// Convert a vector into a unit vector if possible, otherwise returns the zero vector. Also
+///	outputs the length.
 B2_API b2Vec2 b2GetLengthAndNormalize(float* length, b2Vec2 v);
+
+/// Box2D bases all length units on meters, but you may need different units for your game.
+/// You can set this value to use different units. This should be done at application startup
+///	and only modified once. Default value is 1.
+///	@warning This must be modified before any calls to Box2D
+B2_API void b2SetLengthUnitsPerMeter(float lengthUnits);
+
+/// Get the current length units per meter.
+B2_API float b2GetLengthUnitsPerMeter(void);
+
+/**@}*/
+
+/**
+ * @defgroup math_cpp C++ Math
+ * @brief Math operator overloads for C++
+ *
+ * See math_functions.h for details.
+ * @{
+ */
+
+#ifdef __cplusplus
+
+/// Unary add one vector to another
+inline void operator+=(b2Vec2& a, b2Vec2 b)
+{
+	a.x += b.x;
+	a.y += b.y;
+}
+
+/// Unary subtract one vector from another
+inline void operator-=(b2Vec2& a, b2Vec2 b)
+{
+	a.x -= b.x;
+	a.y -= b.y;
+}
+
+/// Unary multiply a vector by a scalar
+inline void operator*=(b2Vec2& a, float b)
+{
+	a.x *= b;
+	a.y *= b;
+}
+
+/// Unary negate a vector
+inline b2Vec2 operator-(b2Vec2 a)
+{
+	return {-a.x, -a.y};
+}
+
+/// Binary vector addition
+inline b2Vec2 operator+(b2Vec2 a, b2Vec2 b)
+{
+	return {a.x + b.x, a.y + b.y};
+}
+
+/// Binary vector subtraction
+inline b2Vec2 operator-(b2Vec2 a, b2Vec2 b)
+{
+	return {a.x - b.x, a.y - b.y};
+}
+
+/// Binary scalar and vector multiplication
+inline b2Vec2 operator*(float a, b2Vec2 b)
+{
+	return {a * b.x, a * b.y};
+}
+
+/// Binary scalar and vector multiplication
+inline b2Vec2 operator*(b2Vec2 a, float b)
+{
+	return {a.x * b, a.y * b};
+}
+
+/// Binary vector equality
+inline bool operator==(b2Vec2 a, b2Vec2 b)
+{
+	return a.x == b.x && a.y == b.y;
+}
+
+/// Binary vector inequality
+inline bool operator!=(b2Vec2 a, b2Vec2 b)
+{
+	return a.x != b.x || a.y != b.y;
+}
+
+#endif
+
+/**@}*/

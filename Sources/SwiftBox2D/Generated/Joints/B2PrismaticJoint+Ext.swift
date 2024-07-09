@@ -9,28 +9,9 @@ public extension B2PrismaticJoint {
         b2PrismaticJoint_EnableSpring(id, enableSpring)
     }
     
+    /// Is the prismatic joint spring enabled or not?
     func isSpringEnabled() -> Bool {
         b2PrismaticJoint_IsSpringEnabled(id)
-    }
-    
-    /// Set the joint stiffness in Hertz
-    func setSpringHertz(_ hertz: Float) {
-        b2PrismaticJoint_SetSpringHertz(id, hertz)
-    }
-    
-    /// - returns: the joint stiffness in Hertz
-    func getSpringHertz() -> Float {
-        b2PrismaticJoint_GetSpringHertz(id)
-    }
-    
-    /// Set the joint damping ratio (non-dimensional)
-    func setSpringDampingRatio(_ dampingRatio: Float) {
-        b2PrismaticJoint_SetSpringDampingRatio(id, dampingRatio)
-    }
-    
-    /// - returns: the joint damping ratio (non-dimensional)
-    func getSpringDampingRatio() -> Float {
-        b2PrismaticJoint_GetSpringDampingRatio(id)
     }
     
     /// Enable/disable a prismatic joint limit
@@ -38,22 +19,22 @@ public extension B2PrismaticJoint {
         b2PrismaticJoint_EnableLimit(id, enableLimit)
     }
     
-    /// - returns: is the prismatic joint limit enabled
+    /// Is the prismatic joint limit enabled?
     func isLimitEnabled() -> Bool {
         b2PrismaticJoint_IsLimitEnabled(id)
     }
     
-    /// Get the lower joint limit in length units (meters).
+    /// Get the prismatic joint lower limit
     func getLowerLimit() -> Float {
         b2PrismaticJoint_GetLowerLimit(id)
     }
     
-    /// Get the upper joint limit in length units (meters).
+    /// Get the prismatic joint upper limit
     func getUpperLimit() -> Float {
         b2PrismaticJoint_GetUpperLimit(id)
     }
     
-    /// Set the joint limits in length units (meters).
+    /// Set the prismatic joint limits
     func setLimits(_ lower: Float, _ upper: Float) {
         b2PrismaticJoint_SetLimits(id, lower, upper)
     }
@@ -63,43 +44,59 @@ public extension B2PrismaticJoint {
         b2PrismaticJoint_EnableMotor(id, enableMotor)
     }
     
-    /// - returns: is the prismatic joint motor enabled
+    /// Is the prismatic joint motor enabled?
     func isMotorEnabled() -> Bool {
         b2PrismaticJoint_IsMotorEnabled(id)
     }
     
-    /// Set the motor speed for a prismatic joint
-    func setMotorSpeed(_ motorSpeed: Float) {
-        b2PrismaticJoint_SetMotorSpeed(id, motorSpeed)
-    }
-    
-    /// - returns: the motor speed for a prismatic joint
-    func getMotorSpeed() -> Float {
-        b2PrismaticJoint_GetMotorSpeed(id)
-    }
-    
-    /// Get the current motor force for a prismatic joint
+    /// Get the prismatic joint current motor force, typically in newtons
     func getMotorForce() -> Float {
         b2PrismaticJoint_GetMotorForce(id)
     }
     
-    /// Set the maximum force for a prismatic joint motor
-    func setMaxMotorForce(_ force: Float) {
-        b2PrismaticJoint_SetMaxMotorForce(id, force)
+    ///  Get the prismatic joint stiffness in Hertz
+    /// Set the prismatic joint stiffness in Hertz.
+    /// This should usually be less than a quarter of the simulation rate. For example, if the simulation
+    /// runs at 60Hz then the joint stiffness should be 15Hz or less.
+    var springHertz: Float {
+        get {
+            b2PrismaticJoint_GetSpringHertz(id)
+        }
+        set(hertz) {
+            b2PrismaticJoint_SetSpringHertz(id, hertz)
+        }
     }
     
-    /// - returns: the maximum force for a prismatic joint motor
-    func getMaxMotorForce() -> Float {
-        b2PrismaticJoint_GetMaxMotorForce(id)
+    /// Get the prismatic spring damping ratio (non-dimensional)
+    /// Set the prismatic joint damping ratio (non-dimensional)
+    var springDampingRatio: Float {
+        get {
+            b2PrismaticJoint_GetSpringDampingRatio(id)
+        }
+        set(dampingRatio) {
+            b2PrismaticJoint_SetSpringDampingRatio(id, dampingRatio)
+        }
     }
     
-    /// Get the current constraint force for a prismatic joint
-    func getConstraintForce() -> B2Vec2 {
-        b2PrismaticJoint_GetConstraintForce(id)
+    /// Get the prismatic joint motor speed, typically in meters per second
+    /// Set the prismatic joint motor speed, typically in meters per second
+    var motorSpeed: Float {
+        get {
+            b2PrismaticJoint_GetMotorSpeed(id)
+        }
+        set(motorSpeed) {
+            b2PrismaticJoint_SetMotorSpeed(id, motorSpeed)
+        }
     }
     
-    /// Get the current constraint torque for a prismatic joint
-    func getConstraintTorque() -> Float {
-        b2PrismaticJoint_GetConstraintTorque(id)
+    /// Get the prismatic joint maximum motor force, typically in newtons
+    /// Set the prismatic joint maximum motor force, typically in newtons
+    var maxMotorForce: Float {
+        get {
+            b2PrismaticJoint_GetMaxMotorForce(id)
+        }
+        set(force) {
+            b2PrismaticJoint_SetMaxMotorForce(id, force)
+        }
     }
 }

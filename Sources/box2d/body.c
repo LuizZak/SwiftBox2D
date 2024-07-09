@@ -13,12 +13,10 @@
 #include "joint.h"
 #include "shape.h"
 #include "solver_set.h"
-#include "util.h"
 #include "world.h"
 
 // needed for dll export
 #include "box2d/box2d.h"
-#include "box2d/event_types.h"
 #include "box2d/id.h"
 
 #include <string.h>
@@ -179,6 +177,7 @@ static void b2DestroyBodyContacts(b2World* world, b2Body* body, bool wakeBodies)
 
 b2BodyId b2CreateBody(b2WorldId worldId, const b2BodyDef* def)
 {
+	b2CheckDef(def);
 	B2_ASSERT(b2Vec2_IsValid(def->position));
 	B2_ASSERT(b2IsValid(def->angle));
 	B2_ASSERT(b2Vec2_IsValid(def->linearVelocity));
@@ -234,7 +233,7 @@ b2BodyId b2CreateBody(b2WorldId worldId, const b2BodyDef* def)
 	int bodyId = b2AllocId(&world->bodyIdPool);
 
 	b2SolverSet* set = world->solverSetArray + setId;
-	b2BodySim* bodySim = b2AddBodySim(&world->blockAllocator, &set->sims);
+	b2BodySim* bodySim = b2AddBodySim(&set->sims);
 	*bodySim = (b2BodySim){0};
 	bodySim->transform.p = def->position;
 	bodySim->transform.q = b2MakeRot(def->angle);
@@ -261,7 +260,7 @@ b2BodyId b2CreateBody(b2WorldId worldId, const b2BodyDef* def)
 
 	if (setId == b2_awakeSet)
 	{
-		b2BodyState* bodyState = b2AddBodyState(&world->blockAllocator, &set->states);
+		b2BodyState* bodyState = b2AddBodyState(&set->states);
 		B2_ASSERT(((uintptr_t)bodyState & 0x1F) == 0);
 
 		*bodyState = (b2BodyState){0};
@@ -542,7 +541,7 @@ void b2UpdateBodyMassData(b2World* world, b2Body* body)
 
 				b2ShapeExtent extent = b2ComputeShapeExtent(s, b2Vec2_zero);
 				bodySim->minExtent = b2MinFloat(bodySim->minExtent, extent.minExtent);
-				bodySim->maxExtent = B2_MAX(bodySim->maxExtent, extent.maxExtent);
+				bodySim->maxExtent = b2MaxFloat(bodySim->maxExtent, extent.maxExtent);
 
 				shapeId = s->nextShapeId;
 			}
@@ -612,7 +611,7 @@ void b2UpdateBodyMassData(b2World* world, b2Body* body)
 
 		b2ShapeExtent extent = b2ComputeShapeExtent(s, localCenter);
 		bodySim->minExtent = b2MinFloat(bodySim->minExtent, extent.minExtent);
-		bodySim->maxExtent = B2_MAX(bodySim->maxExtent, extent.maxExtent);
+		bodySim->maxExtent = b2MaxFloat(bodySim->maxExtent, extent.maxExtent);
 
 		shapeId = s->nextShapeId;
 	}
@@ -700,17 +699,18 @@ void b2Body_SetTransform(b2BodyId bodyId, b2Vec2 position, float angle)
 	b2BroadPhase* broadPhase = &world->broadPhase;
 
 	b2Transform transform = bodySim->transform;
-	float margin = b2_aabbMargin;
+	const float margin = b2_aabbMargin;
+	const float speculativeDistance = b2_speculativeDistance;
 
 	int shapeId = body->headShapeId;
 	while (shapeId != B2_NULL_INDEX)
 	{
 		b2Shape* shape = world->shapeArray + shapeId;
 		b2AABB aabb = b2ComputeShapeAABB(shape, transform);
-		aabb.lowerBound.x -= b2_speculativeDistance;
-		aabb.lowerBound.y -= b2_speculativeDistance;
-		aabb.upperBound.x += b2_speculativeDistance;
-		aabb.upperBound.y += b2_speculativeDistance;
+		aabb.lowerBound.x -= speculativeDistance;
+		aabb.lowerBound.y -= speculativeDistance;
+		aabb.upperBound.x += speculativeDistance;
+		aabb.upperBound.y += speculativeDistance;
 		shape->aabb = aabb;
 
 		if (b2AABB_Contains(shape->fatAABB, aabb) == false)
@@ -1040,7 +1040,8 @@ void b2Body_SetType(b2BodyId bodyId, b2BodyType type)
 			shapeId = shape->nextShapeId;
 			b2DestroyShapeProxy(shape, &world->broadPhase);
 			bool forcePairCreation = true;
-			b2CreateShapeProxy(shape, &world->broadPhase, b2_movableProxy, transform, forcePairCreation);
+			b2BodyType proxyType = type;
+			b2CreateShapeProxy(shape, &world->broadPhase, proxyType, transform, forcePairCreation);
 		}
 	}
 	else if (type == b2_staticBody)
@@ -1114,7 +1115,7 @@ void b2Body_SetType(b2BodyId bodyId, b2BodyType type)
 			shapeId = shape->nextShapeId;
 			b2DestroyShapeProxy(shape, &world->broadPhase);
 			bool forcePairCreation = true;
-			b2CreateShapeProxy(shape, &world->broadPhase, b2_staticProxy, transform, forcePairCreation);
+			b2CreateShapeProxy(shape, &world->broadPhase, b2_staticBody, transform, forcePairCreation);
 		}
 	}
 	else
@@ -1122,15 +1123,17 @@ void b2Body_SetType(b2BodyId bodyId, b2BodyType type)
 		B2_ASSERT(originalType == b2_dynamicBody || originalType == b2_kinematicBody);
 		B2_ASSERT(type == b2_dynamicBody || type == b2_kinematicBody);
 
-		// Converting between kinematic and dynamic is much simpler
-
-		// Touch the broad-phase proxies to ensure the correct contacts get created
+		// Recreate shape proxies in static tree.
+		b2Transform transform = b2GetBodyTransformQuick(world, body);
 		int shapeId = body->headShapeId;
 		while (shapeId != B2_NULL_INDEX)
 		{
 			b2Shape* shape = world->shapeArray + shapeId;
-			b2BufferMove(&world->broadPhase, shape->proxyKey);
 			shapeId = shape->nextShapeId;
+			b2DestroyShapeProxy(shape, &world->broadPhase);
+			b2BodyType proxyType = type;
+			bool forcePairCreation = true;
+			b2CreateShapeProxy(shape, &world->broadPhase, proxyType, transform, forcePairCreation);
 		}
 	}
 
@@ -1513,7 +1516,7 @@ void b2Body_Enable(b2BodyId bodyId)
 	b2Transform transform = b2GetBodyTransformQuick(world, body);
 
 	// Add shapes to broad-phase
-	b2ProxyType proxyType = setId == b2_staticSet ? b2_staticProxy : b2_movableProxy;
+	b2BodyType proxyType = body->type;
 	bool forcePairCreation = true;
 	int shapeId = body->headShapeId;
 	while (shapeId != B2_NULL_INDEX)

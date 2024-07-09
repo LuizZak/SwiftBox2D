@@ -6,8 +6,6 @@
 #include "bitset.h"
 #include "block_array.h"
 
-#include "box2d/constants.h"
-
 typedef struct b2Body b2Body;
 typedef struct b2ContactSim b2ContactSim;
 typedef struct b2Contact b2Contact;
@@ -19,7 +17,7 @@ typedef struct b2StepContext b2StepContext;
 typedef struct b2World b2World;
 
 // This holds constraints that cannot fit the graph color limit. This happens when a single dynamic body
-// is touching many other sims.
+// is touching many other bodies.
 #define b2_overflowIndex b2_graphColorCount - 1
 
 typedef struct b2GraphColor
@@ -47,7 +45,7 @@ typedef struct b2ConstraintGraph
 } b2ConstraintGraph;
 
 void b2CreateGraph(b2ConstraintGraph* graph, int bodyCapacity);
-void b2DestroyGraph(b2ConstraintGraph* graph, b2BlockAllocator* allocator);
+void b2DestroyGraph(b2ConstraintGraph* graph);
 
 void b2AddContactToGraph(b2World* world, b2ContactSim* contactSim, b2Contact* contact);
 void b2RemoveContactFromGraph(b2World* world, int bodyIdA, int bodyIdB, int colorIndex, int localIndex);

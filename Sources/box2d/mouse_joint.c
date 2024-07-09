@@ -13,6 +13,7 @@
 
 void b2MouseJoint_SetTarget(b2JointId jointId, b2Vec2 target)
 {
+	B2_ASSERT(b2Vec2_IsValid(target));
 	b2JointSim* base = b2GetJointSimCheckType(jointId, b2_mouseJoint);
 	base->mouseJoint.targetA = target;
 }
@@ -25,26 +26,52 @@ b2Vec2 b2MouseJoint_GetTarget(b2JointId jointId)
 
 void b2MouseJoint_SetSpringHertz(b2JointId jointId, float hertz)
 {
+	B2_ASSERT(b2IsValid(hertz) && hertz >= 0.0f);
 	b2JointSim* base = b2GetJointSimCheckType(jointId, b2_mouseJoint);
 	base->mouseJoint.hertz = hertz;
 }
 
-void b2MouseJoint_SetSpringDampingRatio(b2JointId jointId, float dampingRatio)
-{
-	b2JointSim* base = b2GetJointSimCheckType(jointId, b2_mouseJoint);
-	base->mouseJoint.dampingRatio = dampingRatio;
-}
-
-float b2MouseJoint_GetHertz(b2JointId jointId)
+float b2MouseJoint_GetSpringHertz(b2JointId jointId)
 {
 	b2JointSim* base = b2GetJointSimCheckType(jointId, b2_mouseJoint);
 	return base->mouseJoint.hertz;
 }
 
-float b2MouseJoint_GetDampingRatio(b2JointId jointId)
+void b2MouseJoint_SetSpringDampingRatio(b2JointId jointId, float dampingRatio)
+{
+	B2_ASSERT(b2IsValid(dampingRatio) && dampingRatio >= 0.0f);
+	b2JointSim* base = b2GetJointSimCheckType(jointId, b2_mouseJoint);
+	base->mouseJoint.dampingRatio = dampingRatio;
+}
+
+float b2MouseJoint_GetSpringDampingRatio(b2JointId jointId)
 {
 	b2JointSim* base = b2GetJointSimCheckType(jointId, b2_mouseJoint);
 	return base->mouseJoint.dampingRatio;
+}
+
+void b2MouseJoint_SetMaxForce(b2JointId jointId, float maxForce)
+{
+	B2_ASSERT(b2IsValid(maxForce) && maxForce >= 0.0f);
+	b2JointSim* base = b2GetJointSimCheckType(jointId, b2_mouseJoint);
+	base->mouseJoint.maxForce = maxForce;
+}
+
+float b2MouseJoint_GetMaxForce(b2JointId jointId)
+{
+	b2JointSim* base = b2GetJointSimCheckType(jointId, b2_mouseJoint);
+	return base->mouseJoint.maxForce;
+}
+
+b2Vec2 b2GetMouseJointForce(b2World* world, b2JointSim* base)
+{
+	b2Vec2 force = b2MulSV(world->inv_h, base->mouseJoint.linearImpulse);
+	return force;
+}
+
+float b2GetMouseJointTorque(b2World* world, b2JointSim* base)
+{
+	return world->inv_h * base->mouseJoint.angularImpulse;
 }
 
 void b2PrepareMouseJoint(b2JointSim* base, b2StepContext* context)
@@ -153,6 +180,8 @@ void b2SolveMouseJoint(b2JointSim* base, b2StepContext* context)
 		wB += iB * impulse;
 	}
 
+	float maxImpulse = joint->maxForce * context->h;
+
 	{
 		b2Rot dqB = stateB->deltaRotation;
 		b2Vec2 rB = b2RotateVector(dqB, joint->anchorB);
@@ -169,8 +198,19 @@ void b2SolveMouseJoint(b2JointSim* base, b2StepContext* context)
 		b2Vec2 impulse;
 		impulse.x = -massScale * b.x - impulseScale * joint->linearImpulse.x;
 		impulse.y = -massScale * b.y - impulseScale * joint->linearImpulse.y;
+
+		b2Vec2 oldImpulse = joint->linearImpulse;
 		joint->linearImpulse.x += impulse.x;
 		joint->linearImpulse.y += impulse.y;
+
+		float mag = b2Length(joint->linearImpulse);
+		if (mag > maxImpulse)
+		{
+			joint->linearImpulse = b2MulSV(maxImpulse, b2Normalize(joint->linearImpulse));
+		}
+
+		impulse.x = joint->linearImpulse.x - oldImpulse.x;
+		impulse.y = joint->linearImpulse.y - oldImpulse.y;
 
 		vB = b2MulAdd(vB, mB, impulse);
 		wB += iB * b2Cross(rB, impulse);

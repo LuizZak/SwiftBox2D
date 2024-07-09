@@ -10,15 +10,13 @@
 #include "shape.h"
 #include "solver_set.h"
 #include "table.h"
-#include "util.h"
 #include "world.h"
 
-#include "box2d/distance.h"
-#include "box2d/event_types.h"
-#include "box2d/manifold.h"
+#include "box2d/collision.h"
 
 #include <float.h>
 #include <math.h>
+#include <stddef.h>
 
 // Contacts and determinism
 // A deterministic simulation requires contacts to exist in the same order in b2Island no matter the thread count.
@@ -29,10 +27,10 @@
 // - These results are ordered according to the order of the broad-phase move array
 // - The move array is ordered according to the shape creation order using a bitset.
 // - The island/shape/body order is determined by creation order
-// - Logically contacts are only created for awake sims, so they are immediately added to the awake contact array (serially)
+// - Logically contacts are only created for awake bodies, so they are immediately added to the awake contact array (serially)
 //
 // Island linking:
-// - The awake contact array is built from the body-contact graph for all awake sims in awake islands.
+// - The awake contact array is built from the body-contact graph for all awake bodies in awake islands.
 // - Awake contacts are solved in parallel and they generate contact state changes.
 // - These state changes may link islands together using union find.
 // - The state changes are ordered using a bit array that encompasses all contacts
@@ -299,7 +297,7 @@ void b2CreateContact(b2World* world, b2Shape* shapeA, b2Shape* shapeB)
 
 	// Contacts are created as non-touching. Later if they are found to be touching
 	// they will link islands and be moved into the constraint graph.
-	b2ContactSim* contactSim = b2AddContact(&world->blockAllocator, &set->contacts);
+	b2ContactSim* contactSim = b2AddContact(&set->contacts);
 	contactSim->contactId = contactId;
 
 #if B2_VALIDATE
@@ -316,7 +314,7 @@ void b2CreateContact(b2World* world, b2Shape* shapeA, b2Shape* shapeB)
 	contactSim->shapeIdA = shapeIdA;
 	contactSim->shapeIdB = shapeIdB;
 	contactSim->cache = b2_emptyDistanceCache;
-	contactSim->manifold = b2_emptyManifold;
+	contactSim->manifold = (b2Manifold){0};
 	contactSim->friction = b2MixFriction(shapeA->friction, shapeB->friction);
 	contactSim->restitution = b2MixRestitution(shapeA->restitution, shapeB->restitution);
 	contactSim->tangentSpeed = 0.0f;
@@ -470,7 +468,7 @@ bool b2ShouldShapesCollide(b2Filter filterA, b2Filter filterB)
 	return collide;
 }
 
-static bool b2TestShapeOverlap(const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB, b2Transform xfB)
+static bool b2TestShapeOverlap(const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB, b2Transform xfB, b2DistanceCache* cache)
 {
 	b2DistanceInput input;
 	input.proxyA = b2MakeShapeDistanceProxy(shapeA);
@@ -479,13 +477,12 @@ static bool b2TestShapeOverlap(const b2Shape* shapeA, b2Transform xfA, const b2S
 	input.transformB = xfB;
 	input.useRadii = true;
 
-	b2DistanceCache cache = {0};
-	b2DistanceOutput output = b2ShapeDistance(&cache, &input);
+	b2DistanceOutput output = b2ShapeDistance(cache, &input);
 
 	return output.distance < 10.0f * FLT_EPSILON;
 }
 
-// Update the contact manifold and touching status.
+// Update the contact manifold and touching status. Also updates sensor overlap.
 // Note: do not assume the shape AABBs are overlapping or are valid.
 bool b2UpdateContact(b2World* world, b2ContactSim* contactSim, b2Shape* shapeA, b2Transform transformA, b2Vec2 centerOffsetA,
 					 b2Shape* shapeB, b2Transform transformB, b2Vec2 centerOffsetB)
@@ -496,7 +493,7 @@ bool b2UpdateContact(b2World* world, b2ContactSim* contactSim, b2Shape* shapeA, 
 	if (shapeA->isSensor || shapeB->isSensor)
 	{
 		// Sensors don't generate manifolds or hit events
-		touching = b2TestShapeOverlap(shapeA, transformA, shapeB, transformB);
+		touching = b2TestShapeOverlap(shapeA, transformA, shapeB, transformB, &contactSim->cache);
 	}
 	else
 	{

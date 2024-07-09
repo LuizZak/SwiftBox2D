@@ -28,6 +28,7 @@ from utils.directory_structure.directory_structure_manager import (
 )
 from utils.doccomment.doccomment_formatter import DoccommentFormatter
 from utils.doccomment.doccomment_manager import DoccommentManager
+from utils.generators.swift_auto_property import SwiftAutoProperty
 from utils.generators.swift_decl_generator import SwiftDeclGenerator
 from utils.generators.swift_decl_merger import SwiftDeclMerger
 from utils.generators.symbol_generator_filter import SymbolGeneratorFilter
@@ -216,6 +217,7 @@ class TypeGeneratorRequest:
     prefixes: list[str]
     target: DeclGeneratorTarget
     includes: list[str]
+    auto_property: bool
     symbol_filter: SymbolGeneratorFilter
     symbol_name_generator: SymbolNameGenerator
     doccomment_manager: DoccommentManager
@@ -248,6 +250,7 @@ class TypeGeneratorRequest:
             target=target,
             includes=includes,
             directory_manager=directory_manager,
+            auto_property=config.declarations.auto_property,
             symbol_filter=SymbolGeneratorFilter.from_config(config.declarations),
             symbol_name_generator=SymbolNameGenerator.from_config(config.declarations),
             swift_decl_generator=SwiftDeclGenerator.from_config(config.declarations),
@@ -411,6 +414,11 @@ def _generate_types(request: TypeGeneratorRequest) -> int:
     merger = SwiftDeclMerger()
     swift_decls = merger.merge(swift_decls)
     swift_decls = decl_generator.post_merge(swift_decls)
+
+    if request.auto_property:
+        print_stage_name("Detecting properties...")
+        auto_prop = SwiftAutoProperty()
+        swift_decls = auto_prop.convert(swift_decls)
 
     count_visitor.reset()
     count_visitor.walk_all(swift_decls)

@@ -4,103 +4,98 @@
 import box2d
 
 public extension B2RevoluteJoint {
-    /// Enable/disable the joint spring.
+    /// Enable/disable the revolute joint spring
     func enableSpring(_ enableSpring: Bool) {
         b2RevoluteJoint_EnableSpring(id, enableSpring)
     }
     
-    /// - returns: is the revolute joint limit enabled
+    /// Is the revolute joint limit enabled?
     func isLimitEnabled() -> Bool {
         b2RevoluteJoint_IsLimitEnabled(id)
     }
     
-    /// Set the joint stiffness in Hertz
-    func setSpringHertz(_ hertz: Float) {
-        b2RevoluteJoint_SetSpringHertz(id, hertz)
-    }
-    
-    /// - returns: the joint stiffness in Hertz
-    func getSpringHertz() -> Float {
-        b2RevoluteJoint_GetSpringHertz(id)
-    }
-    
-    /// Set the joint damping ratio (non-dimensional)
-    func setSpringDampingRatio(_ dampingRatio: Float) {
-        b2RevoluteJoint_SetSpringDampingRatio(id, dampingRatio)
-    }
-    
-    /// - returns: the  joint damping ratio (non-dimensional)
-    func getSpringDampingRatio() -> Float {
-        b2RevoluteJoint_GetSpringDampingRatio(id)
-    }
-    
-    /// Get the current joint angle in radians relative to the reference angle
+    /// Get the revolute joint current angle in radians relative to the reference angle
+    /// @see b2RevoluteJointDef::referenceAngle
     func getAngle() -> Float {
         b2RevoluteJoint_GetAngle(id)
     }
     
-    /// Enable/disable a revolute joint limit.
+    /// Enable/disable the revolute joint limit
     func enableLimit(_ enableLimit: Bool) {
         b2RevoluteJoint_EnableLimit(id, enableLimit)
     }
     
-    /// Get the lower joint limit in radians.
+    /// Get the revolute joint lower limit in radians
     func getLowerLimit() -> Float {
         b2RevoluteJoint_GetLowerLimit(id)
     }
     
-    /// Get the upper joint limit in radians.
+    /// Get the revolute joint upper limit in radians
     func getUpperLimit() -> Float {
         b2RevoluteJoint_GetUpperLimit(id)
     }
     
-    /// Set the joint limits in radians.
+    /// Set the revolute joint limits in radians
     func setLimits(_ lower: Float, _ upper: Float) {
         b2RevoluteJoint_SetLimits(id, lower, upper)
     }
     
-    /// Enable/disable a revolute joint motor.
+    /// Enable/disable a revolute joint motor
     func enableMotor(_ enableMotor: Bool) {
         b2RevoluteJoint_EnableMotor(id, enableMotor)
     }
     
-    /// - returns: is the revolute joint motor enabled
+    /// Is the revolute joint motor enabled?
     func isMotorEnabled() -> Bool {
         b2RevoluteJoint_IsMotorEnabled(id)
     }
     
-    /// Set the motor speed for a revolute joint in radians per second
-    func setMotorSpeed(_ motorSpeed: Float) {
-        b2RevoluteJoint_SetMotorSpeed(id, motorSpeed)
-    }
-    
-    /// - returns: the motor speed for a revolute joint in radians per second
-    func getMotorSpeed() -> Float {
-        b2RevoluteJoint_GetMotorSpeed(id)
-    }
-    
-    /// Get the current motor torque for a revolute joint
+    /// Get the revolute joint current motor torque, typically in newton-meters
     func getMotorTorque() -> Float {
         b2RevoluteJoint_GetMotorTorque(id)
     }
     
-    /// Set the maximum torque for a revolute joint motor
-    func setMaxMotorTorque(_ torque: Float) {
-        b2RevoluteJoint_SetMaxMotorTorque(id, torque)
+    /// Get the revolute joint spring stiffness in Hertz
+    /// Set the revolute joint spring stiffness in Hertz
+    var springHertz: Float {
+        get {
+            b2RevoluteJoint_GetSpringHertz(id)
+        }
+        set(hertz) {
+            b2RevoluteJoint_SetSpringHertz(id, hertz)
+        }
     }
     
-    /// - returns: the maximum torque for a revolute joint motor
-    func getMaxMotorTorque() -> Float {
-        b2RevoluteJoint_GetMaxMotorTorque(id)
+    /// Get the revolute joint spring damping ratio, non-dimensional
+    /// Set the revolute joint spring damping ratio, non-dimensional
+    var springDampingRatio: Float {
+        get {
+            b2RevoluteJoint_GetSpringDampingRatio(id)
+        }
+        set(dampingRatio) {
+            b2RevoluteJoint_SetSpringDampingRatio(id, dampingRatio)
+        }
     }
     
-    /// Get the current constraint force for a revolute joint
-    func getConstraintForce() -> B2Vec2 {
-        b2RevoluteJoint_GetConstraintForce(id)
+    /// Get the revolute joint motor speed in radians per second
+    /// Set the revolute joint motor speed in radians per second
+    var motorSpeed: Float {
+        get {
+            b2RevoluteJoint_GetMotorSpeed(id)
+        }
+        set(motorSpeed) {
+            b2RevoluteJoint_SetMotorSpeed(id, motorSpeed)
+        }
     }
     
-    /// Get the current constraint torque for a revolute joint
-    func getConstraintTorque() -> Float {
-        b2RevoluteJoint_GetConstraintTorque(id)
+    /// Get the revolute joint maximum motor torque, typically in newton-meters
+    /// Set the revolute joint maximum motor torque, typically in newton-meters
+    var maxMotorTorque: Float {
+        get {
+            b2RevoluteJoint_GetMaxMotorTorque(id)
+        }
+        set(torque) {
+            b2RevoluteJoint_SetMaxMotorTorque(id, torque)
+        }
     }
 }

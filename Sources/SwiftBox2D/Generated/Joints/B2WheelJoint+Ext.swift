@@ -4,55 +4,37 @@
 import box2d
 
 public extension B2WheelJoint {
+    /// Enable/disable the wheel joint spring
     func enableSpring(_ enableSpring: Bool) {
         b2WheelJoint_EnableSpring(id, enableSpring)
     }
     
+    /// Is the wheel joint spring enabled?
     func isSpringEnabled() -> Bool {
         b2WheelJoint_IsSpringEnabled(id)
     }
     
-    /// Set the wheel joint stiffness in Hertz
-    func setSpringHertz(_ hertz: Float) {
-        b2WheelJoint_SetSpringHertz(id, hertz)
-    }
-    
-    /// - returns: the wheel joint stiffness in Hertz
-    func getSpringHertz() -> Float {
-        b2WheelJoint_GetSpringHertz(id)
-    }
-    
-    /// Set the wheel joint damping ratio (non-dimensional)
-    func setSpringDampingRatio(_ dampingRatio: Float) {
-        b2WheelJoint_SetSpringDampingRatio(id, dampingRatio)
-    }
-    
-    /// - returns: the wheel joint damping ratio (non-dimensional)
-    func getSpringDampingRatio() -> Float {
-        b2WheelJoint_GetSpringDampingRatio(id)
-    }
-    
-    /// Enable/disable the wheel joint limit.
+    /// Enable/disable the wheel joint limit
     func enableLimit(_ enableLimit: Bool) {
         b2WheelJoint_EnableLimit(id, enableLimit)
     }
     
-    /// - returns: is the wheel joint limit enabled
+    /// Is the wheel joint limit enabled?
     func isLimitEnabled() -> Bool {
         b2WheelJoint_IsLimitEnabled(id)
     }
     
-    /// Get the lower joint limit in length units (meters).
+    /// Get the wheel joint lower limit
     func getLowerLimit() -> Float {
         b2WheelJoint_GetLowerLimit(id)
     }
     
-    /// Get the upper joint limit in length units (meters).
+    /// Get the wheel joint upper limit
     func getUpperLimit() -> Float {
         b2WheelJoint_GetUpperLimit(id)
     }
     
-    /// Set the joint limits in length units (meters).
+    /// Set the wheel joint limits
     func setLimits(_ lower: Float, _ upper: Float) {
         b2WheelJoint_SetLimits(id, lower, upper)
     }
@@ -62,43 +44,57 @@ public extension B2WheelJoint {
         b2WheelJoint_EnableMotor(id, enableMotor)
     }
     
-    /// - returns: is the wheel joint motor enabled
+    /// Is the wheel joint motor enabled?
     func isMotorEnabled() -> Bool {
         b2WheelJoint_IsMotorEnabled(id)
     }
     
-    /// Set the wheel joint motor speed in radians per second
-    func setMotorSpeed(_ motorSpeed: Float) {
-        b2WheelJoint_SetMotorSpeed(id, motorSpeed)
-    }
-    
-    /// - returns: the wheel joint motor speed in radians per second
-    func getMotorSpeed() -> Float {
-        b2WheelJoint_GetMotorSpeed(id)
-    }
-    
-    /// Get the wheel joint current motor torque
+    /// Get the wheel joint current motor torque, typically in newton-meters
     func getMotorTorque() -> Float {
         b2WheelJoint_GetMotorTorque(id)
     }
     
-    /// Set the wheel joint maximum motor torque
-    func setMaxMotorTorque(_ torque: Float) {
-        b2WheelJoint_SetMaxMotorTorque(id, torque)
+    /// Get the wheel joint stiffness in Hertz
+    /// Set the wheel joint stiffness in Hertz
+    var springHertz: Float {
+        get {
+            b2WheelJoint_GetSpringHertz(id)
+        }
+        set(hertz) {
+            b2WheelJoint_SetSpringHertz(id, hertz)
+        }
     }
     
-    /// - returns: the wheel joint maximum motor torque
-    func getMaxMotorTorque() -> Float {
-        b2WheelJoint_GetMaxMotorTorque(id)
+    /// Get the wheel joint damping ratio, non-dimensional
+    /// Set the wheel joint damping ratio, non-dimensional
+    var springDampingRatio: Float {
+        get {
+            b2WheelJoint_GetSpringDampingRatio(id)
+        }
+        set(dampingRatio) {
+            b2WheelJoint_SetSpringDampingRatio(id, dampingRatio)
+        }
     }
     
-    /// Get the current wheel joint constraint force
-    func getConstraintForce() -> B2Vec2 {
-        b2WheelJoint_GetConstraintForce(id)
+    /// Get the wheel joint motor speed in radians per second
+    /// Set the wheel joint motor speed in radians per second
+    var motorSpeed: Float {
+        get {
+            b2WheelJoint_GetMotorSpeed(id)
+        }
+        set(motorSpeed) {
+            b2WheelJoint_SetMotorSpeed(id, motorSpeed)
+        }
     }
     
-    /// Get the current wheel joint constraint torque
-    func getConstraintTorque() -> Float {
-        b2WheelJoint_GetConstraintTorque(id)
+    /// Get the wheel joint maximum motor torque, typically in newton-meters
+    /// Set the wheel joint maximum motor torque, typically in newton-meters
+    var maxMotorTorque: Float {
+        get {
+            b2WheelJoint_GetMaxMotorTorque(id)
+        }
+        set(torque) {
+            b2WheelJoint_SetMaxMotorTorque(id, torque)
+        }
     }
 }

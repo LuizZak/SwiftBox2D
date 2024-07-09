@@ -4,43 +4,47 @@
 import box2d
 
 public extension B2WeldJoint {
-    /// Set weld joint linear stiffness in Hertz. 0 is rigid.
-    func setLinearHertz(_ hertz: Float) {
-        b2WeldJoint_SetLinearHertz(id, hertz)
+    /// Get the weld joint linear stiffness in Hertz
+    /// Set the weld joint linear stiffness in Hertz. 0 is rigid.
+    var linearHertz: Float {
+        get {
+            b2WeldJoint_GetLinearHertz(id)
+        }
+        set(hertz) {
+            b2WeldJoint_SetLinearHertz(id, hertz)
+        }
     }
     
-    /// - returns: the weld joint linear stiffness in Hertz.
-    func getLinearHertz() -> Float {
-        b2WeldJoint_GetLinearHertz(id)
+    /// Get the weld joint linear damping ratio (non-dimensional)
+    /// Set the weld joint linear damping ratio (non-dimensional)
+    var linearDampingRatio: Float {
+        get {
+            b2WeldJoint_GetLinearDampingRatio(id)
+        }
+        set(dampingRatio) {
+            b2WeldJoint_SetLinearDampingRatio(id, dampingRatio)
+        }
     }
     
-    /// Set weld joint linear damping ratio (non-dimensional)
-    func setLinearDampingRatio(_ dampingRatio: Float) {
-        b2WeldJoint_SetLinearDampingRatio(id, dampingRatio)
+    /// Get the weld joint angular stiffness in Hertz
+    /// Set the weld joint angular stiffness in Hertz. 0 is rigid.
+    var angularHertz: Float {
+        get {
+            b2WeldJoint_GetAngularHertz(id)
+        }
+        set(hertz) {
+            b2WeldJoint_SetAngularHertz(id, hertz)
+        }
     }
     
-    /// - returns: the weld joint linear damping ratio (non-dimensional)
-    func getLinearDampingRatio() -> Float {
-        b2WeldJoint_GetLinearDampingRatio(id)
-    }
-    
-    /// Set weld joint angular stiffness in Hertz. 0 is rigid.
-    func setAngularHertz(_ hertz: Float) {
-        b2WeldJoint_SetAngularHertz(id, hertz)
-    }
-    
-    /// - returns: the weld joint angular stiffness in Hertz.
-    func getAngularHertz() -> Float {
-        b2WeldJoint_GetAngularHertz(id)
-    }
-    
-    /// Set weld joint angular damping ratio (non-dimensional)
-    func setAngularDampingRatio(_ dampingRatio: Float) {
-        b2WeldJoint_SetAngularDampingRatio(id, dampingRatio)
-    }
-    
-    /// - returns: the weld joint angular damping ratio (non-dimensional)
-    func getAngularDampingRatio() -> Float {
-        b2WeldJoint_GetAngularDampingRatio(id)
+    /// Get the weld joint angular damping ratio, non-dimensional
+    /// Set weld joint angular damping ratio, non-dimensional
+    var angularDampingRatio: Float {
+        get {
+            b2WeldJoint_GetAngularDampingRatio(id)
+        }
+        set(dampingRatio) {
+            b2WeldJoint_SetAngularDampingRatio(id, dampingRatio)
+        }
     }
 }

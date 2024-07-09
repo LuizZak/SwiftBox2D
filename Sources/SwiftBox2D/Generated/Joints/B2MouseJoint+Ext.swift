@@ -4,33 +4,47 @@
 import box2d
 
 public extension B2MouseJoint {
-    /// Set the target for a mouse joint
-    func setTarget(_ target: B2Vec2) {
-        b2MouseJoint_SetTarget(id, target)
+    /// Get the mouse joint target
+    /// Set the mouse joint target
+    var target: B2Vec2 {
+        get {
+            b2MouseJoint_GetTarget(id)
+        }
+        set(target) {
+            b2MouseJoint_SetTarget(id, target)
+        }
     }
     
-    /// - returns: the target for a mouse joint
-    func getTarget() -> B2Vec2 {
-        b2MouseJoint_GetTarget(id)
+    /// Get the mouse joint spring stiffness in Hertz
+    /// Set the mouse joint spring stiffness in Hertz
+    var springHertz: Float {
+        get {
+            b2MouseJoint_GetSpringHertz(id)
+        }
+        set(hertz) {
+            b2MouseJoint_SetSpringHertz(id, hertz)
+        }
     }
     
-    /// Set the spring stiffness in Hertz
-    func setSpringHertz(_ hertz: Float) {
-        b2MouseJoint_SetSpringHertz(id, hertz)
+    /// Get the mouse joint damping ratio, non-dimensional
+    /// Set the mouse joint spring damping ratio, non-dimensional
+    var springDampingRatio: Float {
+        get {
+            b2MouseJoint_GetSpringDampingRatio(id)
+        }
+        set(dampingRatio) {
+            b2MouseJoint_SetSpringDampingRatio(id, dampingRatio)
+        }
     }
     
-    /// Set the spring damping ratio (non-dimensional)
-    func setSpringDampingRatio(_ dampingRatio: Float) {
-        b2MouseJoint_SetSpringDampingRatio(id, dampingRatio)
-    }
-    
-    /// Get the Hertz of a mouse joint
-    func getHertz() -> Float {
-        b2MouseJoint_GetHertz(id)
-    }
-    
-    /// Get the damping ratio of a mouse joint
-    func getDampingRatio() -> Float {
-        b2MouseJoint_GetDampingRatio(id)
+    /// Get the mouse joint maximum force, typically in newtons
+    /// Set the mouse joint maximum force, typically in newtons
+    var maxForce: Float {
+        get {
+            b2MouseJoint_GetMaxForce(id)
+        }
+        set(maxForce) {
+            b2MouseJoint_SetMaxForce(id, maxForce)
+        }
     }
 }

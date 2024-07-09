@@ -9,11 +9,7 @@
 #include "core.h"
 #include "joint.h"
 #include "solver_set.h"
-#include "util.h"
 #include "world.h"
-
-#include "box2d/color.h"
-#include "box2d/timer.h"
 
 #include <stddef.h>
 
@@ -51,7 +47,7 @@ b2Island* b2CreateIsland(b2World* world, int setIndex)
 	island->parentIsland = B2_NULL_INDEX;
 	island->constraintRemoveCount = 0;
 
-	b2IslandSim* islandSim = b2AddIsland(&world->blockAllocator, &set->islands);
+	b2IslandSim* islandSim = b2AddIsland(&set->islands);
 	islandSim->islandId = islandId;
 
 	return island;
@@ -641,7 +637,7 @@ void b2SplitIsland(b2World* world, int baseId)
 	int* bodyIds = b2AllocateStackItem(alloc, bodyCount * sizeof(int), "body ids");
 
 	// Build array containing all body indices from base island. These
-	// serve as seed sims for the depth first search (DFS).
+	// serve as seed bodies for the depth first search (DFS).
 	int index = 0;
 	int nextBody = baseIsland->headBody;
 	while (nextBody != B2_NULL_INDEX)
@@ -863,8 +859,8 @@ void b2SplitIsland(b2World* world, int baseId)
 // Split an island because some contacts and/or joints have been removed.
 // This is called during the constraint solve while islands are not being touched. This uses DFS and touches a lot of memory,
 // so it can be quite slow.
-// Note: contacts/joints connected to static sims must belong to an island but don't affect island connectivity
-// Note: static sims are never in an island
+// Note: contacts/joints connected to static bodies must belong to an island but don't affect island connectivity
+// Note: static bodies are never in an island
 // Note: this task interacts with some allocators without locks under the assumption that no other tasks
 // are interacting with these data structures.
 void b2SplitIslandTask(int startIndex, int endIndex, uint32_t threadIndex, void* context)

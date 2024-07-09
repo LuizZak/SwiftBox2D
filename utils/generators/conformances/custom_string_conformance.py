@@ -5,6 +5,7 @@ from utils.data.swift_decls import (
     SwiftMemberDecl,
     SwiftMemberVarDecl,
 )
+from utils.data.swift_type import SwiftType
 from utils.generators.swift_conformance_generator import SwiftConformanceGenerator
 from pycparser import c_ast
 
@@ -71,7 +72,7 @@ class SwiftCustomStringConvertibleConformance(SwiftConformanceGenerator):
                 c_kind=CDeclKind.NONE,
                 doccomment=None,
                 is_static=False,
-                var_type="String",
+                var_type=SwiftType.type_name("String"),
                 accessor_block=accessor,
             )
         ]

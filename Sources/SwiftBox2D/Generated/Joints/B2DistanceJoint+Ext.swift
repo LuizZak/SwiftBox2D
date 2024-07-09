@@ -4,26 +4,12 @@
 import box2d
 
 public extension B2DistanceJoint {
-    /// Get the constraint force on a distance joint
-    func getConstraintForce(_ timeStep: Float) -> Float {
-        b2DistanceJoint_GetConstraintForce(id, timeStep)
-    }
-    
-    /// Set the rest length of a distance joint
-    func setLength(_ length: Float) {
-        b2DistanceJoint_SetLength(id, length)
-    }
-    
-    /// Get the rest length of a distance joint
-    func getLength() -> Float {
-        b2DistanceJoint_GetLength(id)
-    }
-    
     /// Enable/disable the distance joint spring. When disabled the distance joint is rigid.
     func enableSpring(_ enableSpring: Bool) {
         b2DistanceJoint_EnableSpring(id, enableSpring)
     }
     
+    /// Is the distance joint spring enabled?
     func isSpringEnabled() -> Bool {
         b2DistanceJoint_IsSpringEnabled(id)
     }
@@ -38,12 +24,12 @@ public extension B2DistanceJoint {
         b2DistanceJoint_SetSpringDampingRatio(id, dampingRatio)
     }
     
-    /// - returns: the spring Hertz
+    /// Get the spring Hertz
     func getHertz() -> Float {
         b2DistanceJoint_GetHertz(id)
     }
     
-    /// - returns: the spring damping ratio
+    /// Get the spring damping ratio
     func getDampingRatio() -> Float {
         b2DistanceJoint_GetDampingRatio(id)
     }
@@ -59,12 +45,12 @@ public extension B2DistanceJoint {
         b2DistanceJoint_SetLengthRange(id, minLength, maxLength)
     }
     
-    /// Get the minimum distance joint length
+    /// Get the distance joint minimum length
     func getMinLength() -> Float {
         b2DistanceJoint_GetMinLength(id)
     }
     
-    /// Get the maximum distance joint length
+    /// Get the distance joint maximum length
     func getMaxLength() -> Float {
         b2DistanceJoint_GetMaxLength(id)
     }
@@ -74,31 +60,53 @@ public extension B2DistanceJoint {
         b2DistanceJoint_GetCurrentLength(id)
     }
     
+    /// Enable/disable the distance joint motor
     func enableMotor(_ enableMotor: Bool) {
         b2DistanceJoint_EnableMotor(id, enableMotor)
     }
     
+    /// Is the distance joint motor enabled?
     func isMotorEnabled() -> Bool {
         b2DistanceJoint_IsMotorEnabled(id)
     }
     
-    func setMotorSpeed(_ motorSpeed: Float) {
-        b2DistanceJoint_SetMotorSpeed(id, motorSpeed)
-    }
-    
-    func getMotorSpeed() -> Float {
-        b2DistanceJoint_GetMotorSpeed(id)
-    }
-    
+    /// Get the distance joint current motor force, typically in newtons
     func getMotorForce() -> Float {
         b2DistanceJoint_GetMotorForce(id)
     }
     
-    func setMaxMotorForce(_ force: Float) {
-        b2DistanceJoint_SetMaxMotorForce(id, force)
+    ///  Get the rest length of a distance joint
+    /// Set the rest length of a distance joint
+    /// - param jointId: The id for a distance joint
+    /// - param length: The new distance joint length
+    var length: Float {
+        get {
+            b2DistanceJoint_GetLength(id)
+        }
+        set(length) {
+            b2DistanceJoint_SetLength(id, length)
+        }
     }
     
-    func getMaxMotorForce() -> Float {
-        b2DistanceJoint_GetMaxMotorForce(id)
+    /// Get the distance joint motor speed, typically in meters per second
+    /// Set the distance joint motor speed, typically in meters per second
+    var motorSpeed: Float {
+        get {
+            b2DistanceJoint_GetMotorSpeed(id)
+        }
+        set(motorSpeed) {
+            b2DistanceJoint_SetMotorSpeed(id, motorSpeed)
+        }
+    }
+    
+    /// Get the distance joint maximum motor force, typically in newtons
+    /// Set the distance joint maximum motor force, typically in newtons
+    var maxMotorForce: Float {
+        get {
+            b2DistanceJoint_GetMaxMotorForce(id)
+        }
+        set(force) {
+            b2DistanceJoint_SetMaxMotorForce(id, force)
+        }
     }
 }

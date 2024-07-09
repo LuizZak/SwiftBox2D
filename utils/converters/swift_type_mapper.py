@@ -25,7 +25,7 @@ class SwiftTypeMapper:
         SwiftType,  # Resolved Swift type, with aliased typedefs in place.
     ]
 
-    @dataclass(slots=True)
+    @dataclass()
     class _Flags:
         is_constant: bool = False
 

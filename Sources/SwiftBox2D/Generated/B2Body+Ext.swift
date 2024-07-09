@@ -4,20 +4,9 @@
 import box2d
 
 public extension B2Body {
-    /// Body identifier validation. Provides validation for up to 64K allocations.
+    /// Body identifier validation. Can be used to detect orphaned ids. Provides validation for up to 64K allocations.
     func isValid() -> Bool {
         b2Body_IsValid(id)
-    }
-    
-    /// Get the body type: static, kinematic, or dynamic
-    func getType() -> b2BodyType {
-        b2Body_GetType(id)
-    }
-    
-    /// Change the body type. This is an expensive operation. This automatically updates the mass
-    /// properties regardless of the automatic mass setting.
-    func setType(_ type: b2BodyType) {
-        b2Body_SetType(id, type)
     }
     
     /// Set the user data for a body
@@ -30,7 +19,7 @@ public extension B2Body {
         b2Body_GetPosition(id)
     }
     
-    /// Get the world rotation of a body as a sine/cosine pair.
+    /// Get the world rotation of a body as a cosine/sine pair (complex number)
     func getRotation() -> B2Rot {
         b2Body_GetRotation(id)
     }
@@ -46,6 +35,8 @@ public extension B2Body {
     }
     
     /// Set the world transform of a body. This acts as a teleport and is fairly expensive.
+    /// - note: Generally you should create a body with then intended transform.
+    /// @see b2BodyDef::position and b2BodyDef::angle
     func setTransform(_ position: B2Vec2, _ angle: Float) {
         b2Body_SetTransform(id, position, angle)
     }
@@ -70,46 +61,30 @@ public extension B2Body {
         b2Body_GetWorldVector(id, localVector)
     }
     
-    /// Get the linear velocity of a body's center of mass
-    func getLinearVelocity() -> B2Vec2 {
-        b2Body_GetLinearVelocity(id)
-    }
-    
-    /// Get the angular velocity of a body in radians per second
-    func getAngularVelocity() -> Float {
-        b2Body_GetAngularVelocity(id)
-    }
-    
-    /// Set the linear velocity of a body
-    func setLinearVelocity(_ linearVelocity: B2Vec2) {
-        b2Body_SetLinearVelocity(id, linearVelocity)
-    }
-    
-    /// Set the angular velocity of a body in radians per second
-    func setAngularVelocity(_ angularVelocity: Float) {
-        b2Body_SetAngularVelocity(id, angularVelocity)
-    }
-    
-    /// Apply a force at a world point. If the force is not
-    /// applied at the center of mass, it will generate a torque and
-    /// affect the angular velocity. This wakes up the body.
-    /// - param force: the world force vector, usually in Newtons (N).
-    /// - param point: the world position of the point of application.
-    /// - param wake: also wake up the body
+    /// Apply a force at a world point. If the force is not applied at the center of mass,
+    /// it will generate a torque and affect the angular velocity. This optionally wakes up the body.
+    /// The force is ignored if the body is not awake.
+    /// - param bodyId: The body id
+    /// - param force: The world force vector, typically in newtons (N)
+    /// - param point: The world position of the point of application
+    /// - param wake: Option to wake up the body
     func applyForce(_ force: B2Vec2, _ point: B2Vec2, _ wake: Bool) {
         b2Body_ApplyForce(id, force, point, wake)
     }
     
-    /// Apply a force to the center of mass. This wakes up the body.
-    /// - param force: the world force vector, usually in Newtons (N).
+    /// Apply a force to the center of mass. This optionally wakes up the body.
+    /// The force is ignored if the body is not awake.
+    /// - param bodyId: The body id
+    /// - param force: the world force vector, usually in newtons (N).
     /// - param wake: also wake up the body
     func applyForceToCenter(_ force: B2Vec2, _ wake: Bool) {
         b2Body_ApplyForceToCenter(id, force, wake)
     }
     
-    /// Apply a torque. This affects the angular velocity
-    /// without affecting the linear velocity of the center of mass.
-    /// - param torque: about the z-axis (out of the screen), usually in N-m.
+    /// Apply a torque. This affects the angular velocity without affecting the linear velocity.
+    /// This optionally wakes the body. The torque is ignored if the body is not awake.
+    /// - param bodyId: The body id
+    /// - param torque: about the z-axis (out of the screen), typically in N*m.
     /// - param wake: also wake up the body
     func applyTorque(_ torque: Float, _ wake: Bool) {
         b2Body_ApplyTorque(id, torque, wake)
@@ -117,68 +92,61 @@ public extension B2Body {
     
     /// Apply an impulse at a point. This immediately modifies the velocity.
     /// It also modifies the angular velocity if the point of application
-    /// is not at the center of mass. This wakes up the body.
-    /// This should be used for one-shot impulses. If you need a steady force,
-    /// use a force instead, which will work better with the sub-stepping solver.
-    /// - param impulse: the world impulse vector, usually in N-seconds or kg-m/s.
+    /// is not at the center of mass. This optionally wakes the body.
+    /// The impulse is ignored if the body is not awake.
+    /// - param bodyId: The body id
+    /// - param impulse: the world impulse vector, typically in N*s or kg*m/s.
     /// - param point: the world position of the point of application.
     /// - param wake: also wake up the body
+    /// @warning This should be used for one-shot impulses. If you need a steady force,
+    /// use a force instead, which will work better with the sub-stepping solver.
     func applyLinearImpulse(_ impulse: B2Vec2, _ point: B2Vec2, _ wake: Bool) {
         b2Body_ApplyLinearImpulse(id, impulse, point, wake)
     }
     
     /// Apply an impulse to the center of mass. This immediately modifies the velocity.
-    /// This should be used for one-shot impulses. If you need a steady force,
-    /// use a force instead, which will work better with the sub-stepping solver.
-    /// - param impulse: the world impulse vector, usually in N-seconds or kg-m/s.
+    /// The impulse is ignored if the body is not awake. This optionally wakes the body.
+    /// - param bodyId: The body id
+    /// - param impulse: the world impulse vector, typically in N*s or kg*m/s.
     /// - param wake: also wake up the body
+    /// @warning This should be used for one-shot impulses. If you need a steady force,
+    /// use a force instead, which will work better with the sub-stepping solver.
     func applyLinearImpulseToCenter(_ impulse: B2Vec2, _ wake: Bool) {
         b2Body_ApplyLinearImpulseToCenter(id, impulse, wake)
     }
     
-    /// Apply an angular impulse.
-    /// This should be used for one-shot impulses. If you need a steady force,
-    /// use a force instead, which will work better with the sub-stepping solver.
-    /// - param impulse: the angular impulse in units of
-    /// kg*m*m/s
+    /// Apply an angular impulse. The impulse is ignored if the body is not awake.
+    /// This optionally wakes the body.
+    /// - param bodyId: The body id
+    /// - param impulse: the angular impulse, typically in units of kg*m*m/s
     /// - param wake: also wake up the body
+    /// @warning This should be used for one-shot impulses. If you need a steady force,
+    /// use a force instead, which will work better with the sub-stepping solver.
     func applyAngularImpulse(_ impulse: Float, _ wake: Bool) {
         b2Body_ApplyAngularImpulse(id, impulse, wake)
     }
     
-    /// Get the mass of the body (kilograms)
+    /// Get the mass of the body, typically in kilograms
     func getMass() -> Float {
         b2Body_GetMass(id)
     }
     
-    /// Get the inertia tensor of the body. In 2D this is a single number. (kilograms * meters^2)
+    /// Get the inertia tensor of the body, typically in kg*m^2
     func getInertiaTensor() -> Float {
         b2Body_GetInertiaTensor(id)
     }
     
-    /// Get the center of mass position of the body in local space.
+    /// Get the center of mass position of the body in local space
     func getLocalCenterOfMass() -> B2Vec2 {
         b2Body_GetLocalCenterOfMass(id)
     }
     
-    /// Get the center of mass position of the body in world space.
+    /// Get the center of mass position of the body in world space
     func getWorldCenterOfMass() -> B2Vec2 {
         b2Body_GetWorldCenterOfMass(id)
     }
     
-    /// Override the body's mass properties. Normally this is computed automatically using the
-    /// shape geometry and density. This information is lost if a shape is added or removed or if the
-    /// body type changes.
-    func setMassData(_ massData: b2MassData) {
-        b2Body_SetMassData(id, massData)
-    }
-    
-    /// Get the mass data for a body.
-    func getMassData() -> b2MassData {
-        b2Body_GetMassData(id)
-    }
-    
-    /// This resets the mass properties to the sum of the mass properties of the shapes.
+    /// This update the mass properties to the sum of the mass properties of the shapes.
     /// This normally does not need to be called unless you called SetMassData to override
     /// the mass and you later want to reset the mass.
     /// You may also use this when automatic mass computation has been disabled.
@@ -187,79 +155,39 @@ public extension B2Body {
         b2Body_ApplyMassFromShapes(id)
     }
     
-    /// Adjust the linear damping. Normally this is set in b2BodyDef before creation.
-    func setLinearDamping(_ linearDamping: Float) {
-        b2Body_SetLinearDamping(id, linearDamping)
-    }
-    
-    /// Get the current linear damping.
-    func getLinearDamping() -> Float {
-        b2Body_GetLinearDamping(id)
-    }
-    
-    /// Adjust the angular damping. Normally this is set in b2BodyDef before creation.
-    func setAngularDamping(_ angularDamping: Float) {
-        b2Body_SetAngularDamping(id, angularDamping)
-    }
-    
-    /// Get the current angular damping.
-    func getAngularDamping() -> Float {
-        b2Body_GetAngularDamping(id)
-    }
-    
-    /// Adjust the gravity scale. Normally this is set in b2BodyDef before creation.
-    func setGravityScale(_ gravityScale: Float) {
-        b2Body_SetGravityScale(id, gravityScale)
-    }
-    
-    /// Get the current gravity scale.
-    func getGravityScale() -> Float {
-        b2Body_GetGravityScale(id)
-    }
-    
-    /// Is this body awake?
+    /// - returns: true if this body is awake
     func isAwake() -> Bool {
         b2Body_IsAwake(id)
     }
     
     /// Wake a body from sleep. This wakes the entire island the body is touching.
-    /// Putting a body to sleep will put the entire island of bodies touching this body to sleep,
-    /// which can be expensive.
+    /// @warning Putting a body to sleep will put the entire island of bodies touching this body to sleep,
+    /// which can be expensive and possibly unintuitive.
     func setAwake(_ awake: Bool) {
         b2Body_SetAwake(id, awake)
     }
     
-    /// Enable or disable sleeping this body. If sleeping is disabled the body will wake.
+    /// Enable or disable sleeping for this body. If sleeping is disabled the body will wake.
     func enableSleep(_ enableSleep: Bool) {
         b2Body_EnableSleep(id, enableSleep)
     }
     
-    /// - returns: is sleeping enabled for this body?
+    /// Returns true if sleeping is enabled for this body
     func isSleepEnabled() -> Bool {
         b2Body_IsSleepEnabled(id)
     }
     
-    /// Set the sleep threshold. Normally in meters per second.
-    func setSleepThreshold(_ sleepVelocity: Float) {
-        b2Body_SetSleepThreshold(id, sleepVelocity)
-    }
-    
-    /// Get the sleep threshold. Normally in meters per second.
-    func getSleepThreshold() -> Float {
-        b2Body_GetSleepThreshold(id)
-    }
-    
-    /// Is this body enabled?
+    /// Returns true if this body is enabled
     func isEnabled() -> Bool {
         b2Body_IsEnabled(id)
     }
     
-    /// Disable a body by removing it completely from the simulation
+    /// Disable a body by removing it completely from the simulation. This is expensive.
     func disable() {
         b2Body_Disable(id)
     }
     
-    /// Enable a body by adding it to the simulation
+    /// Enable a body by adding it to the simulation. This is expensive.
     func enable() {
         b2Body_Enable(id)
     }
@@ -285,7 +213,8 @@ public extension B2Body {
         b2Body_IsBullet(id)
     }
     
-    /// Enable/disable hit events on all shapes.
+    /// Enable/disable hit events on all shapes
+    /// @see b2ShapeDef::enableHitEvents
     func enableHitEvents(_ enableHitEvents: Bool) {
         b2Body_EnableHitEvents(id, enableHitEvents)
     }
@@ -322,9 +251,101 @@ public extension B2Body {
         b2Body_GetContactData(id, contactData, capacity)
     }
     
-    /// Get the current world AABB that contains all the attached shapes. Note that this may not emcompass the body origin.
+    /// Get the current world AABB that contains all the attached shapes. Note that this may not encompass the body origin.
     /// If there are no shapes attached then the returned AABB is empty and centered on the body origin.
     func computeAABB() -> B2AABB {
         b2Body_ComputeAABB(id)
+    }
+    
+    ///  Get the body type: static, kinematic, or dynamic
+    /// Change the body type. This is an expensive operation. This automatically updates the mass
+    /// properties regardless of the automatic mass setting.
+    var type: b2BodyType {
+        get {
+            b2Body_GetType(id)
+        }
+        set(type) {
+            b2Body_SetType(id, type)
+        }
+    }
+    
+    /// Get the linear velocity of a body's center of mass. Typically in meters per second.
+    /// Set the linear velocity of a body. Typically in meters per second.
+    var linearVelocity: B2Vec2 {
+        get {
+            b2Body_GetLinearVelocity(id)
+        }
+        set(linearVelocity) {
+            b2Body_SetLinearVelocity(id, linearVelocity)
+        }
+    }
+    
+    /// Get the angular velocity of a body in radians per second
+    /// Set the angular velocity of a body in radians per second
+    var angularVelocity: Float {
+        get {
+            b2Body_GetAngularVelocity(id)
+        }
+        set(angularVelocity) {
+            b2Body_SetAngularVelocity(id, angularVelocity)
+        }
+    }
+    
+    ///  Get the mass data for a body
+    /// Override the body's mass properties. Normally this is computed automatically using the
+    /// shape geometry and density. This information is lost if a shape is added or removed or if the
+    /// body type changes.
+    var massData: b2MassData {
+        get {
+            b2Body_GetMassData(id)
+        }
+        set(massData) {
+            b2Body_SetMassData(id, massData)
+        }
+    }
+    
+    /// Get the current linear damping.
+    /// Adjust the linear damping. Normally this is set in b2BodyDef before creation.
+    var linearDamping: Float {
+        get {
+            b2Body_GetLinearDamping(id)
+        }
+        set(linearDamping) {
+            b2Body_SetLinearDamping(id, linearDamping)
+        }
+    }
+    
+    /// Get the current angular damping.
+    /// Adjust the angular damping. Normally this is set in b2BodyDef before creation.
+    var angularDamping: Float {
+        get {
+            b2Body_GetAngularDamping(id)
+        }
+        set(angularDamping) {
+            b2Body_SetAngularDamping(id, angularDamping)
+        }
+    }
+    
+    ///  Get the current gravity scale
+    /// Adjust the gravity scale. Normally this is set in b2BodyDef before creation.
+    /// @see b2BodyDef::gravityScale
+    var gravityScale: Float {
+        get {
+            b2Body_GetGravityScale(id)
+        }
+        set(gravityScale) {
+            b2Body_SetGravityScale(id, gravityScale)
+        }
+    }
+    
+    /// Get the sleep threshold, typically in meters per second.
+    /// Set the sleep threshold, typically in meters per second
+    var sleepThreshold: Float {
+        get {
+            b2Body_GetSleepThreshold(id)
+        }
+        set(sleepVelocity) {
+            b2Body_SetSleepThreshold(id, sleepVelocity)
+        }
     }
 }

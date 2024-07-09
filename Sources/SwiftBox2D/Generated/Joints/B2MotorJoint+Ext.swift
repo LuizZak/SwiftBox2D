@@ -4,63 +4,58 @@
 import box2d
 
 public extension B2MotorJoint {
-    /// Set/Get the linear offset target for a motor joint
-    func setLinearOffset(_ linearOffset: B2Vec2) {
-        b2MotorJoint_SetLinearOffset(id, linearOffset)
+    /// Get the motor joint linear offset target
+    /// Set the motor joint linear offset target
+    var linearOffset: B2Vec2 {
+        get {
+            b2MotorJoint_GetLinearOffset(id)
+        }
+        set(linearOffset) {
+            b2MotorJoint_SetLinearOffset(id, linearOffset)
+        }
     }
     
-    /// - returns: the linear offset target for a motor joint
-    func getLinearOffset() -> B2Vec2 {
-        b2MotorJoint_GetLinearOffset(id)
+    /// Get the motor joint angular offset target in radians
+    /// Set the motor joint angular offset target in radians
+    var angularOffset: Float {
+        get {
+            b2MotorJoint_GetAngularOffset(id)
+        }
+        set(angularOffset) {
+            b2MotorJoint_SetAngularOffset(id, angularOffset)
+        }
     }
     
-    /// Set the angular offset target for a motor joint in radians
-    func setAngularOffset(_ angularOffset: Float) {
-        b2MotorJoint_SetAngularOffset(id, angularOffset)
+    /// Get the motor joint maximum force, typically in newtons
+    /// Set the motor joint maximum force, typically in newtons
+    var maxForce: Float {
+        get {
+            b2MotorJoint_GetMaxForce(id)
+        }
+        set(maxForce) {
+            b2MotorJoint_SetMaxForce(id, maxForce)
+        }
     }
     
-    /// - returns: the angular offset target for a motor joint in radians
-    func getAngularOffset() -> Float {
-        b2MotorJoint_GetAngularOffset(id)
+    /// Get the motor joint maximum torque, typically in newton-meters
+    /// Set the motor joint maximum torque, typically in newton-meters
+    var maxTorque: Float {
+        get {
+            b2MotorJoint_GetMaxTorque(id)
+        }
+        set(maxTorque) {
+            b2MotorJoint_SetMaxTorque(id, maxTorque)
+        }
     }
     
-    /// Set the maximum force for a motor joint
-    func setMaxForce(_ maxForce: Float) {
-        b2MotorJoint_SetMaxForce(id, maxForce)
-    }
-    
-    /// - returns: the maximum force for a motor joint
-    func getMaxForce() -> Float {
-        b2MotorJoint_GetMaxForce(id)
-    }
-    
-    /// Set the maximum torque for a motor joint
-    func setMaxTorque(_ maxTorque: Float) {
-        b2MotorJoint_SetMaxTorque(id, maxTorque)
-    }
-    
-    /// - returns: the maximum torque for a motor joint
-    func getMaxTorque() -> Float {
-        b2MotorJoint_GetMaxTorque(id)
-    }
-    
-    /// Set the correction factor for a motor joint
-    func setCorrectionFactor(_ correctionFactor: Float) {
-        b2MotorJoint_SetCorrectionFactor(id, correctionFactor)
-    }
-    
-    /// - returns: the correction factor for a motor joint
-    func getCorrectionFactor() -> Float {
-        b2MotorJoint_GetCorrectionFactor(id)
-    }
-    
-    /// Get the current constraint force for a motor joint
-    func getConstraintForce() -> B2Vec2 {
-        b2MotorJoint_GetConstraintForce(id)
-    }
-    
-    /// Get the current constraint torque for a motor joint
-    func getConstraintTorque() -> Float {
-        b2MotorJoint_GetConstraintTorque(id)
+    /// Get the motor joint correction factor, typically in [0, 1]
+    /// Set the motor joint correction factor, typically in [0, 1]
+    var correctionFactor: Float {
+        get {
+            b2MotorJoint_GetCorrectionFactor(id)
+        }
+        set(correctionFactor) {
+            b2MotorJoint_SetCorrectionFactor(id, correctionFactor)
+        }
     }
 }

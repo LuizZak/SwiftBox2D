@@ -75,6 +75,7 @@ class GeneratorConfig:
 
         prefixes: list[str]
         symbol_casing_settings: SymbolCasingSettings
+        auto_property: bool
         functions_to_methods: list["FunctionToMethodMapper"]
         conformances: list["ConformanceEntry"]
         formatter: "SwiftNameFormatting"
@@ -97,6 +98,7 @@ class GeneratorConfig:
                     if json["conformances"] is not None
                     else []
                 ),
+                auto_property=json.get("autoProperty", False) == True,
                 functions_to_methods=(
                     list(
                         map(

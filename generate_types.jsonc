@@ -18,6 +18,7 @@
             "patternsToSplit": [],
             "snakeCaseAfterTerms": []
         },
+        "autoProperty": true,
         "functionsToMethods": [
             { "cPrefix": "b2World_", "swiftType": "B2World", "param0": { "swiftName": "id", "type": "b2WorldId" } },
             { "cPrefix": "b2Body_", "swiftType": "B2Body", "param0": { "swiftName": "id", "type": "b2BodyId" } },

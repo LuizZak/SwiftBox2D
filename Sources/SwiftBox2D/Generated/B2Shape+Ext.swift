@@ -9,95 +9,56 @@ public extension B2Shape {
         b2Shape_IsValid(id)
     }
     
-    /// Get the type of a shape.
+    /// Get the type of a shape
     func getType() -> b2ShapeType {
         b2Shape_GetType(id)
     }
     
-    /// Get the body that a shape is attached to
+    /// Get the id of the body that a shape is attached to
     func getBody() -> b2BodyId {
         b2Shape_GetBody(id)
     }
     
-    /// Is this shape a sensor? See b2ShapeDef.
+    /// Returns true If the shape is a sensor
     func isSensor() -> Bool {
         b2Shape_IsSensor(id)
     }
     
-    /// Set the user data for a shape.
+    /// Set the user data for a shape
     func setUserData(_ userData: UnsafeMutableRawPointer?) {
         b2Shape_SetUserData(id, userData)
     }
     
-    /// Set the density on a shape. Normally this is specified in b2ShapeDef.
-    /// This will not update the mass properties on the parent body until you
-    /// call b2Body_ResetMassData.
-    func setDensity(_ density: Float) {
-        b2Shape_SetDensity(id, density)
-    }
-    
-    /// Get the density on a shape.
-    func getDensity() -> Float {
-        b2Shape_GetDensity(id)
-    }
-    
-    /// Set the friction on a shape. Normally this is specified in b2ShapeDef.
-    func setFriction(_ friction: Float) {
-        b2Shape_SetFriction(id, friction)
-    }
-    
-    /// Get the friction on a shape.
-    func getFriction() -> Float {
-        b2Shape_GetFriction(id)
-    }
-    
-    /// Set the restitution (bounciness) on a shape. Normally this is specified in b2ShapeDef.
-    func setRestitution(_ restitution: Float) {
-        b2Shape_SetRestitution(id, restitution)
-    }
-    
-    /// Get the restitution on a shape.
-    func getRestitution() -> Float {
-        b2Shape_GetRestitution(id)
-    }
-    
-    /// Get the current filter
-    func getFilter() -> b2Filter {
-        b2Shape_GetFilter(id)
-    }
-    
-    /// Set the current filter. This is almost as expensive as recreating the shape.
-    func setFilter(_ filter: b2Filter) {
-        b2Shape_SetFilter(id, filter)
-    }
-    
     /// Enable sensor events for this shape. Only applies to kinematic and dynamic bodies. Ignored for sensors.
+    /// @see b2ShapeDef::isSensor
     func enableSensorEvents(_ flag: Bool) {
         b2Shape_EnableSensorEvents(id, flag)
     }
     
-    /// - returns: are sensor events enabled?
+    /// Returns true if sensor events are enabled
     func areSensorEventsEnabled() -> Bool {
         b2Shape_AreSensorEventsEnabled(id)
     }
     
     /// Enable contact events for this shape. Only applies to kinematic and dynamic bodies. Ignored for sensors.
+    /// @see b2ShapeDef::enableContactEvents
     func enableContactEvents(_ flag: Bool) {
         b2Shape_EnableContactEvents(id, flag)
     }
     
-    /// - returns: are contact events enabled?
+    /// Returns true if contact events are enabled
     func areContactEventsEnabled() -> Bool {
         b2Shape_AreContactEventsEnabled(id)
     }
     
     /// Enable pre-solve contact events for this shape. Only applies to dynamic bodies. These are expensive
-    /// and must be carefully handled due to multi-threading. Ignored for sensors.
+    /// and must be carefully handled due to multithreading. Ignored for sensors.
+    /// @see b2PreSolveFcn
     func enablePreSolveEvents(_ flag: Bool) {
         b2Shape_EnablePreSolveEvents(id, flag)
     }
     
-    /// - returns: are pre-solve events enabled?
+    /// Returns true if pre-solve events are enabled
     func arePreSolveEventsEnabled() -> Bool {
         b2Shape_ArePreSolveEventsEnabled(id)
     }
@@ -108,7 +69,7 @@ public extension B2Shape {
         b2Shape_EnableHitEvents(id, flag)
     }
     
-    /// - returns: are hit events enabled?
+    /// Returns true if hit events are enabled
     func areHitEventsEnabled() -> Bool {
         b2Shape_AreHitEventsEnabled(id)
     }
@@ -123,58 +84,60 @@ public extension B2Shape {
         b2Shape_RayCast(id, origin, translation)
     }
     
-    /// Access the circle geometry of a shape. Asserts the type is correct.
+    /// Get a copy of the shape's circle. Asserts the type is correct.
     func getCircle() -> B2Circle {
         b2Shape_GetCircle(id)
     }
     
-    /// Access the line segment geometry of a shape. Asserts the type is correct.
+    /// Get a copy of the shape's line segment. Asserts the type is correct.
     func getSegment() -> b2Segment {
         b2Shape_GetSegment(id)
     }
     
-    /// Access the smooth line segment geometry of a shape. These come from chain shapes.
+    /// Get a copy of the shape's smooth line segment. These come from chain shapes.
     /// Asserts the type is correct.
     func getSmoothSegment() -> b2SmoothSegment {
         b2Shape_GetSmoothSegment(id)
     }
     
-    /// Access the capsule geometry of a shape. Asserts the type is correct.
+    /// Get a copy of the shape's capsule. Asserts the type is correct.
     func getCapsule() -> b2Capsule {
         b2Shape_GetCapsule(id)
     }
     
-    /// Access the convex polygon geometry of a shape. Asserts the type is correct.
+    /// Get a copy of the shape's convex polygon. Asserts the type is correct.
     func getPolygon() -> b2Polygon {
         b2Shape_GetPolygon(id)
     }
     
     /// Allows you to change a shape to be a circle or update the current circle.
     /// This does not modify the mass properties.
+    /// @see b2Body_ApplyMassFromShapes
     func setCircle(_ circle: UnsafeMutablePointer<b2Circle>?) {
         b2Shape_SetCircle(id, circle)
     }
     
     /// Allows you to change a shape to be a capsule or update the current capsule.
     /// This does not modify the mass properties.
+    /// @see b2Body_ApplyMassFromShapes
     func setCapsule(_ capsule: UnsafeMutablePointer<b2Capsule>?) {
         b2Shape_SetCapsule(id, capsule)
     }
     
     /// Allows you to change a shape to be a segment or update the current segment.
-    /// This does not modify the mass properties.
     func setSegment(_ segment: UnsafeMutablePointer<b2Segment>?) {
         b2Shape_SetSegment(id, segment)
     }
     
-    /// Allows you to change a shape to be a segment or update the current segment.
+    /// Allows you to change a shape to be a polygon or update the current polygon.
     /// This does not modify the mass properties.
+    /// @see b2Body_ApplyMassFromShapes
     func setPolygon(_ polygon: UnsafeMutablePointer<b2Polygon>?) {
         b2Shape_SetPolygon(id, polygon)
     }
     
-    /// If the type is b2_smoothSegmentShape then you can get the parent chain id.
-    /// If the shape is not a smooth segment then this will return b2_nullChainId.
+    /// Get the parent chain id if the shape type is b2_smoothSegmentShape, otherwise
+    /// returns b2_nullChainId.
     func getParentChain() -> b2ChainId {
         b2Shape_GetParentChain(id)
     }
@@ -197,5 +160,54 @@ public extension B2Shape {
     /// Get the closest point on a shape to a target point. Target and result are in world space.
     func getClosestPoint(_ target: B2Vec2) -> B2Vec2 {
         b2Shape_GetClosestPoint(id, target)
+    }
+    
+    ///  Get the density of a shape, typically in kg/m^2
+    /// Set the mass density of a shape, typically in kg/m^2.
+    /// This will not update the mass properties on the parent body.
+    /// @see b2ShapeDef::density, b2Body_ApplyMassFromShapes
+    var density: Float {
+        get {
+            b2Shape_GetDensity(id)
+        }
+        set(density) {
+            b2Shape_SetDensity(id, density)
+        }
+    }
+    
+    ///  Get the friction of a shape
+    /// Set the friction on a shape
+    /// @see b2ShapeDef::friction
+    var friction: Float {
+        get {
+            b2Shape_GetFriction(id)
+        }
+        set(friction) {
+            b2Shape_SetFriction(id, friction)
+        }
+    }
+    
+    ///  Get the shape restitution
+    /// Set the shape restitution (bounciness)
+    /// @see b2ShapeDef::restitution
+    var restitution: Float {
+        get {
+            b2Shape_GetRestitution(id)
+        }
+        set(restitution) {
+            b2Shape_SetRestitution(id, restitution)
+        }
+    }
+    
+    ///  Get the shape filter
+    /// Set the current filter. This is almost as expensive as recreating the shape.
+    /// @see b2ShapeDef::filter
+    var filter: b2Filter {
+        get {
+            b2Shape_GetFilter(id)
+        }
+        set(filter) {
+            b2Shape_SetFilter(id, filter)
+        }
     }
 }

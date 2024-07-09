@@ -14,34 +14,24 @@ public extension B2Joint {
         b2Joint_GetType(id)
     }
     
-    /// Get body A on a joint
+    /// Get body A id on a joint
     func getBodyA() -> b2BodyId {
         b2Joint_GetBodyA(id)
     }
     
-    /// Get body B on a joint
+    /// Get body B id on a joint
     func getBodyB() -> b2BodyId {
         b2Joint_GetBodyB(id)
     }
     
-    /// Get local anchor on bodyA
+    /// Get the local anchor on bodyA
     func getLocalAnchorA() -> B2Vec2 {
         b2Joint_GetLocalAnchorA(id)
     }
     
-    /// Get local anchor on bodyB
+    /// Get the local anchor on bodyB
     func getLocalAnchorB() -> B2Vec2 {
         b2Joint_GetLocalAnchorB(id)
-    }
-    
-    /// Toggle collision between connected bodies
-    func setCollideConnected(_ shouldCollide: Bool) {
-        b2Joint_SetCollideConnected(id, shouldCollide)
-    }
-    
-    /// Is collision allowed between connected bodies?
-    func getCollideConnected() -> Bool {
-        b2Joint_GetCollideConnected(id)
     }
     
     /// Set the user data on a joint
@@ -52,5 +42,26 @@ public extension B2Joint {
     /// Wake the bodies connect to this joint
     func wakeBodies() {
         b2Joint_WakeBodies(id)
+    }
+    
+    /// Get the current constraint force for this joint
+    func getConstraintForce() -> B2Vec2 {
+        b2Joint_GetConstraintForce(id)
+    }
+    
+    /// Get the current constraint torque for this joint
+    func getConstraintTorque() -> Float {
+        b2Joint_GetConstraintTorque(id)
+    }
+    
+    /// Is collision allowed between connected bodies?
+    /// Toggle collision between connected bodies
+    var collideConnected: Bool {
+        get {
+            b2Joint_GetCollideConnected(id)
+        }
+        set(shouldCollide) {
+            b2Joint_SetCollideConnected(id, shouldCollide)
+        }
     }
 }

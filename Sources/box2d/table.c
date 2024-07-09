@@ -6,7 +6,6 @@
 #include "allocate.h"
 #include "core.h"
 #include "ctz.h"
-#include "util.h"
 
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -15,6 +14,8 @@
 #if B2_DEBUG
 _Atomic int g_probeCount;
 #endif
+
+// todo compare with https://github.com/skeeto/scratch/blob/master/set32/set32.h
 
 b2HashSet b2CreateSet(int32_t capacity)
 {

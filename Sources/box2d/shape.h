@@ -5,8 +5,6 @@
 
 #include "world.h"
 
-#include "box2d/distance.h"
-#include "box2d/geometry.h"
 #include "box2d/types.h"
 
 typedef struct b2BroadPhase b2BroadPhase;
@@ -66,7 +64,7 @@ typedef struct b2ShapeExtent
 	float maxExtent;
 } b2ShapeExtent;
 
-void b2CreateShapeProxy(b2Shape* shape, b2BroadPhase* bp, b2ProxyType type, b2Transform transform, bool forcePairCreation);
+void b2CreateShapeProxy(b2Shape* shape, b2BroadPhase* bp, b2BodyType type, b2Transform transform, bool forcePairCreation);
 void b2DestroyShapeProxy(b2Shape* shape, b2BroadPhase* bp);
 
 b2MassData b2ComputeShapeMass(const b2Shape* shape);

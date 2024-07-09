@@ -4,12 +4,14 @@
 import box2d
 
 public extension B2Chain {
-    /// Set the friction of a chain. Normally this is set in b2ChainDef.
+    /// Set the chain friction
+    /// @see b2ChainDef::friction
     func setFriction(_ friction: Float) {
         b2Chain_SetFriction(id, friction)
     }
     
-    /// Set the restitution (bounciness) on a chain. Normally this is specified in b2ChainDef.
+    /// Set the chain restitution (bounciness)
+    /// @see b2ChainDef::restitution
     func setRestitution(_ restitution: Float) {
         b2Chain_SetRestitution(id, restitution)
     }

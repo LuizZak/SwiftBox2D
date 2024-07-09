@@ -14,12 +14,7 @@
 #include "shape.h"
 #include "solver_set.h"
 #include "stack_allocator.h"
-#include "util.h"
 #include "world.h"
-
-#include "box2d/color.h"
-#include "box2d/event_types.h"
-#include "box2d/timer.h"
 
 // for mm_pause
 #include "x86/sse2.h"
@@ -60,9 +55,9 @@ static void b2IntegrateVelocitiesTask(int startIndex, int endIndex, b2StepContex
 
 		// Apply forces, torque, gravity, and damping
 		// Apply damping.
-		// ODE: dv/dt + c * v = 0
+		// Differential equation: dv/dt + c * v = 0
 		// Solution: v(t) = v0 * exp(-c * t)
-		// Time step: v(t + dt) = v0 * exp(-c * (t + dt)) = v0 * exp(-c * t) * exp(-c * dt) = v * exp(-c * dt)
+		// Time step: v(t + dt) = v0 * exp(-c * (t + dt)) = v0 * exp(-c * t) * exp(-c * dt) = v(t) * exp(-c * dt)
 		// v2 = exp(-c * dt) * v1
 		// Pade approximation:
 		// v2 = v1 * 1 / (1 + c * dt)
@@ -190,6 +185,9 @@ static void b2FinalizeBodiesTask(int startIndex, int endIndex, uint32_t threadIn
 	b2TaskContext* taskContext = world->taskContextArray + threadIndex;
 
 	bool enableContinuous = world->enableContinuous;
+
+	const float speculativeDistance = b2_speculativeDistance;
+	const float aabbMargin = b2_aabbMargin;
 
 	B2_ASSERT(startIndex <= endIndex);
 
@@ -321,10 +319,10 @@ static void b2FinalizeBodiesTask(int startIndex, int endIndex, uint32_t threadIn
 			else
 			{
 				b2AABB aabb = b2ComputeShapeAABB(shape, transform);
-				aabb.lowerBound.x -= b2_speculativeDistance;
-				aabb.lowerBound.y -= b2_speculativeDistance;
-				aabb.upperBound.x += b2_speculativeDistance;
-				aabb.upperBound.y += b2_speculativeDistance;
+				aabb.lowerBound.x -= speculativeDistance;
+				aabb.lowerBound.y -= speculativeDistance;
+				aabb.upperBound.x += speculativeDistance;
+				aabb.upperBound.y += speculativeDistance;
 				shape->aabb = aabb;
 
 				B2_ASSERT(shape->enlargedAABB == false);
@@ -332,10 +330,10 @@ static void b2FinalizeBodiesTask(int startIndex, int endIndex, uint32_t threadIn
 				if (b2AABB_Contains(shape->fatAABB, aabb) == false)
 				{
 					b2AABB fatAABB;
-					fatAABB.lowerBound.x = aabb.lowerBound.x - b2_aabbMargin;
-					fatAABB.lowerBound.y = aabb.lowerBound.y - b2_aabbMargin;
-					fatAABB.upperBound.x = aabb.upperBound.x + b2_aabbMargin;
-					fatAABB.upperBound.y = aabb.upperBound.y + b2_aabbMargin;
+					fatAABB.lowerBound.x = aabb.lowerBound.x - aabbMargin;
+					fatAABB.lowerBound.y = aabb.lowerBound.y - aabbMargin;
+					fatAABB.upperBound.x = aabb.upperBound.x + aabbMargin;
+					fatAABB.upperBound.y = aabb.upperBound.y + aabbMargin;
 					shape->fatAABB = fatAABB;
 
 					shape->enlargedAABB = true;
@@ -796,6 +794,7 @@ struct b2ContinuousContext
 	float fraction;
 };
 
+// todo this may lead to pauses for scenarios where pre-solve would disable collision
 static bool b2ContinuousQueryCallback(int proxyId, int shapeId, void* context)
 {
 	B2_MAYBE_UNUSED(proxyId);
@@ -828,6 +827,12 @@ static bool b2ContinuousQueryCallback(int proxyId, int shapeId, void* context)
 		return true;
 	}
 
+	// Skip sensors
+	if (shape->isSensor == true)
+	{
+		return true;
+	}
+
 	b2CheckIndex(world->bodyArray, shape->bodyId);
 	b2Body* body = world->bodyArray + shape->bodyId;
 	b2BodySim* bodySim = b2GetBodySim(world, body);
@@ -840,13 +845,25 @@ static bool b2ContinuousQueryCallback(int proxyId, int shapeId, void* context)
 	}
 
 	// Skip filtered bodies
-
 	b2CheckIndex(world->bodyArray, fastBodySim->bodyId);
 	b2Body* fastBody = world->bodyArray + fastBodySim->bodyId;
 	canCollide = b2ShouldBodiesCollide(world, fastBody, body);
 	if (canCollide == false)
 	{
 		return true;
+	}
+
+	// Custom user filtering
+	b2CustomFilterFcn* customFilterFcn = world->customFilterFcn;
+	if (customFilterFcn != NULL)
+	{
+		b2ShapeId idA = {shape->id + 1, world->worldId, shape->revision};
+		b2ShapeId idB = {fastShape->id + 1, world->worldId, fastShape->revision};
+		canCollide = customFilterFcn(idA, idB, world->customFilterContext);
+		if (canCollide == false)
+		{
+			return true;
+		}
 	}
 
 	// Prevent pausing on smooth segment junctions
@@ -915,8 +932,9 @@ static void b2SolveContinuous(b2World* world, int bodySimIndex)
 	xf2.q = sweep.q2;
 	xf2.p = b2Sub(sweep.c2, b2RotateVector(sweep.q2, sweep.localCenter));
 
-	b2DynamicTree* staticTree = world->broadPhase.trees + b2_staticProxy;
-	b2DynamicTree* movableTree = world->broadPhase.trees + b2_movableProxy;
+	b2DynamicTree* staticTree = world->broadPhase.trees + b2_staticBody;
+	b2DynamicTree* kinematicTree = world->broadPhase.trees + b2_kinematicBody;
+	b2DynamicTree* dynamicTree = world->broadPhase.trees + b2_dynamicBody;
 
 	struct b2ContinuousContext context;
 	context.world = world;
@@ -936,6 +954,8 @@ static void b2SolveContinuous(b2World* world, int bodySimIndex)
 		b2Shape* fastShape = shapes + shapeId;
 		B2_ASSERT(fastShape->isFast == true);
 
+		shapeId = fastShape->nextShapeId;
+
 		// Clear flag (keep set on body)
 		fastShape->isFast = false;
 
@@ -950,15 +970,23 @@ static void b2SolveContinuous(b2World* world, int bodySimIndex)
 		// Store this for later
 		fastShape->aabb = box2;
 
-		b2DynamicTree_Query(staticTree, box, b2ContinuousQueryCallback, &context);
+		// No continuous collision for sensors
+		if (fastShape->isSensor)
+		{
+			continue;
+		}
+
+		b2DynamicTree_Query(staticTree, box, b2_defaultMaskBits, b2ContinuousQueryCallback, &context);
 
 		if (isBullet)
 		{
-			b2DynamicTree_Query(movableTree, box, b2ContinuousQueryCallback, &context);
+			b2DynamicTree_Query(kinematicTree, box, b2_defaultMaskBits, b2ContinuousQueryCallback, &context);
+			b2DynamicTree_Query(dynamicTree, box, b2_defaultMaskBits, b2ContinuousQueryCallback, &context);
 		}
-
-		shapeId = fastShape->nextShapeId;
 	}
+
+	const float speculativeDistance = b2_speculativeDistance;
+	const float aabbMargin = b2_aabbMargin;
 
 	if (context.fraction < 1.0f)
 	{
@@ -982,19 +1010,19 @@ static void b2SolveContinuous(b2World* world, int bodySimIndex)
 
 			// Must recompute aabb at the interpolated transform
 			b2AABB aabb = b2ComputeShapeAABB(shape, transform);
-			aabb.lowerBound.x -= b2_speculativeDistance;
-			aabb.lowerBound.y -= b2_speculativeDistance;
-			aabb.upperBound.x += b2_speculativeDistance;
-			aabb.upperBound.y += b2_speculativeDistance;
+			aabb.lowerBound.x -= speculativeDistance;
+			aabb.lowerBound.y -= speculativeDistance;
+			aabb.upperBound.x += speculativeDistance;
+			aabb.upperBound.y += speculativeDistance;
 			shape->aabb = aabb;
 
 			if (b2AABB_Contains(shape->fatAABB, aabb) == false)
 			{
 				b2AABB fatAABB;
-				fatAABB.lowerBound.x = aabb.lowerBound.x - b2_aabbMargin;
-				fatAABB.lowerBound.y = aabb.lowerBound.y - b2_aabbMargin;
-				fatAABB.upperBound.x = aabb.upperBound.x + b2_aabbMargin;
-				fatAABB.upperBound.y = aabb.upperBound.y + b2_aabbMargin;
+				fatAABB.lowerBound.x = aabb.lowerBound.x - aabbMargin;
+				fatAABB.lowerBound.y = aabb.lowerBound.y - aabbMargin;
+				fatAABB.upperBound.x = aabb.upperBound.x + aabbMargin;
+				fatAABB.upperBound.y = aabb.upperBound.y + aabbMargin;
 				shape->fatAABB = fatAABB;
 
 				shape->enlargedAABB = true;
@@ -1023,10 +1051,10 @@ static void b2SolveContinuous(b2World* world, int bodySimIndex)
 			if (b2AABB_Contains(shape->fatAABB, shape->aabb) == false)
 			{
 				b2AABB fatAABB;
-				fatAABB.lowerBound.x = shape->aabb.lowerBound.x - b2_aabbMargin;
-				fatAABB.lowerBound.y = shape->aabb.lowerBound.y - b2_aabbMargin;
-				fatAABB.upperBound.x = shape->aabb.upperBound.x + b2_aabbMargin;
-				fatAABB.upperBound.y = shape->aabb.upperBound.y + b2_aabbMargin;
+				fatAABB.lowerBound.x = shape->aabb.lowerBound.x - aabbMargin;
+				fatAABB.lowerBound.y = shape->aabb.lowerBound.y - aabbMargin;
+				fatAABB.upperBound.x = shape->aabb.upperBound.x + aabbMargin;
+				fatAABB.upperBound.y = shape->aabb.upperBound.y + aabbMargin;
 				shape->fatAABB = fatAABB;
 
 				shape->enlargedAABB = true;
@@ -1806,7 +1834,7 @@ void b2Solve(b2World* world, b2StepContext* stepContext)
 	// Serially enlarge broad-phase proxies for fast shapes
 	{
 		b2BroadPhase* broadPhase = &world->broadPhase;
-		b2DynamicTree* movableTree = broadPhase->trees + b2_movableProxy;
+		b2DynamicTree* dynamicTree = broadPhase->trees + b2_dynamicBody;
 		b2Body* bodies = world->bodyArray;
 		b2Shape* shapes = world->shapeArray;
 
@@ -1844,12 +1872,12 @@ void b2Solve(b2World* world, b2StepContext* stepContext)
 
 				int proxyKey = shape->proxyKey;
 				int proxyId = B2_PROXY_ID(proxyKey);
-				B2_ASSERT(B2_PROXY_TYPE(proxyKey) == b2_movableProxy);
+				B2_ASSERT(B2_PROXY_TYPE(proxyKey) == b2_dynamicBody);
 
 				// all fast shapes should already be in the move buffer
 				B2_ASSERT(b2ContainsKey(&broadPhase->moveSet, proxyKey + 1));
 
-				b2DynamicTree_EnlargeProxy(movableTree, proxyId, shape->fatAABB);
+				b2DynamicTree_EnlargeProxy(dynamicTree, proxyId, shape->fatAABB);
 
 				shapeId = shape->nextShapeId;
 			}
@@ -1890,12 +1918,12 @@ void b2Solve(b2World* world, b2StepContext* stepContext)
 
 				int proxyKey = shape->proxyKey;
 				int proxyId = B2_PROXY_ID(proxyKey);
-				B2_ASSERT(B2_PROXY_TYPE(proxyKey) == b2_movableProxy);
+				B2_ASSERT(B2_PROXY_TYPE(proxyKey) == b2_dynamicBody);
 
 				// all fast shapes should already be in the move buffer
 				B2_ASSERT(b2ContainsKey(&broadPhase->moveSet, proxyKey + 1));
 
-				b2DynamicTree_EnlargeProxy(movableTree, proxyId, shape->fatAABB);
+				b2DynamicTree_EnlargeProxy(dynamicTree, proxyId, shape->fatAABB);
 
 				shapeId = shape->nextShapeId;
 			}
