@@ -54,7 +54,9 @@ class FileWalker(object):
         self.file_name = file_name
         self.pattern = re.compile(r"#line\s+(\d+)\s+\"(.+)\"")
 
-    def process_line(self, line_contents, absolute_line) -> Optional[FileVisit]:
+    def process_line(
+        self, line_contents: str, absolute_line: int
+    ) -> Optional[FileVisit]:
         match = self.pattern.match(line_contents)
         if match is None:
             return None
@@ -115,11 +117,14 @@ class FileWalker(object):
                     current_visit.line += 1
                     current_visit.absolute_line += 1
 
-    # Returns a reduced visit list where each element is the latest occurrence of a file name
-    # on the input file.
-    # The list is the minimal #line information needed to reconstruct the path of #include files
-    # on a preprocessed header file.
     def min_visits(self) -> list[FileVisit]:
+        """
+        Returns a reduced visit list where each element is the latest occurrence
+        of a file name on the input file.
+        The list is the minimal #line information needed to reconstruct the path
+        of #include files on a preprocessed header file.
+        """
+
         result: list[FileVisit] = []
 
         if len(self.visits) == 0:
@@ -208,8 +213,6 @@ if __name__ == "__main__":
 
     walker = FileWalker(Path.cwd().joinpath(Path(args.file_name)))
 
-    file_visits: list[FileVisit] = []
-
     if args.command is None:
         print("Error: Command name required.")
         parser.print_help()
@@ -217,8 +220,6 @@ if __name__ == "__main__":
 
     if args.command == "absolute":
         walker.walk_to_absolute(args.line_number)
-
-        file_visits = walker.min_visits()
     elif args.command == "relative":
         if not walker.walk_to_relative(args.relative_file_name, args.line_number):
             file_path = Path(args.relative_file_name)

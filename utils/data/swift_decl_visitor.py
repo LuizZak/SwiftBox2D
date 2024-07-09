@@ -83,7 +83,7 @@ class SwiftDeclVisitor(object):
 
 
 class SwiftDeclCallableVisitor(SwiftDeclVisitor):
-    "Visits declarations recursively, invoking a callable for every declaration visited on `self.generic_visit(<node>)`."
+    """Visits declarations recursively, invoking a callable for every declaration visited on `self.generic_visit(<node>)`."""
 
     def __init__(self, callback: Callable):
         self.callback = callback

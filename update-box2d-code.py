@@ -71,21 +71,21 @@ def cwd_path(*args: PathLike | str) -> Path:
 
 # From: https://github.com/gitpython-developers/GitPython/blob/ea43defd777a9c0751fc44a9c6a622fc2dbd18a0/git/util.py#L101
 # Windows has issues deleting readonly files that git creates
-def git_rmtree(path: os.PathLike) -> None:
+def git_rmtree(path_to_remove: os.PathLike) -> None:
     """Remove the given recursively.
     :note: we use shutil rmtree but adjust its behaviour to see whether files that
         couldn't be deleted are read-only. Windows will not remove them in that case"""
 
-    def onerror(func: Callable, path: os.PathLike, _) -> None:
+    def onerror(func: Callable, p: os.PathLike, _) -> None:
         # Is the error an access error ?
-        os.chmod(path, stat.S_IWUSR)
+        os.chmod(p, stat.S_IWUSR)
 
         try:
-            func(path)  # Will scream if still not possible to delete.
+            func(p)  # Will scream if still not possible to delete.
         except Exception:
             raise
 
-    return shutil.rmtree(path, False, onerror)
+    return shutil.rmtree(path_to_remove, False, onerror)
 
 
 # ----

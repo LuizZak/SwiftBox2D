@@ -38,7 +38,7 @@ from utils.paths import paths
 from utils.text.syntax_stream import SyntaxStream
 
 
-def run_cl(input_path: Path) -> bytes:
+def run_cl(input_path: Path, extra_args: list[str] | None = None) -> bytes:
     args: list[str | os.PathLike] = [
         "cl",
         "/E",
@@ -46,11 +46,13 @@ def run_cl(input_path: Path) -> bytes:
         "/Zc:wchar_t",
         input_path,
     ]
+    if extra_args is not None:
+        args.extend(extra_args)
 
     return subprocess.check_output(args, cwd=paths.SCRIPTS_ROOT_PATH)
 
 
-def run_clang(input_path: Path) -> bytes:
+def run_clang(input_path: Path, extra_args: list[str] | None = None) -> bytes:
     args: list[str | os.PathLike] = [
         "clang",
         "-E",
@@ -59,15 +61,17 @@ def run_clang(input_path: Path) -> bytes:
         "-pedantic-errors",
         input_path,
     ]
+    if extra_args is not None:
+        args.extend(extra_args)
 
     return subprocess.check_output(args, cwd=paths.SCRIPTS_ROOT_PATH)
 
 
-def run_c_preprocessor(input_path: Path) -> bytes:
+def run_c_preprocessor(input_path: Path, extra_args: list[str] | None = None) -> bytes:
     if sys.platform == "win32":
-        return run_cl(input_path)
+        return run_cl(input_path, extra_args)
 
-    return run_clang(input_path)
+    return run_clang(input_path, extra_args)
 
 
 class DeclGeneratorTarget:
@@ -120,7 +124,7 @@ class DeclFileGeneratorStdoutTarget(DeclGeneratorTarget):
 
 
 class DeclFileGenerator:
-    "Class used to write `SwiftDecl` declarations into files."
+    """Class used to write `SwiftDecl` declarations into files."""
 
     def __init__(
         self,
@@ -207,6 +211,7 @@ class SwiftDoccommentFormatterVisitor(SwiftDeclVisitor):
 @dataclass
 class TypeGeneratorRequest:
     header_file: Path
+    extra_compiler_args: list[str] | None
     destination: Path
     prefixes: list[str]
     target: DeclGeneratorTarget
@@ -237,6 +242,7 @@ class TypeGeneratorRequest:
 
         return cls(
             header_file=header_file,
+            extra_compiler_args=None,
             destination=destination,
             prefixes=prefixes,
             target=target,
@@ -348,7 +354,7 @@ def generate_types(request: TypeGeneratorRequest) -> int:
 def _generate_types(request: TypeGeneratorRequest) -> int:
     print_stage_name("Generating header file...")
 
-    output_file = run_c_preprocessor(request.header_file)
+    output_file = run_c_preprocessor(request.header_file, request.extra_compiler_args)
 
     # Windows-specific fix to replace some page feeds that are present in the original system headers
     if sys.platform == "win32":

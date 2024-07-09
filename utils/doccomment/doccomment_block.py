@@ -42,24 +42,24 @@ class DoccommentBlock:
         )
 
     def contains_line(self, line_index: int) -> bool:
-        return line_index >= self.line and line_index < self.end_line()
+        return self.line <= line_index < self.end_line()
 
     def end_line(self) -> int:
-        "Returns the line this comment span ends, inclusive."
+        """Returns the line this comment span ends, inclusive."""
         return self.line + self.line_count
 
     def is_multi_lined(self) -> bool:
         return self.line_count > 1
 
     def lines(self) -> list[str]:
-        "Returns the comment lines associated with this doc comment block."
+        """Returns the comment lines associated with this doc comment block."""
         return self.comment_contents.splitlines()
 
     def line_index_at(self, char_index: int) -> int:
         return self.comment_contents.count("\n", 0, char_index) + 1
 
     def line_break_indices(self) -> list[int]:
-        "Returns the string index where each line in `self.comment_contents` starts at."
+        """Returns the string index where each line in `self.comment_contents` starts at."""
 
         result = []
         acc = 0
@@ -98,7 +98,7 @@ class DoccommentBlock:
         pattern: re.Pattern,
         repl: str | Callable[[re.Match[str]], str],
     ) -> "DoccommentBlock":
-        "Performs substitution using a given regex and replacement on this comment's contents."
+        """Performs substitution using a given regex and replacement on this comment's contents."""
 
         return self.with_contents(
             pattern.sub(repl, self.comment_contents),
@@ -175,7 +175,7 @@ class DoccommentBlock:
 
     @classmethod
     def from_string(cls, string: str) -> "DoccommentBlock":
-        "Makes a doc comment with no path/line/column information with the given string contents."
+        """Makes a doc comment with no path/line/column information with the given string contents."""
         return DoccommentBlock(
             file=Path(),
             line=1,

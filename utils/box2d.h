@@ -23,11 +23,15 @@
 
 /// Work around GCC-specific features
 #define __builtin_va_list void
+#define __extension__
+#define __asm__(x)
 
 #if defined(__WCHAR_TYPE__)
 #undef wchar_t
 #endif // defined(__WCHAR_TYPE__)
 #define __restrict
 #define __attribute__(va)
+
+#define B2_COMPILER_MSVC
 
 #include "../Sources/box2d/include/box2d/box2d.h"

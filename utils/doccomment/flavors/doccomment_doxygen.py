@@ -73,8 +73,8 @@ class DoccommentFlavorDoxygen(DoccommentFlavor):
 
         return comment
 
+    @staticmethod
     def handle_command(
-        self,
         comment: DoccommentBlock,
         name: str,
         handler: Callable[["StringManipulator"], Any],
@@ -99,28 +99,27 @@ class DoccommentFlavorDoxygen(DoccommentFlavor):
 
         return comment.with_contents(buffer)
 
+    @staticmethod
     def __convert_ref(
-        self,
         symbol_name: str | None,
         lookup: SwiftDeclLookup,
     ) -> str | None:
         def __convert_ref_internal(
-            symbol_name: str | None,
-            lookup: SwiftDeclLookup,
+            inner_symbol_name: str | None
         ) -> str | None:
-            if symbol_name is None:
+            if inner_symbol_name is None:
                 return None
 
             # C++ namespaced symbol references
-            if "::" in symbol_name:
-                split = symbol_name.split("::")
-                replaced = map(lambda s: __convert_ref_internal(s, lookup), split)
+            if "::" in inner_symbol_name:
+                split = inner_symbol_name.split("::")
+                replaced = map(lambda s: __convert_ref_internal(s), split)
                 return ".".join([r for r in replaced if r is not None])
 
-            swift_name = lookup.lookup_c_symbol(symbol_name)
-            return swift_name if swift_name is not None else symbol_name
+            swift_name = lookup.lookup_c_symbol(inner_symbol_name)
+            return swift_name if swift_name is not None else inner_symbol_name
 
-        return f"`{__convert_ref_internal(symbol_name, lookup)}`"
+        return f"`{__convert_ref_internal(symbol_name)}`"
 
 
 if __name__ == "__main__":

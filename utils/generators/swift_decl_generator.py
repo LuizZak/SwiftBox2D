@@ -401,7 +401,7 @@ class SwiftDeclGenerator:
         return result
 
     def post_merge(self, decls: list[SwiftDecl]) -> list[SwiftDecl]:
-        "Applies post-type merge operations to a list of Swift declarations"
+        """Applies post-type merge operations to a list of Swift declarations"""
         decls = list(decls)  # Copy internally first
 
         def _generate_typealiases(decls: list[SwiftDecl]):

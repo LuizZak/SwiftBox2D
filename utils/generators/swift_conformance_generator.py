@@ -138,10 +138,6 @@ class SwiftConformanceGenerator:
             return all(map(self._is_constant_field_decl, field.decls))
         if isinstance(field, c_ast.Union):
             return any(map(self._is_constant_field_decl, field.decls))
-        if isinstance(field.type, c_ast.TypeDecl):
-            if isinstance(field.dim, c_ast.Constant):
-                dims = int(field.dim.value)
-                return dims != 0
 
         return True
 

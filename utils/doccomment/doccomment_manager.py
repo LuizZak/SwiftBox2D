@@ -42,7 +42,7 @@ class DoccommentManager:
         )
 
     def populate(self, decls: Sequence[SwiftDecl]):
-        "Populates doc comments for provided declarations. Comments are sourced from each declaration's `origin`."
+        """Populates doc comments for provided declarations. Comments are sourced from each declaration's `origin`."""
 
         if not self.should_collect:
             return
@@ -50,7 +50,7 @@ class DoccommentManager:
         self.lookup.populate_doc_comments_inplace(decls)
 
     def format(self, decls: Sequence[SwiftDecl]):
-        "Formats doc comments from provided declarations inplace."
+        """Formats doc comments from provided declarations inplace."""
 
         if not self.should_format:
             return

@@ -74,7 +74,7 @@ class SwiftAccessLevel(Enum):
                 return False
 
     def less_visible(self, other: "SwiftAccessLevel"):
-        "Returns the less visible access level between `self` and `other`."
+        """Returns the less visible access level between `self` and `other`."""
         if self.is_more_visible(other):
             return other
         return self
@@ -265,7 +265,7 @@ class SwiftMemberFunctionDecl(SwiftMemberDecl):
 
         def copy(self):
             return SwiftMemberFunctionDecl.ParameterType(
-                self.label, self.name, self.decorations, type
+                self.label, self.name, self.decorations, self.type
             )
 
     parameters: list[ParameterType] = field(default_factory=lambda: [])

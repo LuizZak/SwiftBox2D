@@ -37,7 +37,7 @@ class SwiftDeclMerger:
                     decl.original_name if decl.original_name is not None else "<none>"
                 )
 
-                raise BaseException(
+                raise Exception(
                     f"Found two symbols that share the same name but are of different types or access levels: {existing_name} (type: {type(existing)}) (originally: {existing_original}) and {decl_name} (type: {type(decl)}) (originally: {decl_original})"
                 )
             else:
@@ -111,15 +111,15 @@ class SwiftDeclMerger:
         result = decl1.copy()
 
         if decl1.name != decl2.name:
-            raise BaseException(
+            raise Exception(
                 f"Attempted to merge two member variable symbols that don't share a name: {decl1.name.to_string()} and {decl2.name.to_string()}"
             )
         if decl1.var_type != decl2.var_type:
-            raise BaseException(
+            raise Exception(
                 f"Attempted to merge two member variable symbols that don't share a type: {decl1.name.to_string()} ({decl1.var_type}) and {decl2.name.to_string()} ({decl2.var_type})"
             )
         if decl1.is_static != decl2.is_static:
-            raise BaseException(
+            raise Exception(
                 f"Found two member variable symbols that don't share the same is_static: {decl1.name.to_string()} ({decl1.is_static}) and {decl2.name.to_string()} ({decl2.is_static})"
             )
         if (
@@ -127,7 +127,7 @@ class SwiftDeclMerger:
             and decl2.initial_value is not None
             and decl1.initial_value != decl2.initial_value
         ):
-            raise BaseException(
+            raise Exception(
                 f"Found two member variable symbols that have different initial values defined: {decl1.name.to_string()} ({decl1.initial_value}) and {decl2.name.to_string()} ({decl2.initial_value})"
             )
         if decl2.initial_value is not None:
@@ -151,7 +151,7 @@ class SwiftDeclMerger:
             if len(decl1.body) == 0:
                 result.body = decl2.body
             elif len(decl2.body) != 0:
-                raise BaseException(
+                raise Exception(
                     f"Found two member function symbols that have different bodies defined: {decl1.name.to_string()} ({decl1.body}) and {decl2.name.to_string()} ({decl2.body})"
                 )
 
@@ -159,7 +159,7 @@ class SwiftDeclMerger:
             if len(decl1.parameters) == 0:
                 result.parameters = list(decl2.parameters)
             elif len(decl2.parameters) != 0:
-                raise BaseException(
+                raise Exception(
                     f"Found two member function symbols that have different argument sets defined: {decl1.name.to_string()} ({decl1.parameters}) and {decl2.name.to_string()} ({decl2.parameters})"
                 )
 
@@ -167,7 +167,7 @@ class SwiftDeclMerger:
             if decl1.return_type is None:
                 result.return_type = decl2.return_type
             elif decl2.return_type is not None:
-                raise BaseException(
+                raise Exception(
                     f"Found two member function symbols that have different return types defined: {decl1.name.to_string()} ({decl1.return_type}) and {decl2.name.to_string()} ({decl2.return_type})"
                 )
 

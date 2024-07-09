@@ -94,7 +94,7 @@ class SwiftTypeMapper:
         ("UInt64", ["uint64_t", "unsigned long long", "unsigned long long int"]),
     ]
 
-    __cached_typedefs: dict[str, c_ast.Node] | None = None
+    __cached_typedefs: dict[str, c_ast.Typedef] | None = None
     __cached_typedef_resolves: dict[str, _InternalTypeResult] | None = None
 
     def enable_caching(self, ast: c_ast.FileAST):
@@ -123,7 +123,9 @@ class SwiftTypeMapper:
         return None
 
     def unalias_type(self, type_name: str, context: c_ast.FileAST) -> SwiftType | None:
-        """Returns the fully resolved unaliased type of name `type_name`, if it is a typedef, returns `None` otherwise."""
+        """
+        Returns the fully resolved unaliased type of name `type_name`, if it is a typedef, returns `None` otherwise.
+        """
         if expanded := self._expand_type_def(type_name, context):
             return expanded[0]
 
@@ -203,8 +205,8 @@ class SwiftTypeMapper:
 
             params = []
             for p in c_decl.args.params:
-                if type := self._map_base(p, context=context):
-                    params.append(type[0])
+                if typ := self._map_base(p, context=context):
+                    params.append(typ[0])
                 else:
                     return None
 
@@ -287,9 +289,9 @@ class SwiftTypeMapper:
             if not (decl := self.__cached_typedefs.get(type_name)):
                 return None
 
-            if type := self._map(decl.type, context):
+            if typ := self._map(decl.type, context):
                 return (
-                    type[0],
+                    typ[0],
                     SwiftType.type_name(type_name),
                 )
             else:
@@ -318,32 +320,35 @@ class SwiftTypeMapper:
 if __name__ == "__main__":
     import pycparser
 
-    src = """
-    int *a;
-    void *b;
-    unsigned int c;
-    long long d;
-    signed long long e;
-    unsigned long long f;
-    typedef void* g(unsigned int a, int b);
-    void h(g* a);
-    typedef struct { int b; } i;
-    void j(i a);
-    const int *k;
-    long unsigned int l;
-    short signed int m;
-    int n[10];
-    long *p[5];
-    """
+    def __test():
+        src = """
+        int *a;
+        void *b;
+        unsigned int c;
+        long long d;
+        signed long long e;
+        unsigned long long f;
+        typedef void* g(unsigned int a, int b);
+        void h(g* a);
+        typedef struct { int b; } i;
+        void j(i a);
+        const int *k;
+        long unsigned int l;
+        short signed int m;
+        int n[10];
+        long *p[5];
+        """
 
-    parser = pycparser.CParser()
-    node: c_ast.FileAST = parser.parse(src, "<stdin>")
+        parser = pycparser.CParser()
+        node: c_ast.FileAST = parser.parse(src, "<stdin>")
 
-    node.show()
+        node.show()
 
-    mapper = SwiftTypeMapper()
-    for decl in node.ext:
-        if typ := mapper.map_to_swift_type(decl, node):
-            print(typ.to_string())
-        else:
-            print(None)
+        mapper = SwiftTypeMapper()
+        for decl in node.ext:
+            if typ := mapper.map_to_swift_type(decl, node):
+                print(typ.to_string())
+            else:
+                print(None)
+
+    __test()

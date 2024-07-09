@@ -136,7 +136,7 @@ class SymbolGeneratorFilter:
                     return cls.NEITHER
 
     class DeclarationFilter:
-        "Base class for filters."
+        """Base class for filters."""
 
         neutral_result: "SymbolGeneratorFilter.DeclarationFilterResult"
         "Result of filter in case a positive match is not found. Defaults to `NEITHER`."
@@ -153,7 +153,7 @@ class SymbolGeneratorFilter:
             return SymbolGeneratorFilter.DeclarationFilterResult.NEITHER
 
     class RegexDeclarationFilter(DeclarationFilter):
-        "A declaration filter that filters based on the regex of the original C symbol name."
+        """A declaration filter that filters based on the regex of the original C symbol name."""
 
         pattern: re.Pattern
 

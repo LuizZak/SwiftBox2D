@@ -5,7 +5,7 @@ T = TypeVar("T")
 
 
 class SyntaxStream:
-    "Class used to generate Swift syntax strings."
+    """Class used to generate Swift syntax strings."""
 
     def __init__(self, destination: TextIO):
         self.destination = destination
@@ -15,7 +15,7 @@ class SyntaxStream:
         self.destination.write(text)
 
     def write_then_line(self, text: str = ""):
-        "Writes a given string of text and output a line break at the end."
+        """Writes a given string of text and output a line break at the end."""
         self.write(f"{text}\n")
 
     def indent_str(self) -> str:
@@ -30,7 +30,7 @@ class SyntaxStream:
         self.write_then_line(text)
 
     def pre_line(self):
-        "Emits the indentation for a line."
+        """Emits the indentation for a line."""
         self.write(f"{self.indent_str()}")
 
     def indent(self):

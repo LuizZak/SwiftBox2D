@@ -161,7 +161,7 @@ class SymbolNameFormatter:
         )
 
     def split_component_inplace(self, string: str, output: list[str]):
-        "Performs recursive in-place splitting of `string` along `self.words_to_split` boundaries into `output`."
+        """Performs recursive in-place splitting of `string` along `self.words_to_split` boundaries into `output`."""
 
         for pattern in self.words_to_split:
             if not pattern.search(string):

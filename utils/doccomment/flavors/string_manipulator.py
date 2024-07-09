@@ -2,7 +2,7 @@ import re
 
 
 class StringManipulator:
-    "Manipulates subsections of strings by extending an index range into buffer before replacing the entire selected range with a substitution."
+    """Manipulates subsections of strings by extending an index range into buffer before replacing the entire selected range with a substitution."""
 
     def __init__(self, buffer: str, index: int):
         self.__buffer = buffer
@@ -14,11 +14,11 @@ class StringManipulator:
         return self.__buffer
 
     def start(self) -> int:
-        "Returns the start index of the current selection."
+        """Returns the start index of the current selection."""
         return self.__index
 
     def end(self) -> int:
-        "Returns the end index of the current selection."
+        """Returns the end index of the current selection."""
         return self.__index + self.__length
 
     def get_range(self) -> range:
@@ -27,31 +27,31 @@ class StringManipulator:
     # MARK: Extending selection
 
     def extend_word(self):
-        "Extends the current selection by a regex word (`\\w`). Nothing is done if a word cannot be matched at the current range's end point."
+        """Extends the current selection by a regex word (`\\w`). Nothing is done if a word cannot be matched at the current range's end point."""
         self.extend(r"\w+")
 
     def extend_to_newline(self):
-        "Extends the current selection until a newline is found. Nothing is done if no newline exists from the current range's end point."
+        """Extends the current selection until a newline is found. Nothing is done if no newline exists from the current range's end point."""
         self.extend_to(self.__buffer.find("\n", self.end()) + 1)
 
     def extend_whitespace(self):
-        "Extends the current selection past any whitespace available at the current selection end."
+        """Extends the current selection past any whitespace available at the current selection end."""
         if match := self.__whitespace_regex.match(self.__buffer, self.end()):
             self.extend_to(match.end())
 
     def extend_length(self, ext: int):
-        "Extends the current selection by a given length."
+        """Extends the current selection by a given length."""
         self.__length += ext
 
     def extend_to(self, end: int):
-        "Extends the selection to a specified absolute index into the buffer. If `end` is greater than the current start index, nothing is done."
+        """Extends the selection to a specified absolute index into the buffer. If `end` is greater than the current start index, nothing is done."""
         if end < self.__index:
             return
 
         self.__length = end - self.__index
 
     def extend(self, pattern: re.Pattern | str) -> str | None:
-        "Extends the current selection via regex. Returns the string that resulted from the pattern that was applied, or None, if no match was found at `self.end()`."
+        """Extends the current selection via regex. Returns the string that resulted from the pattern that was applied, or None, if no match was found at `self.end()`."""
         if isinstance(pattern, str):
             pattern = re.compile(pattern)
 

@@ -94,7 +94,7 @@ class DirectoryStructureManager:
         )
 
     def make_declaration_files(self, decls: Iterable[SwiftDecl]) -> list[SwiftFile]:
-        "Merges a given list of declarations into Swift files."
+        """Merges a given list of declarations into Swift files."""
 
         result: dict[Path, SwiftFile] = dict()
 

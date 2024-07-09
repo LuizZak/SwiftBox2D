@@ -12,26 +12,26 @@ import io
 
 
 def jsonc_load(path: PathLike):
-    "Loads the contents of the given JSONC string buffer as a JSON with `json.loads`"
+    """Loads the contents of the given JSONC string buffer as a JSON with `json.loads`"""
     with open(path, "r") as file:
         return jsonc_loads(file.read())
 
 
 def jsonc_loads(string: str | bytes | bytearray):
-    "Loads the contents of the given JSONC string buffer as a JSON with `json.loads`"
+    """Loads the contents of the given JSONC string buffer as a JSON with `json.loads`"""
     _string: str
     if isinstance(string, str):
         _string = string
     elif isinstance(string, bytes):
         _string = str(string)
-    elif isinstance(string, bytearray):
+    else:
         _string = str(string)
 
     return json.loads(jsonc_strip_comments(_string))
 
 
 def jsonc_strip_comments(source: str | Path) -> str:
-    "Strips C-style comments from a given JSON string or JSON file's contents, returning a string capable of being parsed with `json.loads(<str>)`"
+    """Strips C-style comments from a given JSON string or JSON file's contents, returning a string capable of being parsed with `json.loads(<str>)`"""
 
     if isinstance(source, Path):
         with open(source, "r") as f:

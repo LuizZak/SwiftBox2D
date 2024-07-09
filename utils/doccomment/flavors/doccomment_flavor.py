@@ -10,7 +10,7 @@ class DoccommentFlavor:
     """
 
     def doccomment_patterns(self) -> list[str]:
-        "Gets a list of C-style comment patterns that indicate a doc comment of this flavor's specification. Must be overridden by subclasses."
+        """Gets a list of C-style comment patterns that indicate a doc comment of this flavor's specification. Must be overridden by subclasses."""
         raise NotImplementedError()
 
     def transform_doccomment(

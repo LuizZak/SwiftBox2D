@@ -22,13 +22,13 @@ def declaration_from_type(typ: c_ast.Decl) -> tuple[str, str] | None:
         if typ.declname is None:
             return None
 
-        return (typ.declname, c_string_from_node(typ.type))
+        return typ.declname, c_string_from_node(typ.type)
     if isinstance(typ, c_ast.PtrDecl):
         inner = declaration_from_type(typ.type)
         if inner is None:
             return None
 
-        return (inner[0], f"*{inner[1]}")
+        return inner[0], f"*{inner[1]}"
 
     raise Exception(f"Unknown declaration type {type(typ)}")
 

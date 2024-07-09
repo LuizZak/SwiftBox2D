@@ -10,7 +10,7 @@ from utils.doccomment.doccomment_block import DoccommentBlock
 
 @dataclass(init=False)
 class _CachedFile:
-    "A cached entry in `DoccommentLookup`."
+    """A cached entry in `DoccommentLookup`."""
 
     path: Path
     doccomments: list[DoccommentBlock]
@@ -48,14 +48,14 @@ class DoccommentLookup:
         self.doccomment_patterns = sorted(doccomment_patterns, key=len, reverse=True)
 
     def populate_doc_comments(self, decls: Sequence[SwiftDecl]) -> list[SwiftDecl]:
-        "Populates doc comments for a provided sequence of Swift declarations, returning a list of copies of the declarations with doccomments populated."
+        """Populates doc comments for a provided sequence of Swift declarations, returning a list of copies of the declarations with doccomments populated."""
 
         results = [decl.copy() for decl in decls]
         self.populate_doc_comments_inplace(results)
         return results
 
     def populate_doc_comments_inplace(self, decls: Sequence[SwiftDecl]):
-        "Populates doc comments for a provided sequence of Swift declarations, modifying each declaration in-place."
+        """Populates doc comments for a provided sequence of Swift declarations, modifying each declaration in-place."""
         self._pre_fetch_files(decls)
 
         visitor = SwiftDeclCallableVisitor(self._populate)
