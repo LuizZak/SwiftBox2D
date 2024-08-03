@@ -13,7 +13,7 @@ let package = Package(
         .target(
             name: "box2d",
             cSettings: [
-                .unsafeFlags(["-Wpsabi"])
+                .unsafeFlags(["-mavx2"]),
             ]
         ),
         .target(
