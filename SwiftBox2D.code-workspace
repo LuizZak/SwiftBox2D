@@ -95,18 +95,6 @@
         }
     ],
     "settings": {
-        "C_Cpp.default.defines": [
-            "_DEBUG",
-            "UNICODE",
-            "_UNICODE",
-        ],
-        "C_Cpp.default.includePath": [
-            "${workspaceFolder}/Sources/box2d/**",
-        ],
-        "C_Cpp.default.cStandard": "c11",
-        "C_Cpp.default.cppStandard": "c++17",
-        "C_Cpp.default.windowsSdkVersion": "10.0.18362.0",
-        
         "commentAnchors.workspace.excludeFiles": "**/{node_modules,.git,.idea,target,out,build,vendor,.build,.swiftpm}/**/*",
         "commentAnchors.tags.anchors": {
             "MARK:": {
@@ -154,7 +142,7 @@
             "xutility": "cpp",
             "float.h": "c",
             "manifold.h": "c",
-            "constants.h": "c"
+            "constants.h": "c",
         },
         "files.eol": "\n",
         "files.exclude": {
