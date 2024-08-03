@@ -24,11 +24,6 @@ public extension B2Body {
         b2Body_GetRotation(id)
     }
     
-    /// Get the body angle in radians in the range [-pi, pi]
-    func getAngle() -> Float {
-        b2Body_GetAngle(id)
-    }
-    
     /// Get the world transform of a body.
     func getTransform() -> B2Transform {
         b2Body_GetTransform(id)
@@ -37,8 +32,8 @@ public extension B2Body {
     /// Set the world transform of a body. This acts as a teleport and is fairly expensive.
     /// - note: Generally you should create a body with then intended transform.
     /// @see b2BodyDef::position and b2BodyDef::angle
-    func setTransform(_ position: B2Vec2, _ angle: Float) {
-        b2Body_SetTransform(id, position, angle)
+    func setTransform(_ position: B2Vec2, _ rotation: B2Rot) {
+        b2Body_SetTransform(id, position, rotation)
     }
     
     /// Get a local point on a body given a world point

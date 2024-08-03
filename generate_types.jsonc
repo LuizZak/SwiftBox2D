@@ -40,9 +40,7 @@
             { "cName": "b2AABB", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
             { "cName": "b2Rot", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
             { "cName": "b2Transform", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
-            { "cName": "b2Mat22", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
-            // Misc types
-            { "cName": "b2Color", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] }
+            { "cName": "b2Mat22", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] }
         ],
         "filters": {
             "enums": [],

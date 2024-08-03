@@ -5,7 +5,7 @@
 
 #include "box2d/types.h"
 
-b2WorldDef b2DefaultWorldDef()
+b2WorldDef b2DefaultWorldDef(void)
 {
 	b2WorldDef def = {0};
 	def.gravity.x = 0.0f;
@@ -23,10 +23,11 @@ b2WorldDef b2DefaultWorldDef()
 	return def;
 }
 
-b2BodyDef b2DefaultBodyDef()
+b2BodyDef b2DefaultBodyDef(void)
 {
 	b2BodyDef def = {0};
 	def.type = b2_staticBody;
+	def.rotation = b2Rot_identity;
 	def.sleepThreshold = 0.05f * b2_lengthUnitsPerMeter;
 	def.gravityScale = 1.0f;
 	def.enableSleep = true;
@@ -37,19 +38,19 @@ b2BodyDef b2DefaultBodyDef()
 	return def;
 }
 
-b2Filter b2DefaultFilter()
+b2Filter b2DefaultFilter(void)
 {
 	b2Filter filter = {0x00000001, 0xFFFFFFFF, 0};
 	return filter;
 }
 
-b2QueryFilter b2DefaultQueryFilter()
+b2QueryFilter b2DefaultQueryFilter(void)
 {
 	b2QueryFilter filter = {0x00000001, 0xFFFFFFFF};
 	return filter;
 }
 
-b2ShapeDef b2DefaultShapeDef()
+b2ShapeDef b2DefaultShapeDef(void)
 {
 	b2ShapeDef def = {0};
 	def.friction = 0.6f;
@@ -61,7 +62,7 @@ b2ShapeDef b2DefaultShapeDef()
 	return def;
 }
 
-b2ChainDef b2DefaultChainDef()
+b2ChainDef b2DefaultChainDef(void)
 {
 	b2ChainDef def = {0};
 	def.friction = 0.6f;

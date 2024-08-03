@@ -9,11 +9,6 @@ public extension B2RevoluteJoint {
         b2RevoluteJoint_EnableSpring(id, enableSpring)
     }
     
-    /// Is the revolute joint limit enabled?
-    func isLimitEnabled() -> Bool {
-        b2RevoluteJoint_IsLimitEnabled(id)
-    }
-    
     /// Get the revolute joint current angle in radians relative to the reference angle
     /// @see b2RevoluteJointDef::referenceAngle
     func getAngle() -> Float {
@@ -23,6 +18,11 @@ public extension B2RevoluteJoint {
     /// Enable/disable the revolute joint limit
     func enableLimit(_ enableLimit: Bool) {
         b2RevoluteJoint_EnableLimit(id, enableLimit)
+    }
+    
+    /// Is the revolute joint limit enabled?
+    func isLimitEnabled() -> Bool {
+        b2RevoluteJoint_IsLimitEnabled(id)
     }
     
     /// Get the revolute joint lower limit in radians

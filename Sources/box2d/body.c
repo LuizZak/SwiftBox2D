@@ -179,7 +179,7 @@ b2BodyId b2CreateBody(b2WorldId worldId, const b2BodyDef* def)
 {
 	b2CheckDef(def);
 	B2_ASSERT(b2Vec2_IsValid(def->position));
-	B2_ASSERT(b2IsValid(def->angle));
+	B2_ASSERT(b2Rot_IsValid(def->rotation));
 	B2_ASSERT(b2Vec2_IsValid(def->linearVelocity));
 	B2_ASSERT(b2IsValid(def->angularVelocity));
 	B2_ASSERT(b2IsValid(def->linearDamping) && def->linearDamping >= 0.0f);
@@ -236,7 +236,7 @@ b2BodyId b2CreateBody(b2WorldId worldId, const b2BodyDef* def)
 	b2BodySim* bodySim = b2AddBodySim(&set->sims);
 	*bodySim = (b2BodySim){0};
 	bodySim->transform.p = def->position;
-	bodySim->transform.q = b2MakeRot(def->angle);
+	bodySim->transform.q = def->rotation;
 	bodySim->center = def->position;
 	bodySim->rotation0 = bodySim->transform.q;
 	bodySim->center0 = bodySim->center;
@@ -245,8 +245,8 @@ b2BodyId b2CreateBody(b2WorldId worldId, const b2BodyDef* def)
 	bodySim->torque = 0.0f;
 	bodySim->mass = 0.0f;
 	bodySim->invMass = 0.0f;
-	bodySim->I = 0.0f;
-	bodySim->invI = 0.0f;
+	bodySim->inertia = 0.0f;
+	bodySim->invInertia = 0.0f;
 	bodySim->minExtent = b2_huge;
 	bodySim->maxExtent = 0.0f;
 	bodySim->linearDamping = def->linearDamping;
@@ -520,8 +520,8 @@ void b2UpdateBodyMassData(b2World* world, b2Body* body)
 	// Compute mass data from shapes. Each shape has its own density.
 	bodySim->mass = 0.0f;
 	bodySim->invMass = 0.0f;
-	bodySim->I = 0.0f;
-	bodySim->invI = 0.0f;
+	bodySim->inertia = 0.0f;
+	bodySim->invInertia = 0.0f;
 	bodySim->localCenter = b2Vec2_zero;
 	bodySim->minExtent = b2_huge;
 	bodySim->maxExtent = 0.0f;
@@ -566,7 +566,7 @@ void b2UpdateBodyMassData(b2World* world, b2Body* body)
 		b2MassData massData = b2ComputeShapeMass(s);
 		bodySim->mass += massData.mass;
 		localCenter = b2MulAdd(localCenter, massData.mass, massData.center);
-		bodySim->I += massData.I;
+		bodySim->inertia += massData.rotationalInertia;
 
 	}
 
@@ -577,17 +577,17 @@ void b2UpdateBodyMassData(b2World* world, b2Body* body)
 		localCenter = b2MulSV(bodySim->invMass, localCenter);
 	}
 
-	if (bodySim->I > 0.0f && body->fixedRotation == false)
+	if (bodySim->inertia > 0.0f && body->fixedRotation == false)
 	{
 		// Center the inertia about the center of mass.
-		bodySim->I -= bodySim->mass * b2Dot(localCenter, localCenter);
-		B2_ASSERT(bodySim->I > 0.0f);
-		bodySim->invI = 1.0f / bodySim->I;
+		bodySim->inertia -= bodySim->mass * b2Dot(localCenter, localCenter);
+		B2_ASSERT(bodySim->inertia > 0.0f);
+		bodySim->invInertia = 1.0f / bodySim->inertia;
 	}
 	else
 	{
-		bodySim->I = 0.0f;
-		bodySim->invI = 0.0f;
+		bodySim->inertia = 0.0f;
+		bodySim->invInertia = 0.0f;
 	}
 
 	// Move center of mass.
@@ -633,14 +633,6 @@ b2Rot b2Body_GetRotation(b2BodyId bodyId)
 	return transform.q;
 }
 
-float b2Body_GetAngle(b2BodyId bodyId)
-{
-	b2World* world = b2GetWorld(bodyId.world0);
-	b2Body* body = b2GetBodyFullId(world, bodyId);
-	b2Transform transform = b2GetBodyTransformQuick(world, body);
-	return b2Rot_GetAngle(transform.q);
-}
-
 b2Transform b2Body_GetTransform(b2BodyId bodyId)
 {
 	b2World* world = b2GetWorld(bodyId.world0);
@@ -680,8 +672,10 @@ b2Vec2 b2Body_GetWorldVector(b2BodyId bodyId, b2Vec2 localVector)
 	return b2RotateVector(transform.q, localVector);
 }
 
-void b2Body_SetTransform(b2BodyId bodyId, b2Vec2 position, float angle)
+void b2Body_SetTransform(b2BodyId bodyId, b2Vec2 position, b2Rot rotation)
 {
+	B2_ASSERT(b2Vec2_IsValid(position));
+	B2_ASSERT(b2Rot_IsValid(rotation));
 	B2_ASSERT(b2Body_IsValid(bodyId));
 	b2World* world = b2GetWorld(bodyId.world0);
 	B2_ASSERT(world->locked == false);
@@ -690,7 +684,7 @@ void b2Body_SetTransform(b2BodyId bodyId, b2Vec2 position, float angle)
 	b2BodySim* bodySim = b2GetBodySim(world, body);
 
 	bodySim->transform.p = position;
-	bodySim->transform.q = b2MakeRot(angle);
+	bodySim->transform.q = rotation;
 	bodySim->center = b2TransformPoint(bodySim->transform, bodySim->localCenter);
 
 	bodySim->rotation0 = bodySim->transform.q;
@@ -761,6 +755,12 @@ void b2Body_SetLinearVelocity(b2BodyId bodyId, b2Vec2 linearVelocity)
 {
 	b2World* world = b2GetWorld(bodyId.world0);
 	b2Body* body = b2GetBodyFullId(world, bodyId);
+
+	if (b2LengthSquared(linearVelocity) > 0.0f)
+	{
+		b2WakeBody(world, body);
+	}
+	
 	b2BodyState* state = b2GetBodyState(world, body);
 	if (state == NULL)
 	{
@@ -768,16 +768,18 @@ void b2Body_SetLinearVelocity(b2BodyId bodyId, b2Vec2 linearVelocity)
 	}
 
 	state->linearVelocity = linearVelocity;
-	if (b2LengthSquared(linearVelocity) > 0.0f)
-	{
-		b2WakeBody(world, body);
-	}
 }
 
 void b2Body_SetAngularVelocity(b2BodyId bodyId, float angularVelocity)
 {
 	b2World* world = b2GetWorld(bodyId.world0);
 	b2Body* body = b2GetBodyFullId(world, bodyId);
+
+	if (angularVelocity != 0.0f)
+	{
+		b2WakeBody(world, body);
+	}
+	
 	b2BodyState* state = b2GetBodyState(world, body);
 	if (state == NULL)
 	{
@@ -785,10 +787,6 @@ void b2Body_SetAngularVelocity(b2BodyId bodyId, float angularVelocity)
 	}
 
 	state->angularVelocity = angularVelocity;
-	if (angularVelocity != 0.0f)
-	{
-		b2WakeBody(world, body);
-	}
 }
 
 void b2Body_ApplyForce(b2BodyId bodyId, b2Vec2 force, b2Vec2 point, bool wake)
@@ -861,7 +859,7 @@ void b2Body_ApplyLinearImpulse(b2BodyId bodyId, b2Vec2 impulse, b2Vec2 point, bo
 		b2BodyState* state = set->states.data + localIndex;
 		b2BodySim* bodySim = set->sims.data + localIndex;
 		state->linearVelocity = b2MulAdd(state->linearVelocity, bodySim->invMass, impulse);
-		state->angularVelocity += bodySim->invI * b2Cross(b2Sub(point, bodySim->center), impulse);
+		state->angularVelocity += bodySim->invInertia * b2Cross(b2Sub(point, bodySim->center), impulse);
 	}
 }
 
@@ -909,7 +907,7 @@ void b2Body_ApplyAngularImpulse(b2BodyId bodyId, float impulse, bool wake)
 		B2_ASSERT(0 <= localIndex && localIndex < set->states.count);
 		b2BodyState* state = set->states.data + localIndex;
 		b2BodySim* sim = set->sims.data + localIndex;
-		state->angularVelocity += sim->invI * impulse;
+		state->angularVelocity += sim->invInertia * impulse;
 	}
 }
 
@@ -1201,7 +1199,7 @@ float b2Body_GetInertiaTensor(b2BodyId bodyId)
 	b2World* world = b2GetWorld(bodyId.world0);
 	b2Body* body = b2GetBodyFullId(world, bodyId);
 	b2BodySim* bodySim = b2GetBodySim(world, body);
-	return bodySim->I;
+	return bodySim->inertia;
 }
 
 b2Vec2 b2Body_GetLocalCenterOfMass(b2BodyId bodyId)
@@ -1223,7 +1221,7 @@ b2Vec2 b2Body_GetWorldCenterOfMass(b2BodyId bodyId)
 void b2Body_SetMassData(b2BodyId bodyId, b2MassData massData)
 {
 	B2_ASSERT(b2IsValid(massData.mass) && massData.mass >= 0.0f);
-	B2_ASSERT(b2IsValid(massData.I) && massData.I >= 0.0f);
+	B2_ASSERT(b2IsValid(massData.rotationalInertia) && massData.rotationalInertia >= 0.0f);
 	B2_ASSERT(b2Vec2_IsValid(massData.center));
 
 	b2World* world = b2GetWorldLocked(bodyId.world0);
@@ -1236,7 +1234,7 @@ void b2Body_SetMassData(b2BodyId bodyId, b2MassData massData)
 	b2BodySim* bodySim = b2GetBodySim(world, body);
 
 	bodySim->mass = massData.mass;
-	bodySim->I = massData.I;
+	bodySim->inertia = massData.rotationalInertia;
 	bodySim->localCenter = massData.center;
 
 	b2Vec2 center = b2TransformPoint(bodySim->transform, massData.center);
@@ -1244,7 +1242,7 @@ void b2Body_SetMassData(b2BodyId bodyId, b2MassData massData)
 	bodySim->center0 = center;
 
 	bodySim->invMass = bodySim->mass > 0.0f ? 1.0f / bodySim->mass : 0.0f;
-	bodySim->invI = bodySim->I > 0.0f ? 1.0f / bodySim->I : 0.0f;
+	bodySim->invInertia = bodySim->inertia > 0.0f ? 1.0f / bodySim->inertia : 0.0f;
 }
 
 b2MassData b2Body_GetMassData(b2BodyId bodyId)
@@ -1252,7 +1250,7 @@ b2MassData b2Body_GetMassData(b2BodyId bodyId)
 	b2World* world = b2GetWorld(bodyId.world0);
 	b2Body* body = b2GetBodyFullId(world, bodyId);
 	b2BodySim* bodySim = b2GetBodySim(world, body);
-	b2MassData massData = {bodySim->mass, bodySim->localCenter, bodySim->I};
+	b2MassData massData = {bodySim->mass, bodySim->localCenter, bodySim->inertia};
 	return massData;
 }
 
@@ -1266,6 +1264,25 @@ void b2Body_ApplyMassFromShapes(b2BodyId bodyId)
 
 	b2Body* body = b2GetBodyFullId(world, bodyId);
 	b2UpdateBodyMassData(world, body);
+}
+
+void b2Body_SetAutomaticMass(b2BodyId bodyId, bool automaticMass)
+{
+	b2World* world = b2GetWorldLocked(bodyId.world0);
+	if (world == NULL)
+	{
+		return;
+	}
+
+	b2Body* body = b2GetBodyFullId(world, bodyId);
+	body->automaticMass = automaticMass;
+}
+
+bool b2Body_GetAutomaticMass(b2BodyId bodyId)
+{
+	b2World* world = b2GetWorld(bodyId.world0);
+	b2Body* body = b2GetBodyFullId(world, bodyId);
+	return body->automaticMass;
 }
 
 void b2Body_SetLinearDamping(b2BodyId bodyId, float linearDamping)
