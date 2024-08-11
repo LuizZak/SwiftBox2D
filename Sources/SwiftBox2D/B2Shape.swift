@@ -6,4 +6,8 @@ public class B2Shape {
     init(id: b2ShapeId) {
         self.id = id
     }
+
+    deinit {
+        b2DestroyShape(id)
+    }
 }

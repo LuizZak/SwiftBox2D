@@ -6,4 +6,8 @@ public class B2Body {
     init(id: b2BodyId) {
         self.id = id
     }
+
+    deinit {
+        b2DestroyBody(id)
+    }
 }

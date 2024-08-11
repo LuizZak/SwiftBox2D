@@ -7,4 +7,8 @@ public class B2Joint {
     init(id: b2JointId) {
         self.id = id
     }
+
+    deinit {
+        b2DestroyJoint(id)
+    }
 }

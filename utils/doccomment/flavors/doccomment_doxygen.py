@@ -62,6 +62,10 @@ class DoccommentFlavorDoxygen(DoccommentFlavor):
                 range.replace(f"- param {range.extend(r"\w+")}:"),
             ),
         )
+        # Reword '@returns' with '- returns:'
+        comment = self.handle_command(
+            comment, "returns", lambda range: range.replace("- returns:")
+        )
         # Reword '@return' with '- returns:'
         comment = self.handle_command(
             comment, "return", lambda range: range.replace("- returns:")
