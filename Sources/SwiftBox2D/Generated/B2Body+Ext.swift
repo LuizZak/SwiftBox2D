@@ -220,7 +220,7 @@ public extension B2Body {
     }
     
     /// Get the shape ids for all shapes on this body, up to the provided capacity.
-    /// - returns: the number of shape ids stored in the user array
+    /// - returns:s the number of shape ids stored in the user array
     func getShapes(_ shapeArray: UnsafeMutablePointer<b2ShapeId>?, _ capacity: Int32) -> Int32 {
         b2Body_GetShapes(id, shapeArray, capacity)
     }
@@ -231,7 +231,7 @@ public extension B2Body {
     }
     
     /// Get the joint ids for all joints on this body, up to the provided capacity
-    /// - returns: the number of joint ids stored in the user array
+    /// - returns:s the number of joint ids stored in the user array
     func getJoints(_ jointArray: UnsafeMutablePointer<b2JointId>?, _ capacity: Int32) -> Int32 {
         b2Body_GetJoints(id, jointArray, capacity)
     }
