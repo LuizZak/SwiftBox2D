@@ -6,7 +6,7 @@ import box2d
 /// Axis-aligned bounding box
 public typealias B2AABB = b2AABB
 
-extension B2AABB: CustomStringConvertible, Equatable, Hashable { }
+extension B2AABB: @retroactive CustomStringConvertible, @retroactive Equatable, @retroactive Hashable { }
 
 public extension B2AABB {
     var description: String {

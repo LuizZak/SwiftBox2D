@@ -7,7 +7,7 @@ import box2d
 /// This is similar to using a complex number for rotation
 public typealias B2Rot = b2Rot
 
-extension B2Rot: CustomStringConvertible, Equatable, Hashable { }
+extension B2Rot: @retroactive CustomStringConvertible, @retroactive Equatable, @retroactive Hashable { }
 
 public extension B2Rot {
     var description: String {

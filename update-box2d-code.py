@@ -92,7 +92,7 @@ def git_rmtree(path_to_remove: os.PathLike) -> None:
 # Main logic
 # ----
 
-BOX2D_REPO = "https://github.com/erincatto/box2c.git"
+BOX2D_REPO = "https://github.com/erincatto/box2d.git"
 
 BOX2D_TARGET_PATH = cwd_path("Sources", "box2d")
 
@@ -206,7 +206,7 @@ def update_code(box2d_tag_or_branch: str | None, force: bool) -> int:
     # Copy files
     copy_box2d_files(src_path, include_path, BOX2D_TARGET_PATH)
     # Copy simde from <box2d cloned repo>/extern/simde
-    copy_dependency_files(box2d_clone_path, BOX2D_TARGET_PATH)
+    # copy_dependency_files(box2d_clone_path, BOX2D_TARGET_PATH)
 
     print(ConsoleColor.GREEN("Success!"))
 

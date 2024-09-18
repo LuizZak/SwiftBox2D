@@ -16,12 +16,28 @@
 #include "stack_allocator.h"
 #include "world.h"
 
-// for mm_pause
-#include "x86/sse2.h"
-
 #include <limits.h>
 #include <stdatomic.h>
 #include <stdbool.h>
+#include <stddef.h>
+
+#if defined( B2_CPU_ARM )
+static inline void b2Pause( void )
+{
+	__asm__ __volatile__( "isb\n" );
+}
+#elif defined( B2_CPU_X86_X64 )
+#include <immintrin.h>
+static inline void b2Pause( void )
+{
+	_mm_pause();
+}
+#else
+static inline void b2Pause( void )
+{
+	// no threading will likely be used in web assembly
+}
+#endif
 
 typedef struct b2WorkerContext
 {
@@ -40,7 +56,7 @@ static void b2IntegrateVelocitiesTask( int startIndex, int endIndex, b2StepConte
 
 	b2Vec2 gravity = context->world->gravity;
 	float h = context->h;
-	float maxLinearSpeed = b2_maxTranslation * context->inv_dt;
+	float maxLinearSpeed = context->maxLinearVelocity;
 	float maxAngularSpeed = b2_maxRotation * context->inv_dt;
 	float maxLinearSpeedSquared = maxLinearSpeed * maxLinearSpeed;
 	float maxAngularSpeedSquared = maxAngularSpeed * maxAngularSpeed;
@@ -78,7 +94,7 @@ static void b2IntegrateVelocitiesTask( int startIndex, int endIndex, b2StepConte
 		}
 
 		// Clamp to max angular speed
-		if ( w * w > maxAngularSpeedSquared )
+		if ( w * w > maxAngularSpeedSquared && sim->allowFastRotation == false )
 		{
 			float ratio = maxAngularSpeed / b2AbsFloat( w );
 			w *= ratio;
@@ -548,7 +564,7 @@ static void b2ExecuteMainStage( b2SolverStage* stage, b2StepContext* context, ui
 		// todo consider using the cycle counter as well
 		while ( atomic_load( &stage->completionCount ) != blockCount )
 		{
-			simde_mm_pause();
+			b2Pause();
 		}
 
 		atomic_store( &stage->completionCount, 0 );
@@ -753,12 +769,12 @@ void b2SolverTask( int startIndex, int endIndex, uint32_t threadIndexDontUse, vo
 				// uint64_t prev = __rdtsc();
 				// do
 				//{
-				//	simde_mm_pause();
+				//	b2Pause();
 				//}
 				// while ((__rdtsc() - prev) < maxSpinTime);
 				// maxSpinTime += 10;
-				simde_mm_pause();
-				simde_mm_pause();
+				b2Pause();
+				b2Pause();
 				spinCount += 1;
 			}
 		}
@@ -866,12 +882,12 @@ static bool b2ContinuousQueryCallback( int proxyId, int shapeId, void* context )
 		}
 	}
 
-	// Prevent pausing on smooth segment junctions
-	if ( shape->type == b2_smoothSegmentShape )
+	// Prevent pausing on chain segment junctions
+	if ( shape->type == b2_chainSegmentShape )
 	{
 		b2Transform transform = bodySim->transform;
-		b2Vec2 p1 = b2TransformPoint( transform, shape->smoothSegment.segment.point1 );
-		b2Vec2 p2 = b2TransformPoint( transform, shape->smoothSegment.segment.point2 );
+		b2Vec2 p1 = b2TransformPoint( transform, shape->chainSegment.segment.point1 );
+		b2Vec2 p2 = b2TransformPoint( transform, shape->chainSegment.segment.point2 );
 		b2Vec2 e = b2Sub( p2, p1 );
 		b2Vec2 c1 = continuousContext->centroid1;
 		b2Vec2 c2 = continuousContext->centroid2;
@@ -1104,6 +1120,12 @@ static void b2BulletBodyTask( int startIndex, int endIndex, uint32_t threadIndex
 	b2TracyCZoneEnd( bullet_body_task );
 }
 
+#if B2_SIMD_WIDTH == 8
+#define B2_SIMD_SHIFT 3
+#else
+#define B2_SIMD_SHIFT 2
+#endif
+
 // Solve with graph coloring
 void b2Solve( b2World* world, b2StepContext* stepContext )
 {
@@ -1224,8 +1246,8 @@ void b2Solve( b2World* world, b2StepContext* stepContext )
 			{
 				activeColorIndices[c] = i;
 
-				// 8-way SIMD
-				int colorContactCountSIMD = colorContactCount > 0 ? ( ( colorContactCount - 1 ) >> 3 ) + 1 : 0;
+				// 4/8-way SIMD
+				int colorContactCountSIMD = colorContactCount > 0 ? ( ( colorContactCount - 1 ) >> B2_SIMD_SHIFT ) + 1 : 0;
 
 				colorContactCounts[c] = colorContactCountSIMD;
 
@@ -1278,15 +1300,16 @@ void b2Solve( b2World* world, b2StepContext* stepContext )
 		activeColorCount = c;
 
 		// Gather contact pointers for easy parallel-for traversal. Some may be NULL due to SIMD remainders.
-		b2ContactSim** contacts =
-			b2AllocateStackItem( &world->stackAllocator, 8 * simdContactCount * sizeof( b2ContactSim* ), "contact pointers" );
+		b2ContactSim** contacts = b2AllocateStackItem(
+			&world->stackAllocator, B2_SIMD_WIDTH * simdContactCount * sizeof( b2ContactSim* ), "contact pointers" );
 
 		// Gather joint pointers for easy parallel-for traversal.
 		b2JointSim** joints =
 			b2AllocateStackItem( &world->stackAllocator, awakeJointCount * sizeof( b2JointSim* ), "joint pointers" );
 
-		b2ContactConstraintSIMD* simdContactConstraints = b2AllocateStackItem(
-			&world->stackAllocator, simdContactCount * sizeof( b2ContactConstraintSIMD ), "contact constraint" );
+		int simdConstraintSize = b2GetContactConstraintSIMDByteCount();
+		b2ContactConstraintSIMD* simdContactConstraints =
+			b2AllocateStackItem( &world->stackAllocator, simdContactCount * simdConstraintSize, "contact constraint" );
 
 		int overflowContactCount = colors[b2_overflowIndex].contacts.count;
 		b2ContactConstraint* overflowContactConstraints = b2AllocateStackItem(
@@ -1311,18 +1334,19 @@ void b2Solve( b2World* world, b2StepContext* stepContext )
 				}
 				else
 				{
-					color->simdConstraints = simdContactConstraints + contactBase;
+					color->simdConstraints =
+						(b2ContactConstraintSIMD*)( (uint8_t*)simdContactConstraints + contactBase * simdConstraintSize );
 
 					for ( int k = 0; k < colorContactCount; ++k )
 					{
-						contacts[8 * contactBase + k] = color->contacts.data + k;
+						contacts[B2_SIMD_WIDTH * contactBase + k] = color->contacts.data + k;
 					}
 
 					// remainder
-					int colorContactCountSIMD = ( ( colorContactCount - 1 ) >> 3 ) + 1;
-					for ( int k = colorContactCount; k < 8 * colorContactCountSIMD; ++k )
+					int colorContactCountSIMD = ( ( colorContactCount - 1 ) >> B2_SIMD_SHIFT ) + 1;
+					for ( int k = colorContactCount; k < B2_SIMD_WIDTH * colorContactCountSIMD; ++k )
 					{
-						contacts[8 * contactBase + k] = NULL;
+						contacts[B2_SIMD_WIDTH * contactBase + k] = NULL;
 					}
 
 					contactBase += colorContactCountSIMD;

@@ -6,7 +6,7 @@ import box2d
 /// A 2D rigid transform
 public typealias B2Transform = b2Transform
 
-extension B2Transform: CustomStringConvertible, Equatable, Hashable { }
+extension B2Transform: @retroactive CustomStringConvertible, @retroactive Equatable, @retroactive Hashable { }
 
 public extension B2Transform {
     var description: String {

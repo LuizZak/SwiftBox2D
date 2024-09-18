@@ -7,7 +7,7 @@ import box2d
 /// This can be used to represent a point or free vector
 public typealias B2Vec2 = b2Vec2
 
-extension B2Vec2: CustomStringConvertible, Equatable, Hashable { }
+extension B2Vec2: @retroactive CustomStringConvertible, @retroactive Equatable, @retroactive Hashable { }
 
 public extension B2Vec2 {
     var description: String {

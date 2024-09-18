@@ -5,7 +5,7 @@ import box2d
 
 public typealias B2Circle = b2Circle
 
-extension B2Circle: CustomStringConvertible, Equatable, Hashable { }
+extension B2Circle: @retroactive CustomStringConvertible, @retroactive Equatable, @retroactive Hashable { }
 
 public extension B2Circle {
     var description: String {

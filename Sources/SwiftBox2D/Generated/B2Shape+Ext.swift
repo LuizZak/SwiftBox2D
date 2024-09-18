@@ -80,8 +80,8 @@ public extension B2Shape {
     }
     
     /// Ray cast a shape directly
-    func rayCast(_ origin: B2Vec2, _ translation: B2Vec2) -> b2CastOutput {
-        b2Shape_RayCast(id, origin, translation)
+    func rayCast(_ input: UnsafeMutablePointer<b2RayCastInput>?) -> b2CastOutput {
+        b2Shape_RayCast(id, input)
     }
     
     /// Get a copy of the shape's circle. Asserts the type is correct.
@@ -94,10 +94,10 @@ public extension B2Shape {
         b2Shape_GetSegment(id)
     }
     
-    /// Get a copy of the shape's smooth line segment. These come from chain shapes.
+    /// Get a copy of the shape's chain segment. These come from chain shapes.
     /// Asserts the type is correct.
-    func getSmoothSegment() -> b2SmoothSegment {
-        b2Shape_GetSmoothSegment(id)
+    func getChainSegment() -> b2ChainSegment {
+        b2Shape_GetChainSegment(id)
     }
     
     /// Get a copy of the shape's capsule. Asserts the type is correct.
@@ -136,7 +136,7 @@ public extension B2Shape {
         b2Shape_SetPolygon(id, polygon)
     }
     
-    /// Get the parent chain id if the shape type is b2_smoothSegmentShape, otherwise
+    /// Get the parent chain id if the shape type is a chain segment, otherwise
     /// returns b2_nullChainId.
     func getParentChain() -> b2ChainId {
         b2Shape_GetParentChain(id)

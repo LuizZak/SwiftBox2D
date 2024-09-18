@@ -6,7 +6,7 @@ import box2d
 /// A 2-by-2 Matrix
 public typealias B2Mat22 = b2Mat22
 
-extension B2Mat22: CustomStringConvertible, Equatable, Hashable { }
+extension B2Mat22: @retroactive CustomStringConvertible, @retroactive Equatable, @retroactive Hashable { }
 
 public extension B2Mat22 {
     var description: String {

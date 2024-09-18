@@ -88,11 +88,14 @@ typedef struct b2WorldDef
 	/// Joint bounciness. Non-dimensional.
 	float jointDampingRatio;
 
+	/// Maximum linear velocity. Usually meters per second.
+	float maximumLinearVelocity;
+
 	/// Can bodies go to sleep to improve performance
 	bool enableSleep;
 
 	/// Enable continuous collision
-	bool enableContinous;
+	bool enableContinuous;
 
 	/// Number of workers to use with the provided task system. Box2D performs best when using only
 	///	performance cores and accessing a single L2 cache. Efficiency cores and hyper-threading provide
@@ -202,6 +205,10 @@ typedef struct b2BodyDef
 	/// Triggers whenever a shape is add/removed/changed. Default is true.
 	bool automaticMass;
 
+	/// This allows this body to bypass rotational speed limits. Should only be used
+	///	for circular objects, like wheels.
+	bool allowFastRotation;
+
 	/// Used internally to detect a valid definition. DO NOT SET.
 	int32_t internalValue;
 } b2BodyDef;
@@ -227,7 +234,7 @@ typedef struct b2Filter
 	///	   // etc
 	/// };
 	///	@endcode
-	uint32_t categoryBits;
+	uint64_t categoryBits;
 
 	/// The collision mask bits. This states the categories that this
 	/// shape would accept for collision.
@@ -236,7 +243,7 @@ typedef struct b2Filter
 	///	@code{.c}
 	///	maskBits = Static | Player;
 	///	@endcode
-	uint32_t maskBits;
+	uint64_t maskBits;
 
 	/// Collision groups allow a certain group of objects to never collide (negative)
 	/// or always collide (positive). A group index of zero has no effect. Non-zero group filtering
@@ -258,11 +265,11 @@ B2_API b2Filter b2DefaultFilter( void );
 typedef struct b2QueryFilter
 {
 	/// The collision category bits of this query. Normally you would just set one bit.
-	uint32_t categoryBits;
+	uint64_t categoryBits;
 
 	/// The collision mask bits. This states the shape categories that this
 	/// query would accept for collision.
-	uint32_t maskBits;
+	uint64_t maskBits;
 } b2QueryFilter;
 
 /// Use this to initialize your query filter
@@ -285,8 +292,8 @@ typedef enum b2ShapeType
 	/// A convex polygon
 	b2_polygonShape,
 
-	/// A smooth segment owned by a chain shape
-	b2_smoothSegmentShape,
+	/// A line segment owned by a chain shape
+	b2_chainSegmentShape,
 
 	/// The number of shape types
 	b2_shapeTypeCount
@@ -318,6 +325,8 @@ typedef struct b2ShapeDef
 	uint32_t customColor;
 
 	/// A sensor shape generates overlap events but never generates a collision response.
+	///	Sensors do not collide with other sensors and do not have continuous collision.
+	///	Instead use a ray or shape cast for those scenarios.
 	bool isSensor;
 
 	/// Enable sensor events for this shape. Only applies to kinematic and dynamic bodies. Ignored for sensors.
@@ -336,6 +345,7 @@ typedef struct b2ShapeDef
 	/// Normally shapes on static bodies don't invoke contact creation when they are added to the world. This overrides
 	///	that behavior and causes contact creation. This significantly slows down static body creation which can be important
 	///	when there are many static shapes.
+	/// This is implicitly always true for sensors.
 	bool forceContactCreation;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
@@ -346,7 +356,7 @@ typedef struct b2ShapeDef
 /// @ingroup shape
 B2_API b2ShapeDef b2DefaultShapeDef( void );
 
-/// Used to create a chain of edges. This is designed to eliminate ghost collisions with some limitations.
+/// Used to create a chain of line segments. This is designed to eliminate ghost collisions with some limitations.
 ///	- chains are one-sided
 ///	- chains have no mass and should be used on static bodies
 ///	- chains have a counter-clockwise winding order
@@ -356,7 +366,7 @@ B2_API b2ShapeDef b2DefaultShapeDef( void );
 ///	- a chain shape should not self intersect (this is not validated)
 ///	- an open chain shape has NO COLLISION on the first and final edge
 ///	- you may overlap two open chains on their first three and/or last three points to get smooth collision
-///	- a chain shape creates multiple smooth edges shapes on the body
+///	- a chain shape creates multiple line segment shapes on the body
 /// https://en.wikipedia.org/wiki/Polygonal_chain
 /// Must be initialized using b2DefaultChainDef().
 ///	@warning Do not use chain shapes unless you understand the limitations. This is an advanced feature.
@@ -423,7 +433,6 @@ typedef struct b2Profile
 /// Counters that give details of the simulation size.
 typedef struct b2Counters
 {
-	int32_t staticBodyCount;
 	int32_t bodyCount;
 	int32_t shapeCount;
 	int32_t contactCount;
@@ -994,7 +1003,7 @@ typedef struct b2BodyMoveEvent
 
 /// Body events are buffered in the Box2D world and are available
 ///	as event arrays after the time step is complete.
-///	Note: this date becomes invalid if bodies are destroyed
+///	Note: this data becomes invalid if bodies are destroyed
 typedef struct b2BodyEvents
 {
 	/// Array of move events
@@ -1074,7 +1083,6 @@ typedef enum b2HexColor
 {
 	b2_colorAliceBlue = 0xf0f8ff,
 	b2_colorAntiqueWhite = 0xfaebd7,
-	b2_colorAqua = 0x00ffff,
 	b2_colorAquamarine = 0x7fffd4,
 	b2_colorAzure = 0xf0ffff,
 	b2_colorBeige = 0xf5f5dc,
@@ -1117,7 +1125,6 @@ typedef enum b2HexColor
 	b2_colorFirebrick = 0xb22222,
 	b2_colorFloralWhite = 0xfffaf0,
 	b2_colorForestGreen = 0x228b22,
-	b2_colorFuchsia = 0xff00ff,
 	b2_colorGainsboro = 0xdcdcdc,
 	b2_colorGhostWhite = 0xf8f8ff,
 	b2_colorGold = 0xffd700,
@@ -1159,7 +1166,6 @@ typedef enum b2HexColor
 	b2_colorLightSlateGray = 0x778899,
 	b2_colorLightSteelBlue = 0xb0c4de,
 	b2_colorLightYellow = 0xffffe0,
-	b2_colorLime = 0x00ff00,
 	b2_colorLimeGreen = 0x32cd32,
 	b2_colorLinen = 0xfaf0e6,
 	b2_colorMagenta = 0xff00ff,
@@ -1178,7 +1184,6 @@ typedef enum b2HexColor
 	b2_colorMistyRose = 0xffe4e1,
 	b2_colorMoccasin = 0xffe4b5,
 	b2_colorNavajoWhite = 0xffdead,
-	b2_colorNavy = 0x000080,
 	b2_colorNavyBlue = 0x000080,
 	b2_colorOldLace = 0xfdf5e6,
 	b2_colorOlive = 0x808000,
@@ -1233,6 +1238,7 @@ typedef enum b2HexColor
 } b2HexColor;
 
 /// This struct holds callbacks you can implement to draw a Box2D world.
+///	This structure should be zero initialized.
 ///	@ingroup world
 typedef struct b2DebugDraw
 {
@@ -1248,9 +1254,6 @@ typedef struct b2DebugDraw
 
 	/// Draw a solid circle.
 	void ( *DrawSolidCircle )( b2Transform transform, float radius, b2HexColor color, void* context );
-
-	/// Draw a capsule.
-	void ( *DrawCapsule )( b2Vec2 p1, b2Vec2 p2, float radius, b2HexColor color, void* context );
 
 	/// Draw a solid capsule.
 	void ( *DrawSolidCapsule )( b2Vec2 p1, b2Vec2 p2, float radius, b2HexColor color, void* context );
@@ -1306,3 +1309,7 @@ typedef struct b2DebugDraw
 	/// User context that is passed as an argument to drawing callback functions
 	void* context;
 } b2DebugDraw;
+
+/// Use this to initialize your drawing interface. This allows you to implement a sub-set
+/// of the drawing functions.
+B2_API b2DebugDraw b2DefaultDebugDraw( void );

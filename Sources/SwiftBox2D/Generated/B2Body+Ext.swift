@@ -126,9 +126,9 @@ public extension B2Body {
         b2Body_GetMass(id)
     }
     
-    /// Get the inertia tensor of the body, typically in kg*m^2
-    func getInertiaTensor() -> Float {
-        b2Body_GetInertiaTensor(id)
+    /// Get the rotational inertia of the body, typically in kg*m^2
+    func getRotationalInertia() -> Float {
+        b2Body_GetRotationalInertia(id)
     }
     
     /// Get the center of mass position of the body in local space
@@ -339,8 +339,8 @@ public extension B2Body {
         get {
             b2Body_GetSleepThreshold(id)
         }
-        set(sleepVelocity) {
-            b2Body_SetSleepThreshold(id, sleepVelocity)
+        set(sleepThreshold) {
+            b2Body_SetSleepThreshold(id, sleepThreshold)
         }
     }
 }

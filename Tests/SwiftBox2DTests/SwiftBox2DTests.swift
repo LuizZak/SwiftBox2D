@@ -1,16 +1,19 @@
-import XCTest
+import Testing
 
 @testable import SwiftBox2D
 
-final class SwiftBox2DTests: XCTestCase {
-    func testWorldStep() throws {
+@Suite
+struct SwiftBox2DTests {
+    @Test
+    func worldStep() throws {
         let step: Float = 1.0 / 60
         let world = B2World()
-        
+
         world.step(step)
     }
 
-    func testVisibleSymbols() {
+    @Test
+    func visibleSymbols() {
         _=B2AABB()
     }
 }

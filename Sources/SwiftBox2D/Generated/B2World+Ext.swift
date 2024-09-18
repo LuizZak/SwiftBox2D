@@ -99,6 +99,11 @@ public extension B2World {
         b2World_EnableSleeping(id, flag)
     }
     
+    /// Is body sleeping enabled?
+    func isSleepingEnabled() -> Bool {
+        b2World_IsSleepingEnabled(id)
+    }
+    
     /// Enable/disable continuous collision between dynamic and static bodies. Generally you should keep continuous
     /// collision enabled to prevent fast moving objects from going through static objects. The performance gain from
     /// disabling continuous collision is minor.
@@ -107,18 +112,9 @@ public extension B2World {
         b2World_EnableContinuous(id, flag)
     }
     
-    /// Adjust the restitution threshold. It is recommended not to make this value very small
-    /// because it will prevent bodies from sleeping. Typically in meters per second.
-    /// @see b2WorldDef
-    func setRestitutionThreshold(_ value: Float) {
-        b2World_SetRestitutionThreshold(id, value)
-    }
-    
-    /// Adjust the hit event threshold. This controls the collision velocity needed to generate a b2ContactHitEvent.
-    /// Typically in meters per second.
-    /// @see b2WorldDef::hitEventThreshold
-    func setHitEventThreshold(_ value: Float) {
-        b2World_SetHitEventThreshold(id, value)
+    /// Is continuous collision enabled?
+    func isContinuousEnabled() -> Bool {
+        b2World_IsContinuousEnabled(id)
     }
     
     /// Register the custom filter callback. This is optional.
@@ -156,6 +152,11 @@ public extension B2World {
         b2World_EnableWarmStarting(id, flag)
     }
     
+    /// Is constraint warm starting enabled?
+    func isWarmStartingEnabled() -> Bool {
+        b2World_IsWarmStartingEnabled(id)
+    }
+    
     /// Get the current world performance profile
     func getProfile() -> b2Profile {
         b2World_GetProfile(id)
@@ -169,6 +170,32 @@ public extension B2World {
     /// Dump memory stats to box2d_memory.txt
     func dumpMemoryStats() {
         b2World_DumpMemoryStats(id)
+    }
+    
+    ///  Get the the restitution speed threshold. Typically in meters per second.
+    /// Adjust the restitution threshold. It is recommended not to make this value very small
+    /// because it will prevent bodies from sleeping. Typically in meters per second.
+    /// @see b2WorldDef
+    var restitutionThreshold: Float {
+        get {
+            b2World_GetRestitutionThreshold(id)
+        }
+        set(value) {
+            b2World_SetRestitutionThreshold(id, value)
+        }
+    }
+    
+    ///  Get the the hit event speed threshold. Typically in meters per second.
+    /// Adjust the hit event threshold. This controls the collision velocity needed to generate a b2ContactHitEvent.
+    /// Typically in meters per second.
+    /// @see b2WorldDef::hitEventThreshold
+    var hitEventThreshold: Float {
+        get {
+            b2World_GetHitEventThreshold(id)
+        }
+        set(value) {
+            b2World_SetHitEventThreshold(id, value)
+        }
     }
     
     ///  Get the gravity vector

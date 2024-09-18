@@ -5,6 +5,8 @@
 
 #include "box2d/base.h"
 
+// clang-format off
+
 #define B2_NULL_INDEX ( -1 )
 
 #ifdef NDEBUG
@@ -36,18 +38,44 @@
 #elif defined( __EMSCRIPTEN__ )
 	#define B2_PLATFORM_WASM
 #else
-	#error Unsupported platform
+	#define B2_PLATFORM_UNKNOWN
 #endif
 
 // Define CPU
-#if defined( __x86_64__ ) || defined( _M_X64 )
-	#define B2_CPU_X64
-#elif defined( __aarch64__ ) || defined( _M_ARM64 )
+#if defined( __x86_64__ ) || defined( _M_X64 ) || defined( __i386__ ) || defined( _M_IX86 )
+	#define B2_CPU_X86_X64
+#elif defined( __aarch64__ ) || defined( _M_ARM64 ) || defined( __arm__ ) || defined( _M_ARM )
 	#define B2_CPU_ARM
 #elif defined( __EMSCRIPTEN__ )
 	#define B2_CPU_WASM
 #else
-	#error Unsupported CPU
+	#define B2_CPU_UNKNOWN
+#endif
+
+// Define SIMD
+#if defined( BOX2D_ENABLE_SIMD )
+	#if defined( B2_CPU_X86_X64 )
+		#if defined( BOX2D_AVX2 )
+			#define B2_SIMD_AVX2
+			#define B2_SIMD_WIDTH 8
+		#else
+			#define B2_SIMD_SSE2
+			#define B2_SIMD_WIDTH 4
+		#endif
+	#elif defined( B2_CPU_ARM )
+		#define B2_SIMD_NEON
+		#define B2_SIMD_WIDTH 4
+	#elif defined( B2_CPU_WASM )
+		#define B2_CPU_WASM
+		#define B2_SIMD_SSE2
+		#define B2_SIMD_WIDTH 4
+	#else
+		#define B2_SIMD_NONE
+		#define B2_SIMD_WIDTH 4
+	#endif
+#else
+	#define B2_SIMD_NONE
+	#define B2_SIMD_WIDTH 4
 #endif
 
 // Define compiler
@@ -59,32 +87,25 @@
 	#define B2_COMPILER_MSVC
 #endif
 
+// see https://github.com/scottt/debugbreak
 #if defined( B2_COMPILER_MSVC )
 	#define B2_BREAKPOINT __debugbreak()
 #elif defined( B2_COMPILER_GCC ) || defined( B2_COMPILER_CLANG )
-	#if defined( B2_CPU_X64 )
-		#define B2_BREAKPOINT __asm volatile( "int $0x3" )
-	#elif defined( B2_CPU_ARM )
-		#define B2_BREAKPOINT __builtin_trap()
-	#endif
-#elif defined( B2_PLATFORM_WASM )
-	#define B2_BREAKPOINT                                                                                                        \
-		do                                                                                                                       \
-		{                                                                                                                        \
-		}                                                                                                                        \
-		while ( 0 )
+	#define B2_BREAKPOINT __builtin_trap()
 #else
-	#error Unknown platform
+	// Unknown compiler
+	#include <assert.h>
+	#definef B2_BREAKPOINT assert(0)
 #endif
 
 #if !defined( NDEBUG ) || defined( B2_ENABLE_ASSERT )
-extern b2AssertFcn* b2AssertHandler;
-	#define B2_ASSERT( condition )                                                                                               \
-		do                                                                                                                       \
-		{                                                                                                                        \
-			if ( !( condition ) && b2AssertHandler( #condition, __FILE__, (int)__LINE__ ) )                                      \
-				B2_BREAKPOINT;                                                                                                   \
-		}                                                                                                                        \
+	extern b2AssertFcn* b2AssertHandler;
+	#define B2_ASSERT( condition )                                                                                                   \
+		do                                                                                                                           \
+		{                                                                                                                            \
+			if ( !( condition ) && b2AssertHandler( #condition, __FILE__, (int)__LINE__ ) )                                          \
+				B2_BREAKPOINT;                                                                                                       \
+		}                                                                                                                            \
 		while ( 0 )
 #else
 	#define B2_ASSERT( ... ) ( (void)0 )
@@ -93,19 +114,17 @@ extern b2AssertFcn* b2AssertHandler;
 /// Tracy profiler instrumentation
 ///	https://github.com/wolfpld/tracy
 #ifdef BOX2D_PROFILE
-
 	#include <tracy/TracyC.h>
 	#define b2TracyCZoneC( ctx, color, active ) TracyCZoneC( ctx, color, active )
 	#define b2TracyCZoneNC( ctx, name, color, active ) TracyCZoneNC( ctx, name, color, active )
 	#define b2TracyCZoneEnd( ctx ) TracyCZoneEnd( ctx )
-
 #else
-
 	#define b2TracyCZoneC( ctx, color, active )
 	#define b2TracyCZoneNC( ctx, name, color, active )
 	#define b2TracyCZoneEnd( ctx )
-
 #endif
+
+// clang-format on
 
 extern float b2_lengthUnitsPerMeter;
 
@@ -128,14 +147,9 @@ extern float b2_lengthUnitsPerMeter;
 // Maximum number of simultaneous worlds that can be allocated
 #define b2_maxWorlds 128
 
-// The maximum translation of a body per time step. This limit is very large and is used
-// to prevent numerical problems. You shouldn't need to adjust this. Meters.
-// @warning modifying this can have a significant impact on stability
-#define b2_maxTranslation ( 4.0f * b2_lengthUnitsPerMeter )
-
 // The maximum rotation of a body per time step. This limit is very large and is used
 // to prevent numerical problems. You shouldn't need to adjust this.
-// @warning modifying this can have a significant impact on stability
+// @warning increasing this to 0.5f * b2_pi or greater will break continuous collision.
 #define b2_maxRotation ( 0.25f * b2_pi )
 
 // @warning modifying this can have a significant impact on performance and stability

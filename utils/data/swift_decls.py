@@ -382,6 +382,11 @@ class SwiftExtensionDecl(SwiftDecl):
     members: List[SwiftMemberDecl]
     conformances: list[str]
 
+    def conformances_string(self):
+        conformances = sorted(self.conformances)
+        conformances = [f"@retroactive {c}" for c in conformances]
+        return ", ".join(conformances)
+
     def write(self, stream: SyntaxStream):
         super().write(stream)
 
@@ -390,7 +395,7 @@ class SwiftExtensionDecl(SwiftDecl):
         # Emit conformances, with no access control specifier so the code compiles
         # properly
         if len(self.conformances) > 0:
-            conformance_str = ", ".join(sorted(self.conformances))
+            conformance_str = self.conformances_string()
 
             stream.line(f"extension {name}: {conformance_str} {{ }}")
             stream.line()

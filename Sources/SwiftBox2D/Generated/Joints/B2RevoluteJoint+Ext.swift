@@ -9,6 +9,11 @@ public extension B2RevoluteJoint {
         b2RevoluteJoint_EnableSpring(id, enableSpring)
     }
     
+    /// It the revolute angular spring enabled?
+    func isSpringEnabled() -> Bool {
+        b2RevoluteJoint_IsSpringEnabled(id)
+    }
+    
     /// Get the revolute joint current angle in radians relative to the reference angle
     /// @see b2RevoluteJointDef::referenceAngle
     func getAngle() -> Float {

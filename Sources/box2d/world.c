@@ -165,6 +165,7 @@ b2WorldId b2CreateWorld( const b2WorldDef* def )
 	world->gravity = def->gravity;
 	world->hitEventThreshold = def->hitEventThreshold;
 	world->restitutionThreshold = def->restitutionThreshold;
+	world->maxLinearVelocity = def->maximumLinearVelocity;
 	world->contactPushoutVelocity = def->contactPushoutVelocity;
 	world->contactHertz = def->contactHertz;
 	world->contactDampingRatio = def->contactDampingRatio;
@@ -173,7 +174,7 @@ b2WorldId b2CreateWorld( const b2WorldDef* def )
 	world->enableSleep = def->enableSleep;
 	world->locked = false;
 	world->enableWarmStarting = true;
-	world->enableContinuous = def->enableContinous;
+	world->enableContinuous = def->enableContinuous;
 	world->userTreeTask = NULL;
 
 	if ( def->workerCount > 0 && def->enqueueTask != NULL && def->finishTask != NULL )
@@ -743,6 +744,7 @@ void b2World_Step( b2WorldId worldId, float timeStep, int subStepCount )
 	context.jointSoftness = b2MakeSoft( jointHertz, world->jointDampingRatio, context.h );
 
 	context.restitutionThreshold = world->restitutionThreshold;
+	context.maxLinearVelocity = world->maxLinearVelocity;
 	context.enableWarmStarting = world->enableWarmStarting;
 
 	// Update contacts
@@ -812,9 +814,9 @@ static void b2DrawShape( b2DebugDraw* draw, b2Shape* shape, b2Transform xf, b2He
 		}
 		break;
 
-		case b2_smoothSegmentShape:
+		case b2_chainSegmentShape:
 		{
-			b2Segment* segment = &shape->smoothSegment.segment;
+			b2Segment* segment = &shape->chainSegment.segment;
 			b2Vec2 p1 = b2TransformPoint( xf, segment->point1 );
 			b2Vec2 p2 = b2TransformPoint( xf, segment->point2 );
 			draw->DrawSegment( p1, p2, color, draw->context );
@@ -1595,6 +1597,12 @@ void b2World_EnableSleeping( b2WorldId worldId, bool flag )
 	}
 }
 
+bool b2World_IsSleepingEnabled(b2WorldId worldId)
+{
+	b2World* world = b2GetWorldFromId( worldId );
+	return world->enableSleep;
+}
+
 void b2World_EnableWarmStarting( b2WorldId worldId, bool flag )
 {
 	b2World* world = b2GetWorldFromId( worldId );
@@ -1605,6 +1613,12 @@ void b2World_EnableWarmStarting( b2WorldId worldId, bool flag )
 	}
 
 	world->enableWarmStarting = flag;
+}
+
+bool b2World_IsWarmStartingEnabled(b2WorldId worldId)
+{
+	b2World* world = b2GetWorldFromId( worldId );
+	return world->enableWarmStarting;
 }
 
 void b2World_EnableContinuous( b2WorldId worldId, bool flag )
@@ -1619,6 +1633,12 @@ void b2World_EnableContinuous( b2WorldId worldId, bool flag )
 	world->enableContinuous = flag;
 }
 
+bool b2World_IsContinuousEnabled(b2WorldId worldId)
+{
+	b2World* world = b2GetWorldFromId( worldId );
+	return world->enableContinuous;
+}
+
 void b2World_SetRestitutionThreshold( b2WorldId worldId, float value )
 {
 	b2World* world = b2GetWorldFromId( worldId );
@@ -1631,6 +1651,12 @@ void b2World_SetRestitutionThreshold( b2WorldId worldId, float value )
 	world->restitutionThreshold = b2ClampFloat( value, 0.0f, FLT_MAX );
 }
 
+float b2World_GetRestitutionThreshold(b2WorldId worldId)
+{
+	b2World* world = b2GetWorldFromId( worldId );
+	return world->restitutionThreshold;
+}
+
 void b2World_SetHitEventThreshold( b2WorldId worldId, float value )
 {
 	b2World* world = b2GetWorldFromId( worldId );
@@ -1641,6 +1667,12 @@ void b2World_SetHitEventThreshold( b2WorldId worldId, float value )
 	}
 
 	world->hitEventThreshold = b2ClampFloat( value, 0.0f, FLT_MAX );
+}
+
+float b2World_GetHitEventThreshold(b2WorldId worldId)
+{
+	b2World* world = b2GetWorldFromId( worldId );
+	return world->hitEventThreshold;
 }
 
 void b2World_SetContactTuning( b2WorldId worldId, float hertz, float dampingRatio, float pushOut )

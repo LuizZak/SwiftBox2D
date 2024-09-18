@@ -99,21 +99,33 @@ B2_API void b2World_CastPolygon( b2WorldId worldId, const b2Polygon* polygon, b2
 ///	@see b2WorldDef
 B2_API void b2World_EnableSleeping( b2WorldId worldId, bool flag );
 
+/// Is body sleeping enabled?
+B2_API bool b2World_IsSleepingEnabled( b2WorldId worldId );
+
 /// Enable/disable continuous collision between dynamic and static bodies. Generally you should keep continuous
 /// collision enabled to prevent fast moving objects from going through static objects. The performance gain from
 ///	disabling continuous collision is minor.
 ///	@see b2WorldDef
 B2_API void b2World_EnableContinuous( b2WorldId worldId, bool flag );
 
+/// Is continuous collision enabled?
+B2_API bool b2World_IsContinuousEnabled( b2WorldId worldId );
+
 /// Adjust the restitution threshold. It is recommended not to make this value very small
 ///	because it will prevent bodies from sleeping. Typically in meters per second.
 ///	@see b2WorldDef
 B2_API void b2World_SetRestitutionThreshold( b2WorldId worldId, float value );
 
+/// Get the the restitution speed threshold. Typically in meters per second.
+B2_API float b2World_GetRestitutionThreshold( b2WorldId worldId );
+
 /// Adjust the hit event threshold. This controls the collision velocity needed to generate a b2ContactHitEvent.
 /// Typically in meters per second.
 ///	@see b2WorldDef::hitEventThreshold
 B2_API void b2World_SetHitEventThreshold( b2WorldId worldId, float value );
+
+/// Get the the hit event speed threshold. Typically in meters per second.
+B2_API float b2World_GetHitEventThreshold( b2WorldId worldId );
 
 /// Register the custom filter callback. This is optional.
 B2_API void b2World_SetCustomFilterCallback( b2WorldId worldId, b2CustomFilterFcn* fcn, void* context );
@@ -147,6 +159,9 @@ B2_API void b2World_SetContactTuning( b2WorldId worldId, float hertz, float damp
 /// Enable/disable constraint warm starting. Advanced feature for testing. Disabling
 ///	sleeping greatly reduces stability and provides no performance gain.
 B2_API void b2World_EnableWarmStarting( b2WorldId worldId, bool flag );
+
+/// Is constraint warm starting enabled?
+B2_API bool b2World_IsWarmStartingEnabled( b2WorldId worldId );
 
 /// Get the current world performance profile
 B2_API b2Profile b2World_GetProfile( b2WorldId worldId );
@@ -288,8 +303,8 @@ B2_API void b2Body_ApplyAngularImpulse( b2BodyId bodyId, float impulse, bool wak
 /// Get the mass of the body, typically in kilograms
 B2_API float b2Body_GetMass( b2BodyId bodyId );
 
-/// Get the inertia tensor of the body, typically in kg*m^2
-B2_API float b2Body_GetInertiaTensor( b2BodyId bodyId );
+/// Get the rotational inertia of the body, typically in kg*m^2
+B2_API float b2Body_GetRotationalInertia( b2BodyId bodyId );
 
 /// Get the center of mass position of the body in local space
 B2_API b2Vec2 b2Body_GetLocalCenterOfMass( b2BodyId bodyId );
@@ -353,7 +368,7 @@ B2_API void b2Body_EnableSleep( b2BodyId bodyId, bool enableSleep );
 B2_API bool b2Body_IsSleepEnabled( b2BodyId bodyId );
 
 /// Set the sleep threshold, typically in meters per second
-B2_API void b2Body_SetSleepThreshold( b2BodyId bodyId, float sleepVelocity );
+B2_API void b2Body_SetSleepThreshold( b2BodyId bodyId, float sleepThreshold );
 
 /// Get the sleep threshold, typically in meters per second.
 B2_API float b2Body_GetSleepThreshold( b2BodyId bodyId );
@@ -521,7 +536,7 @@ B2_API bool b2Shape_AreHitEventsEnabled( b2ShapeId shapeId );
 B2_API bool b2Shape_TestPoint( b2ShapeId shapeId, b2Vec2 point );
 
 /// Ray cast a shape directly
-B2_API b2CastOutput b2Shape_RayCast( b2ShapeId shapeId, b2Vec2 origin, b2Vec2 translation );
+B2_API b2CastOutput b2Shape_RayCast( b2ShapeId shapeId, const b2RayCastInput* input );
 
 /// Get a copy of the shape's circle. Asserts the type is correct.
 B2_API b2Circle b2Shape_GetCircle( b2ShapeId shapeId );
@@ -529,9 +544,9 @@ B2_API b2Circle b2Shape_GetCircle( b2ShapeId shapeId );
 /// Get a copy of the shape's line segment. Asserts the type is correct.
 B2_API b2Segment b2Shape_GetSegment( b2ShapeId shapeId );
 
-/// Get a copy of the shape's smooth line segment. These come from chain shapes.
+/// Get a copy of the shape's chain segment. These come from chain shapes.
 /// Asserts the type is correct.
-B2_API b2SmoothSegment b2Shape_GetSmoothSegment( b2ShapeId shapeId );
+B2_API b2ChainSegment b2Shape_GetChainSegment( b2ShapeId shapeId );
 
 /// Get a copy of the shape's capsule. Asserts the type is correct.
 B2_API b2Capsule b2Shape_GetCapsule( b2ShapeId shapeId );
@@ -557,7 +572,7 @@ B2_API void b2Shape_SetSegment( b2ShapeId shapeId, const b2Segment* segment );
 ///	@see b2Body_ApplyMassFromShapes
 B2_API void b2Shape_SetPolygon( b2ShapeId shapeId, const b2Polygon* polygon );
 
-/// Get the parent chain id if the shape type is b2_smoothSegmentShape, otherwise
+/// Get the parent chain id if the shape type is a chain segment, otherwise
 /// returns b2_nullChainId.
 B2_API b2ChainId b2Shape_GetParentChain( b2ShapeId shapeId );
 
@@ -674,10 +689,10 @@ B2_API void b2DistanceJoint_SetSpringHertz( b2JointId jointId, float hertz );
 B2_API void b2DistanceJoint_SetSpringDampingRatio( b2JointId jointId, float dampingRatio );
 
 /// Get the spring Hertz
-B2_API float b2DistanceJoint_GetHertz( b2JointId jointId );
+B2_API float b2DistanceJoint_GetSpringHertz( b2JointId jointId );
 
 /// Get the spring damping ratio
-B2_API float b2DistanceJoint_GetDampingRatio( b2JointId jointId );
+B2_API float b2DistanceJoint_GetSpringDampingRatio( b2JointId jointId );
 
 /// Enable joint limit. The limit only works if the joint spring is enabled. Otherwise the joint is rigid
 ///	and the limit has no effect.
@@ -892,6 +907,9 @@ B2_API b2JointId b2CreateRevoluteJoint( b2WorldId worldId, const b2RevoluteJoint
 
 /// Enable/disable the revolute joint spring
 B2_API void b2RevoluteJoint_EnableSpring( b2JointId jointId, bool enableSpring );
+
+/// It the revolute angular spring enabled?
+B2_API bool b2RevoluteJoint_IsSpringEnabled( b2JointId jointId );
 
 /// Set the revolute joint spring stiffness in Hertz
 B2_API void b2RevoluteJoint_SetSpringHertz( b2JointId jointId, float hertz );

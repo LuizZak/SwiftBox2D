@@ -14,26 +14,6 @@ public extension B2DistanceJoint {
         b2DistanceJoint_IsSpringEnabled(id)
     }
     
-    /// Set the spring stiffness in Hertz
-    func setSpringHertz(_ hertz: Float) {
-        b2DistanceJoint_SetSpringHertz(id, hertz)
-    }
-    
-    /// Set the spring damping ratio, non-dimensional
-    func setSpringDampingRatio(_ dampingRatio: Float) {
-        b2DistanceJoint_SetSpringDampingRatio(id, dampingRatio)
-    }
-    
-    /// Get the spring Hertz
-    func getHertz() -> Float {
-        b2DistanceJoint_GetHertz(id)
-    }
-    
-    /// Get the spring damping ratio
-    func getDampingRatio() -> Float {
-        b2DistanceJoint_GetDampingRatio(id)
-    }
-    
     /// Enable joint limit. The limit only works if the joint spring is enabled. Otherwise the joint is rigid
     /// and the limit has no effect.
     func enableLimit(_ enableLimit: Bool) {
@@ -85,6 +65,28 @@ public extension B2DistanceJoint {
         }
         set(length) {
             b2DistanceJoint_SetLength(id, length)
+        }
+    }
+    
+    /// Get the spring Hertz
+    /// Set the spring stiffness in Hertz
+    var springHertz: Float {
+        get {
+            b2DistanceJoint_GetSpringHertz(id)
+        }
+        set(hertz) {
+            b2DistanceJoint_SetSpringHertz(id, hertz)
+        }
+    }
+    
+    /// Get the spring damping ratio
+    /// Set the spring damping ratio, non-dimensional
+    var springDampingRatio: Float {
+        get {
+            b2DistanceJoint_GetSpringDampingRatio(id)
+        }
+        set(dampingRatio) {
+            b2DistanceJoint_SetSpringDampingRatio(id, dampingRatio)
         }
     }
     
