@@ -14,4 +14,11 @@ public class B2Body {
 
         self.init(id: id)
     }
+
+    /// Destroys this body reference, removing it from the world.
+    public func destroy() {
+        b2DestroyBody(self.id)
+
+        self.id = b2_nullBodyId
+    }
 }

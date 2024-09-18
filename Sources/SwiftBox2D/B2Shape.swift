@@ -46,4 +46,11 @@ public class B2Shape {
 
         self.init(id: id)
     }
+
+    /// Destroys this shape, removing it from the body that owns it.
+    public func destroy() {
+        b2DestroyShape(id)
+
+        id = b2_nullShapeId
+    }
 }

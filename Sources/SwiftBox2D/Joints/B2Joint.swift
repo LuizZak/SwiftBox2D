@@ -7,4 +7,11 @@ public class B2Joint {
     init(id: b2JointId) {
         self.id = id
     }
+
+    /// Destroys this joint, removing it from the world that owns it.
+    public func destroy() {
+        b2DestroyJoint(id)
+
+        self.id = b2_nullJointId
+    }
 }

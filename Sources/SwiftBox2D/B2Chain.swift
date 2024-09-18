@@ -14,4 +14,11 @@ public class B2Chain {
 
         self.init(id: id)
     }
+
+    /// Destroys this chain, removing it from the world.
+    public func destroy() {
+        b2DestroyChain(id)
+
+        self.id = b2_nullChainId
+    }
 }
