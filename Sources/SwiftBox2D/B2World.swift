@@ -3,14 +3,27 @@ import box2d
 public class B2World {
     var id: b2WorldId
 
-    init() {
+    init(id: b2WorldId) {
+        self.id = id
+    }
+
+    /// Initializes a new world with a given definition.
+    public convenience init(_ def: b2WorldDef) {
+        var def = def
+        let id = b2CreateWorld(&def)
+
+        self.init(id: id)
+    }
+
+    /// Initializes a new world.
+    public convenience init() {
         var worldDef = b2DefaultWorldDef()
         worldDef.workerCount = 1
         worldDef.enqueueTask = _enqueueTask
         worldDef.finishTask = _finishTask
         worldDef.enableSleep = true
 
-        id = b2CreateWorld(&worldDef)
+        self.init(worldDef)
     }
 
     deinit {
