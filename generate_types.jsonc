@@ -39,6 +39,7 @@
             { "cName": "b2Vec2", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
             { "cName": "b2Circle", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
             { "cName": "b2Capsule", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
+            { "cName": "b2Segment", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
             { "cName": "b2Polygon", "conformances": ["CustomStringConvertible"] },
             { "cName": "b2AABB", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
             { "cName": "b2Rot", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },

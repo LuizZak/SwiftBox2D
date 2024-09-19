@@ -21,4 +21,30 @@ public class B2Body {
 
         self.id = b2_nullBodyId
     }
+
+    // MARK: - Creation
+
+    /// Creates a new capsule shape on this body.
+    @discardableResult
+    public func createCapsule(_ capsule: B2Capsule, shape: b2ShapeDef) -> B2Shape {
+        B2Shape(body: self, shape: shape, capsule: capsule)
+    }
+
+    /// Creates a new circle shape on this body.
+    @discardableResult
+    public func createCircle(_ circle: B2Circle, shape: b2ShapeDef) -> B2Shape {
+        B2Shape(body: self, shape: shape, circle: circle)
+    }
+
+    /// Creates a new polygon shape on this body.
+    @discardableResult
+    public func createPolygon(_ polygon: B2Polygon, shape: b2ShapeDef) -> B2Shape {
+        B2Shape(body: self, shape: shape, polygon: polygon)
+    }
+
+    /// Creates a new segment shape on this body.
+    @discardableResult
+    public func createSegment(_ segment: B2Segment, shape: b2ShapeDef) -> B2Shape {
+        B2Shape(body: self, shape: shape, segment: segment)
+    }
 }

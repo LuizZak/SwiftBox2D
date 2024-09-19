@@ -90,7 +90,7 @@ public extension B2Shape {
     }
     
     /// Get a copy of the shape's line segment. Asserts the type is correct.
-    func getSegment() -> b2Segment {
+    func getSegment() -> B2Segment {
         b2Shape_GetSegment(id)
     }
     

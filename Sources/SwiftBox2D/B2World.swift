@@ -334,6 +334,58 @@ public class B2World {
         }
     }
 
+    // MARK: - Creation
+
+    /// Creates a new body in this world.
+    @discardableResult
+    public func createBody(_ bodyDef: b2BodyDef) -> B2Body {
+        return B2Body(world: self, bodyDef)
+    }
+
+    /// Creates a new distance joint in this world.
+    @discardableResult
+    public func createJoint(_ jointDef: b2DistanceJointDef) -> B2DistanceJoint {
+        .init(world: self, jointDef)
+    }
+
+    /// Creates a new motor joint in this world.
+    @discardableResult
+    public func createJoint(_ jointDef: b2MotorJointDef) -> B2MotorJoint {
+        .init(world: self, jointDef)
+    }
+
+    /// Creates a new mouse joint in this world.
+    @discardableResult
+    public func createJoint(_ jointDef: b2MouseJointDef) -> B2MouseJoint {
+        .init(world: self, jointDef)
+    }
+
+    /// Creates a new prismatic joint in this world.
+    @discardableResult
+    public func createJoint(_ jointDef: b2PrismaticJointDef) -> B2PrismaticJoint {
+        .init(world: self, jointDef)
+    }
+
+    /// Creates a new revolute joint in this world.
+    @discardableResult
+    public func createJoint(_ jointDef: b2RevoluteJointDef) -> B2RevoluteJoint {
+        .init(world: self, jointDef)
+    }
+
+    /// Creates a new weld joint in this world.
+    @discardableResult
+    public func createJoint(_ jointDef: b2WeldJointDef) -> B2WeldJoint {
+        .init(world: self, jointDef)
+    }
+
+    /// Creates a new wheel joint in this world.
+    @discardableResult
+    public func createJoint(_ jointDef: b2WheelJointDef) -> B2WheelJoint {
+        .init(world: self, jointDef)
+    }
+
+    // MARK: - Auxiliary
+
     /// Expected result value returned by ray and shape cast result functions.
     public enum CastResult {
         /// Ignore the shape and continue.

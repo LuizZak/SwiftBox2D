@@ -8,7 +8,7 @@ public class B2Shape {
     }
 
     /// Creates a new capsule shape, attaching it to a given body.
-    public convenience init(body: B2Body, shape: b2ShapeDef, capsule: b2Capsule) {
+    public convenience init(body: B2Body, shape: b2ShapeDef, capsule: B2Capsule) {
         var shape = shape
         var capsule = capsule
 
@@ -18,7 +18,7 @@ public class B2Shape {
     }
 
     /// Creates a new circle shape, attaching it to a given body.
-    public convenience init(body: B2Body, shape: b2ShapeDef, circle: b2Circle) {
+    public convenience init(body: B2Body, shape: b2ShapeDef, circle: B2Circle) {
         var shape = shape
         var circle = circle
 
@@ -28,7 +28,7 @@ public class B2Shape {
     }
 
     /// Creates a new polygon shape, attaching it to a given body.
-    public convenience init(body: B2Body, shape: b2ShapeDef, polygon: b2Polygon) {
+    public convenience init(body: B2Body, shape: b2ShapeDef, polygon: B2Polygon) {
         var shape = shape
         var polygon = polygon
 
@@ -38,7 +38,7 @@ public class B2Shape {
     }
 
     /// Creates a new segment shape, attaching it to a given body.
-    public convenience init(body: B2Body, shape: b2ShapeDef, segment: b2Segment) {
+    public convenience init(body: B2Body, shape: b2ShapeDef, segment: B2Segment) {
         var shape = shape
         var segment = segment
 
