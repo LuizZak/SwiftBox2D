@@ -12,7 +12,8 @@ public class B2World {
     /// Common callback for overlap queries.
     public typealias OverlapResultCallback = (_ shapeId: b2ShapeId) -> Bool
 
-    var id: b2WorldId
+    /// Gets the ID of this world.
+    private(set) public var id: b2WorldId
 
     init(id: b2WorldId) {
         self.id = id

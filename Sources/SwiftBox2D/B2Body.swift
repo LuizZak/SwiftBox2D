@@ -1,7 +1,8 @@
 import box2d
 
 public class B2Body {
-    var id: b2BodyId
+    /// Gets the ID of this body.
+    private(set) public var id: b2BodyId
 
     init(id: b2BodyId) {
         self.id = id
