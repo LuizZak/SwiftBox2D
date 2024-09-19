@@ -64,8 +64,8 @@
             {
                 "path": "Geometry",
                 "match": [
-                    "b2Vec2+Ext.swift", "b2Circle+Ext.swift", "b2AABB+Ext.swift", "b2Rot+Ext.swift",
-                    "b2Transform+Ext.swift", "b2Mat22+Ext.swift"
+                    "B2Vec2+Ext.swift", "B2Circle+Ext.swift", "B2AABB+Ext.swift", "B2Rot+Ext.swift",
+                    "B2Transform+Ext.swift", "B2Mat22+Ext.swift"
                 ]
             },
             { "path": "Joints", "match": [ "/B2(\\w+)Joint.+/" ] }
