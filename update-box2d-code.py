@@ -175,14 +175,6 @@ def copy_box2d_files(src_path: Path, include_path: Path, target_path: Path):
     copy_repo_files(src_path, include_path, target_path)
 
 
-def copy_dependency_files(clone_path: Path, target_path: Path):
-    print_stage_name("Copying over Box2D dependency files...")
-
-    simde_path = clone_path.joinpath("extern", "simde")
-
-    shutil.copytree(simde_path, target_path, dirs_exist_ok=True)
-
-
 def update_code(box2d_tag_or_branch: str | None, force: bool) -> int:
     if (not force) and len(git_output("status", "--porcelain", echo=False).strip()) > 0:
         print(
@@ -205,8 +197,6 @@ def update_code(box2d_tag_or_branch: str | None, force: bool) -> int:
 
     # Copy files
     copy_box2d_files(src_path, include_path, BOX2D_TARGET_PATH)
-    # Copy simde from <box2d cloned repo>/extern/simde
-    # copy_dependency_files(box2d_clone_path, BOX2D_TARGET_PATH)
 
     print(ConsoleColor.GREEN("Success!"))
 
