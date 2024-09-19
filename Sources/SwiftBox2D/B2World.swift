@@ -41,8 +41,15 @@ public class B2World {
         b2DestroyWorld(id)
     }
 
+    /// Simulate a world for one time step. This performs collision detection,
+    /// integration, and constraint solution.
+    ///
+    /// - param timeStep: The amount of time to simulate, this should be a fixed
+    ///     number. Typically 1/60.
+    /// - param subStepCount: The number of sub-steps, increasing the sub-step
+    ///     count can increase accuracy. Typically 4.
     public func step(_ timeStep: Float, subSteps: Int = 4) {
-        b2World_Step(id, timeStep, Int32(subSteps))
+        step(timeStep, Int32(subSteps))
     }
 
     /// Overlap test for all shapes that *potentially* overlap the provided AABB.
@@ -199,7 +206,7 @@ public class B2World {
     /// - note: The callback function may receive shapes in any order
     public func castCircle(
         _ circle: B2Circle,
-        originTransform: B2Transform,
+        originTransform: B2Transform = .identity,
         translation: B2Vec2,
         filter: B2QueryFilter,
         callback: CastResultCallback
@@ -245,7 +252,7 @@ public class B2World {
     /// - note: The callback function may receive shapes in any order
     public func castCapsule(
         _ capsule: B2Capsule,
-        originTransform: B2Transform,
+        originTransform: B2Transform = .identity,
         translation: B2Vec2,
         filter: B2QueryFilter,
         callback: CastResultCallback
@@ -291,7 +298,7 @@ public class B2World {
     /// - note: The callback function may receive shapes in any order
     public func castPolygon(
         _ polygon: B2Polygon,
-        originTransform: B2Transform,
+        originTransform: B2Transform = .identity,
         translation: B2Vec2,
         filter: B2QueryFilter,
         callback: CastResultCallback
