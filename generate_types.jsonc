@@ -34,9 +34,12 @@
             { "cPrefix": "b2Chain_", "swiftType": "B2Chain", "param0": { "swiftName": "id", "type": "b2ChainId" } }
         ],
         "conformances": [
+            { "cName": "b2QueryFilter", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
             // Geometry types
             { "cName": "b2Vec2", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
             { "cName": "b2Circle", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
+            { "cName": "b2Capsule", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
+            { "cName": "b2Polygon", "conformances": ["CustomStringConvertible"] },
             { "cName": "b2AABB", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
             { "cName": "b2Rot", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
             { "cName": "b2Transform", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },

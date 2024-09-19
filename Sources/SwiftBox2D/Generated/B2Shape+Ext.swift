@@ -101,12 +101,12 @@ public extension B2Shape {
     }
     
     /// Get a copy of the shape's capsule. Asserts the type is correct.
-    func getCapsule() -> b2Capsule {
+    func getCapsule() -> B2Capsule {
         b2Shape_GetCapsule(id)
     }
     
     /// Get a copy of the shape's convex polygon. Asserts the type is correct.
-    func getPolygon() -> b2Polygon {
+    func getPolygon() -> B2Polygon {
         b2Shape_GetPolygon(id)
     }
     
