@@ -49,7 +49,7 @@
             "enums": [],
             "enumMembers": [],
             "structs": ["."],
-            "methods": [".", "!b2DistanceJoint_IsLimitEnabled", "!b2Body_SetAutomaticMass", "!b2Body_GetAutomaticMass"]
+            "methods": ["."]
         }
     },
     "docComments": {

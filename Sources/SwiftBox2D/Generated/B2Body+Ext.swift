@@ -299,6 +299,18 @@ public extension B2Body {
         }
     }
     
+    ///  Get the automatic mass setting
+    /// Set the automatic mass setting. Normally this is set in b2BodyDef before creation.
+    /// @see b2BodyDef::automaticMass
+    var automaticMass: Bool {
+        get {
+            b2Body_GetAutomaticMass(id)
+        }
+        set(automaticMass) {
+            b2Body_SetAutomaticMass(id, automaticMass)
+        }
+    }
+    
     /// Get the current linear damping.
     /// Adjust the linear damping. Normally this is set in b2BodyDef before creation.
     var linearDamping: Float {
