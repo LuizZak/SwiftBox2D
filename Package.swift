@@ -5,16 +5,17 @@ let package = Package(
     name: "SwiftBox2D",
     products: [
         .library(
+            name: "box2d",
+            targets: ["box2d"]
+        ),
+        .library(
             name: "SwiftBox2D",
             targets: ["SwiftBox2D"]
         ),
     ],
     targets: [
         .target(
-            name: "box2d",
-            cSettings: [
-                .unsafeFlags(["-mavx2"]),
-            ]
+            name: "box2d"
         ),
         .target(
             name: "SwiftBox2D",
