@@ -223,7 +223,7 @@
             "type": "string",
             "description": "Specifies a type of casing to use when parsing/generating symbols.",
             "title": "SymbolCasing",
-            "enum": ["camelCase", "PascalCase", "snake_case", "UPPER_SNAKE_CASE"]
+            "enum": ["camelCase", "PascalCase", "snake_case", "UPPER_SNAKE_CASE", "mixed_Case"]
         },
         "SymbolCasingSettings": {
             "type": "object",

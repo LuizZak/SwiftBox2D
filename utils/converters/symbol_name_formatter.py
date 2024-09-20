@@ -136,6 +136,8 @@ class SymbolNameFormatter:
                 return name.camel_cased()
             case e.UPPER_SNAKE_CASE:
                 return name.upper_snake_cased()
+            case e.MIXED_CASE:
+                return name.copy()
             case _:
                 raise ValueError(f"Unknown symbol capitalization {capitalization}")
 

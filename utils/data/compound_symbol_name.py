@@ -74,6 +74,9 @@ class ComponentCase(Enum):
 _pascal_case_matcher = re.compile(
     r"((^[a-z]+)|([0-9]+)|([A-Z]{1}[a-z]+)|([A-Z]+(?=([A-Z][a-z])|($)|([0-9]))))"
 )
+_mixed_case_matcher = re.compile(
+    r"((^[a-z]+)|([0-9]+)|(_+[a-z]+)|(_*[A-Z]{1}[a-z]+)|([A-Z]+(?=([A-Z][a-z])|($)|([0-9]))))"
+)
 
 
 @dataclass(repr=False, slots=True)
@@ -108,8 +111,8 @@ class CompoundSymbolName(Sequence["CompoundSymbolName.Component"], Hashable):
 
         def __repr__(self) -> str:
             return (
-                f"CompoundSymbolName.Component(string={self.string}, prefix={self.prefix}, prefix={self.suffix}, "
-                f"prefix={self.joint_to_prev}, string_case={self.string_case})"
+                f"CompoundSymbolName.Component(string={self.string}, prefix={self.prefix}, suffix={self.suffix}, "
+                f"joint_to_prev={self.joint_to_prev}, string_case={self.string_case})"
             )
 
         def __key(self):
@@ -137,7 +140,7 @@ class CompoundSymbolName(Sequence["CompoundSymbolName.Component"], Hashable):
             >>> CompoundSymbolName.Component(string="string", prefix="prefix",
             ...                              suffix="suffix", joint_to_prev="_",
             ...                              string_case=ComponentCase.LOWER).copy()
-            CompoundSymbolName.Component(string=string, prefix=prefix, prefix=suffix, prefix=_, string_case=ComponentCase.LOWER)
+            CompoundSymbolName.Component(string=string, prefix=prefix, suffix=suffix, joint_to_prev=_, string_case=ComponentCase.LOWER)
             """
             return CompoundSymbolName.Component(
                 self.string,
@@ -221,7 +224,7 @@ class CompoundSymbolName(Sequence["CompoundSymbolName.Component"], Hashable):
             If 'force' is True, the casing is forced to be lower-case but the string_case is reset to ComponentCase.ANY:
             >>> CompoundSymbolName.Component(string='SyMBol', prefix='pRef', suffix='SuFF', joint_to_prev='_Prev',
             ...                              string_case=ComponentCase.AS_IS).lower(force=True)
-            CompoundSymbolName.Component(string=symbol, prefix=pref, prefix=suff, prefix=_prev, string_case=ComponentCase.ANY)
+            CompoundSymbolName.Component(string=symbol, prefix=pref, suffix=suff, joint_to_prev=_prev, string_case=ComponentCase.ANY)
             """
 
             if not force and self.string_case != ComponentCase.ANY:
@@ -255,7 +258,7 @@ class CompoundSymbolName(Sequence["CompoundSymbolName.Component"], Hashable):
             If 'force' is True, the casing is forced to be upper-case but the string_case is reset to ComponentCase.ANY:
             >>> CompoundSymbolName.Component(string='SyMBol', prefix='pRef', suffix='SuFF', joint_to_prev='_Prev',
             ...                              string_case=ComponentCase.LOWER).upper(force=True)
-            CompoundSymbolName.Component(string=SYMBOL, prefix=PREF, prefix=SUFF, prefix=_PREV, string_case=ComponentCase.ANY)
+            CompoundSymbolName.Component(string=SYMBOL, prefix=PREF, suffix=SUFF, joint_to_prev=_PREV, string_case=ComponentCase.ANY)
             """
 
             if not force and self.string_case != ComponentCase.ANY:
@@ -398,17 +401,17 @@ class CompoundSymbolName(Sequence["CompoundSymbolName.Component"], Hashable):
 
         >>> CompoundSymbolName.from_camel_case("APascalCaseString")
         CompoundSymbolName(components=[
-            CompoundSymbolName.Component(string=A, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
-            CompoundSymbolName.Component(string=Pascal, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
-            CompoundSymbolName.Component(string=Case, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
-            CompoundSymbolName.Component(string=String, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY)
+            CompoundSymbolName.Component(string=A, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Pascal, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Case, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=String, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY)
         ])
-        >>> CompoundSymbolName.from_camel_case("aPascalCaseString")
+        >>> CompoundSymbolName.from_camel_case("aCamelCaseString")
         CompoundSymbolName(components=[
-            CompoundSymbolName.Component(string=a, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
-            CompoundSymbolName.Component(string=Pascal, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
-            CompoundSymbolName.Component(string=Case, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
-            CompoundSymbolName.Component(string=String, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY)
+            CompoundSymbolName.Component(string=a, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Camel, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Case, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=String, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY)
         ])
         """
         return cls.from_pascal_case(string)
@@ -420,23 +423,63 @@ class CompoundSymbolName(Sequence["CompoundSymbolName.Component"], Hashable):
 
         >>> CompoundSymbolName.from_pascal_case("APascalCaseString")
         CompoundSymbolName(components=[
-            CompoundSymbolName.Component(string=A, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
-            CompoundSymbolName.Component(string=Pascal, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
-            CompoundSymbolName.Component(string=Case, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
-            CompoundSymbolName.Component(string=String, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY)
+            CompoundSymbolName.Component(string=A, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Pascal, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Case, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=String, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY)
         ])
-        >>> CompoundSymbolName.from_pascal_case("aPascalCaseString")
+        >>> CompoundSymbolName.from_pascal_case("aCamelCaseString")
         CompoundSymbolName(components=[
-            CompoundSymbolName.Component(string=a, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
-            CompoundSymbolName.Component(string=Pascal, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
-            CompoundSymbolName.Component(string=Case, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY),
-            CompoundSymbolName.Component(string=String, prefix=None, prefix=None, prefix=None, string_case=ComponentCase.ANY)
+            CompoundSymbolName.Component(string=a, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Camel, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Case, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=String, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY)
         ])
         """
 
         return cls.from_string_list(
             *(t[0] for t in _pascal_case_matcher.findall(string))
         )
+
+    @classmethod
+    def from_mixed_case(cls, string: str) -> "CompoundSymbolName":
+        """
+        Creates a new symbol name from a given `PascalCase` or `camelCase` string, with support for _ separators.
+
+        >>> CompoundSymbolName.from_mixed_case("AMixedCase_String")
+        CompoundSymbolName(components=[
+            CompoundSymbolName.Component(string=A, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Mixed, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Case, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=String, prefix=None, suffix=None, joint_to_prev=_, string_case=ComponentCase.ANY)
+        ])
+        >>> CompoundSymbolName.from_mixed_case("a_mixedCase__String")
+        CompoundSymbolName(components=[
+            CompoundSymbolName.Component(string=a, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=mixed, prefix=None, suffix=None, joint_to_prev=_, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=Case, prefix=None, suffix=None, joint_to_prev=None, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=String, prefix=None, suffix=None, joint_to_prev=__, string_case=ComponentCase.ANY)
+        ])
+        """
+
+        def analyze_component(string: str) -> CompoundSymbolName.Component:
+            prefix = ""
+            while string.startswith("_"):
+                prefix += "_"
+                string = string[1:]
+
+            return CompoundSymbolName.Component(
+                string,
+                None,
+                None,
+                prefix if len(prefix) > 0 else None
+            )
+
+        string_list = [t[0] for t in _mixed_case_matcher.findall(string)]
+
+        components = map(analyze_component, string_list)
+
+        return CompoundSymbolName(components)
 
     def copy(self) -> "CompoundSymbolName":
         """
@@ -551,17 +594,17 @@ class CompoundSymbolName(Sequence["CompoundSymbolName.Component"], Hashable):
 
         >>> CompoundSymbolName.from_snake_case('a_symbol_name').split(lambda i,c: c.string == 'symbol')
         [CompoundSymbolName(components=[
-            CompoundSymbolName.Component(string=a, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY)
+            CompoundSymbolName.Component(string=a, prefix=None, suffix=None, joint_to_prev=_, string_case=ComponentCase.ANY)
         ]), CompoundSymbolName(components=[
-            CompoundSymbolName.Component(string=name, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY)
+            CompoundSymbolName.Component(string=name, prefix=None, suffix=None, joint_to_prev=_, string_case=ComponentCase.ANY)
         ])]
         >>> CompoundSymbolName.from_snake_case('a_symbol_name').split(lambda i,c: c.string == 'symbol', include_separator=True)
         [CompoundSymbolName(components=[
-            CompoundSymbolName.Component(string=a, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY)
+            CompoundSymbolName.Component(string=a, prefix=None, suffix=None, joint_to_prev=_, string_case=ComponentCase.ANY)
         ]), CompoundSymbolName(components=[
-            CompoundSymbolName.Component(string=symbol, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY)
+            CompoundSymbolName.Component(string=symbol, prefix=None, suffix=None, joint_to_prev=_, string_case=ComponentCase.ANY)
         ]), CompoundSymbolName(components=[
-            CompoundSymbolName.Component(string=name, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY)
+            CompoundSymbolName.Component(string=name, prefix=None, suffix=None, joint_to_prev=_, string_case=ComponentCase.ANY)
         ])]
         """
         current: CompoundSymbolName | None = None
@@ -674,11 +717,11 @@ class CompoundSymbolName(Sequence["CompoundSymbolName.Component"], Hashable):
         >>> enum_case = CompoundSymbolName.from_snake_case('D3D12_DRED_VERSION_1_0')
         >>> enum_case.removing_common(enum)
         (CompoundSymbolName(components=[
-            CompoundSymbolName.Component(string=1, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY),
-            CompoundSymbolName.Component(string=0, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY)
+            CompoundSymbolName.Component(string=1, prefix=None, suffix=None, joint_to_prev=_, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=0, prefix=None, suffix=None, joint_to_prev=_, string_case=ComponentCase.ANY)
         ]),
         CompoundSymbolName(components=[
-            CompoundSymbolName.Component(string=VERSION, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY)
+            CompoundSymbolName.Component(string=VERSION, prefix=None, suffix=None, joint_to_prev=_, string_case=ComponentCase.ANY)
         ]))
 
         Optionally allows detecting differences in plurals, e.g.
@@ -687,13 +730,13 @@ class CompoundSymbolName(Sequence["CompoundSymbolName.Component"], Hashable):
         >>> enum_case = CompoundSymbolName.from_snake_case('D3D12_RAY_FLAG_NONE')
         >>> enum_case.removing_common(enum, detect_plurals=True)[0]
         CompoundSymbolName(components=[
-            CompoundSymbolName.Component(string=NONE, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY)
+            CompoundSymbolName.Component(string=NONE, prefix=None, suffix=None, joint_to_prev=_, string_case=ComponentCase.ANY)
         ])
 
         >>> enum_case.removing_common(enum, detect_plurals=False)[0]
         CompoundSymbolName(components=[
-            CompoundSymbolName.Component(string=FLAG, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY),
-            CompoundSymbolName.Component(string=NONE, prefix=None, prefix=None, prefix=_, string_case=ComponentCase.ANY)
+            CompoundSymbolName.Component(string=FLAG, prefix=None, suffix=None, joint_to_prev=_, string_case=ComponentCase.ANY),
+            CompoundSymbolName.Component(string=NONE, prefix=None, suffix=None, joint_to_prev=_, string_case=ComponentCase.ANY)
         ])
         """
 

@@ -10,7 +10,7 @@ public extension B2Joint {
     }
     
     /// Get the joint type
-    func getType() -> b2JointType {
+    func getType() -> B2JointType {
         b2Joint_GetType(id)
     }
     

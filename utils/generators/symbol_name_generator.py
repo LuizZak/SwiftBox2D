@@ -71,6 +71,8 @@ def compound_symbol_with_casing(
             symbol_name = CompoundSymbolName.from_snake_case(name)
         case e.UPPER_SNAKE_CASE:
             symbol_name = CompoundSymbolName.from_snake_case(name)
+        case e.MIXED_CASE:
+            symbol_name = CompoundSymbolName.from_mixed_case(name)
         case _:
             raise ValueError(f"Unknown symbol casing {casing}")
 

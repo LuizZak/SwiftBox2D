@@ -1,9 +1,9 @@
 {
     "declarations": {
-        "prefixes": ["b2"],
+        "prefixes": ["b2_", "b2"],
         "symbolCasing": {
             "enums": "camelCase",
-            "enumMembers": "UPPER_SNAKE_CASE",
+            "enumMembers": "mixed_Case",
             "structs": "camelCase",
             "functions": "camelCase"
         },
@@ -47,8 +47,8 @@
             { "cName": "b2Mat22", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] }
         ],
         "filters": {
-            "enums": [],
-            "enumMembers": [],
+            "enums": ["b2BodyType", "b2ShapeType", "b2JointType", "b2HexColor"],
+            "enumMembers": ["."],
             "structs": ["."],
             "methods": ["."]
         }

@@ -34,6 +34,7 @@ class GeneratorConfig:
             PASCAL_CASE = "PascalCase"
             SNAKE_CASE = "snake_case"
             UPPER_SNAKE_CASE = "UPPER_SNAKE_CASE"
+            MIXED_CASE = "mixed_Case"
 
         @dataclass
         class SymbolCasingSettings:

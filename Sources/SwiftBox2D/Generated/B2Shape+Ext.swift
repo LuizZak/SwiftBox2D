@@ -10,7 +10,7 @@ public extension B2Shape {
     }
     
     /// Get the type of a shape
-    func getType() -> b2ShapeType {
+    func getType() -> B2ShapeType {
         b2Shape_GetType(id)
     }
     

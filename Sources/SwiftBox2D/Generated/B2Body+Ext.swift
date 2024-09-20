@@ -255,7 +255,7 @@ public extension B2Body {
     ///  Get the body type: static, kinematic, or dynamic
     /// Change the body type. This is an expensive operation. This automatically updates the mass
     /// properties regardless of the automatic mass setting.
-    var type: b2BodyType {
+    var type: B2BodyType {
         get {
             b2Body_GetType(id)
         }
