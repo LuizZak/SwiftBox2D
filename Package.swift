@@ -15,7 +15,10 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "box2d"
+            name: "box2d",
+            cSettings: [
+                .define("BOX2D_ENABLE_SIMD"),
+            ]
         ),
         .target(
             name: "SwiftBox2D",
