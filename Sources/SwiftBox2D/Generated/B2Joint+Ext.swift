@@ -24,6 +24,11 @@ public extension B2Joint {
         b2Joint_GetBodyB(id)
     }
     
+    /// Get the world that owns this joint
+    func getWorld() -> b2WorldId {
+        b2Joint_GetWorld(id)
+    }
+    
     /// Get the local anchor on bodyA
     func getLocalAnchorA() -> B2Vec2 {
         b2Joint_GetLocalAnchorA(id)

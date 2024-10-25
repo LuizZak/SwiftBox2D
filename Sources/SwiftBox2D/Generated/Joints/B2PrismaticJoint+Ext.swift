@@ -54,6 +54,16 @@ public extension B2PrismaticJoint {
         b2PrismaticJoint_GetMotorForce(id)
     }
     
+    /// Get the current joint translation, usually in meters.
+    func getTranslation() -> Float {
+        b2PrismaticJoint_GetTranslation(id)
+    }
+    
+    /// Get the current joint translation speed, usually in meters per second.
+    func getSpeed() -> Float {
+        b2PrismaticJoint_GetSpeed(id)
+    }
+    
     ///  Get the prismatic joint stiffness in Hertz
     /// Set the prismatic joint stiffness in Hertz.
     /// This should usually be less than a quarter of the simulation rate. For example, if the simulation

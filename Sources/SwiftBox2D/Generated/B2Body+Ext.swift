@@ -214,6 +214,11 @@ public extension B2Body {
         b2Body_EnableHitEvents(id, enableHitEvents)
     }
     
+    /// Get the world that owns this body
+    func getWorld() -> b2WorldId {
+        b2Body_GetWorld(id)
+    }
+    
     /// Get the number of shapes on this body
     func getShapeCount() -> Int32 {
         b2Body_GetShapeCount(id)
@@ -296,18 +301,6 @@ public extension B2Body {
         }
         set(massData) {
             b2Body_SetMassData(id, massData)
-        }
-    }
-    
-    ///  Get the automatic mass setting
-    /// Set the automatic mass setting. Normally this is set in b2BodyDef before creation.
-    /// @see b2BodyDef::automaticMass
-    var automaticMass: Bool {
-        get {
-            b2Body_GetAutomaticMass(id)
-        }
-        set(automaticMass) {
-            b2Body_SetAutomaticMass(id, automaticMass)
         }
     }
     

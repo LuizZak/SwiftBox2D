@@ -18,6 +18,9 @@
 #include <math.h>
 #include <stddef.h>
 
+B2_ARRAY_SOURCE( b2Contact, b2Contact );
+B2_ARRAY_SOURCE( b2ContactSim, b2ContactSim );
+
 // Contacts and determinism
 // A deterministic simulation requires contacts to exist in the same order in b2Island no matter the thread count.
 // The order must reproduce from run to run. This is necessary because the Gauss-Seidel constraint solver is order dependent.
@@ -37,18 +40,29 @@
 // - As long as contacts are created in deterministic order, island link order is deterministic.
 // - This keeps the order of contacts in islands deterministic
 
-// Friction mixing law. The idea is to allow either shape to drive the friction to zero.
-// For example, anything slides on ice.
-static inline float b2MixFriction( float friction1, float friction2 )
+static inline float b2MixFloats( float value1, float value2, b2MixingRule mixingRule )
 {
-	return sqrtf( friction1 * friction2 );
-}
+	switch (mixingRule)
+	{
+		case b2_mixAverage:
+			return 0.5f * ( value1 + value2 );
 
-// Restitution mixing law. The idea is allow for anything to bounce off an inelastic surface.
-// For example, a superball bounces on anything.
-static inline float b2MixRestitution( float restitution1, float restitution2 )
-{
-	return restitution1 > restitution2 ? restitution1 : restitution2;
+		case b2_mixGeometricMean:
+			return sqrtf( value1 * value2 );
+
+		case b2_mixMultiply:
+			return value1 * value2;
+			
+		case b2_mixMinimum:
+			return value1 < value2 ? value1 : value2;
+				
+		case b2_mixMaximum:
+			return value1 > value2 ? value1 : value2;
+
+		default:
+			B2_ASSERT( false );
+			return 0.0f;
+	}
 }
 
 // todo make relative for all
@@ -128,21 +142,21 @@ static b2Manifold b2SegmentAndPolygonManifold( const b2Shape* shapeA, b2Transfor
 	return b2CollideSegmentAndPolygon( &shapeA->segment, xfA, &shapeB->polygon, xfB );
 }
 
-static b2Manifold b2ChainSegmentAndCircleManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB,
-													b2Transform xfB, b2DistanceCache* cache )
+static b2Manifold b2ChainSegmentAndCircleManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB, b2Transform xfB,
+												   b2DistanceCache* cache )
 {
 	B2_MAYBE_UNUSED( cache );
 	return b2CollideChainSegmentAndCircle( &shapeA->chainSegment, xfA, &shapeB->circle, xfB );
 }
 
 static b2Manifold b2ChainSegmentAndCapsuleManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB,
-													 b2Transform xfB, b2DistanceCache* cache )
+													b2Transform xfB, b2DistanceCache* cache )
 {
 	return b2CollideChainSegmentAndCapsule( &shapeA->chainSegment, xfA, &shapeB->capsule, xfB, cache );
 }
 
 static b2Manifold b2ChainSegmentAndPolygonManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB,
-													 b2Transform xfB, b2DistanceCache* cache )
+													b2Transform xfB, b2DistanceCache* cache )
 {
 	return b2CollideChainSegmentAndPolygon( &shapeA->chainSegment, xfA, &shapeB->polygon, xfB, cache );
 }
@@ -203,8 +217,8 @@ void b2CreateContact( b2World* world, b2Shape* shapeA, b2Shape* shapeB )
 		return;
 	}
 
-	b2Body* bodyA = b2GetBody( world, shapeA->bodyId );
-	b2Body* bodyB = b2GetBody( world, shapeB->bodyId );
+	b2Body* bodyA = b2BodyArray_Get( &world->bodies, shapeA->bodyId );
+	b2Body* bodyB = b2BodyArray_Get( &world->bodies, shapeB->bodyId );
 
 	B2_ASSERT( bodyA->setIndex != b2_disabledSet && bodyB->setIndex != b2_disabledSet );
 	B2_ASSERT( bodyA->setIndex != b2_staticSet || bodyB->setIndex != b2_staticSet );
@@ -222,23 +236,23 @@ void b2CreateContact( b2World* world, b2Shape* shapeA, b2Shape* shapeB )
 		setIndex = b2_disabledSet;
 	}
 
-	b2SolverSet* set = world->solverSetArray + setIndex;
+	b2SolverSet* set = b2SolverSetArray_Get( &world->solverSets, setIndex );
 
 	// Create contact key and contact
 	int contactId = b2AllocId( &world->contactIdPool );
-	if ( contactId == b2Array( world->contactArray ).count )
+	if ( contactId == world->contacts.count )
 	{
-		b2Array_Push( world->contactArray, ( b2Contact ){ 0 } );
+		b2ContactArray_Push( &world->contacts, ( b2Contact ){ 0 } );
 	}
 
 	int shapeIdA = shapeA->id;
 	int shapeIdB = shapeB->id;
 
-	b2Contact* contact = world->contactArray + contactId;
+	b2Contact* contact =  b2ContactArray_Get( &world->contacts, contactId );
 	contact->contactId = contactId;
 	contact->setIndex = setIndex;
 	contact->colorIndex = B2_NULL_INDEX;
-	contact->localIndex = set->contacts.count;
+	contact->localIndex = set->contactSims.count;
 	contact->islandId = B2_NULL_INDEX;
 	contact->islandPrev = B2_NULL_INDEX;
 	contact->islandNext = B2_NULL_INDEX;
@@ -272,7 +286,7 @@ void b2CreateContact( b2World* world, b2Shape* shapeA, b2Shape* shapeB )
 		int headContactKey = bodyA->headContactKey;
 		if ( headContactKey != B2_NULL_INDEX )
 		{
-			b2Contact* headContact = world->contactArray + ( headContactKey >> 1 );
+			b2Contact* headContact = b2ContactArray_Get( &world->contacts, headContactKey >> 1 );
 			headContact->edges[headContactKey & 1].prevKey = keyA;
 		}
 		bodyA->headContactKey = keyA;
@@ -289,7 +303,7 @@ void b2CreateContact( b2World* world, b2Shape* shapeA, b2Shape* shapeB )
 		int headContactKey = bodyB->headContactKey;
 		if ( bodyB->headContactKey != B2_NULL_INDEX )
 		{
-			b2Contact* headContact = world->contactArray + ( headContactKey >> 1 );
+			b2Contact* headContact = b2ContactArray_Get( &world->contacts, headContactKey >> 1 );
 			headContact->edges[headContactKey & 1].prevKey = keyB;
 		}
 		bodyB->headContactKey = keyB;
@@ -302,7 +316,7 @@ void b2CreateContact( b2World* world, b2Shape* shapeA, b2Shape* shapeB )
 
 	// Contacts are created as non-touching. Later if they are found to be touching
 	// they will link islands and be moved into the constraint graph.
-	b2ContactSim* contactSim = b2AddContact( &set->contacts );
+	b2ContactSim* contactSim = b2ContactSimArray_Add( &set->contactSims );
 	contactSim->contactId = contactId;
 
 #if B2_VALIDATE
@@ -320,8 +334,8 @@ void b2CreateContact( b2World* world, b2Shape* shapeA, b2Shape* shapeB )
 	contactSim->shapeIdB = shapeIdB;
 	contactSim->cache = b2_emptyDistanceCache;
 	contactSim->manifold = ( b2Manifold ){ 0 };
-	contactSim->friction = b2MixFriction( shapeA->friction, shapeB->friction );
-	contactSim->restitution = b2MixRestitution( shapeA->restitution, shapeB->restitution );
+	contactSim->friction = b2MixFloats( shapeA->friction, shapeB->friction, world->frictionMixingRule );
+	contactSim->restitution = b2MixFloats( shapeA->restitution, shapeB->restitution, world->restitutionMixingRule );
 	contactSim->tangentSpeed = 0.0f;
 	contactSim->simFlags = 0;
 
@@ -350,8 +364,8 @@ void b2DestroyContact( b2World* world, b2Contact* contact, bool wakeBodies )
 
 	int bodyIdA = edgeA->bodyId;
 	int bodyIdB = edgeB->bodyId;
-	b2Body* bodyA = b2GetBody( world, bodyIdA );
-	b2Body* bodyB = b2GetBody( world, bodyIdB );
+	b2Body* bodyA = b2BodyArray_Get( &world->bodies, bodyIdA );
+	b2Body* bodyB = b2BodyArray_Get( &world->bodies, bodyIdB );
 
 	// if (contactListener && contact->IsTouching())
 	//{
@@ -361,14 +375,14 @@ void b2DestroyContact( b2World* world, b2Contact* contact, bool wakeBodies )
 	// Remove from body A
 	if ( edgeA->prevKey != B2_NULL_INDEX )
 	{
-		b2Contact* prevContact = world->contactArray + ( edgeA->prevKey >> 1 );
+		b2Contact* prevContact = b2ContactArray_Get( &world->contacts, edgeA->prevKey >> 1 );
 		b2ContactEdge* prevEdge = prevContact->edges + ( edgeA->prevKey & 1 );
 		prevEdge->nextKey = edgeA->nextKey;
 	}
 
 	if ( edgeA->nextKey != B2_NULL_INDEX )
 	{
-		b2Contact* nextContact = world->contactArray + ( edgeA->nextKey >> 1 );
+		b2Contact* nextContact = b2ContactArray_Get( &world->contacts, edgeA->nextKey >> 1 );
 		b2ContactEdge* nextEdge = nextContact->edges + ( edgeA->nextKey & 1 );
 		nextEdge->prevKey = edgeA->prevKey;
 	}
@@ -386,14 +400,14 @@ void b2DestroyContact( b2World* world, b2Contact* contact, bool wakeBodies )
 	// Remove from body B
 	if ( edgeB->prevKey != B2_NULL_INDEX )
 	{
-		b2Contact* prevContact = world->contactArray + ( edgeB->prevKey >> 1 );
+		b2Contact* prevContact = b2ContactArray_Get( &world->contacts, edgeB->prevKey >> 1 );
 		b2ContactEdge* prevEdge = prevContact->edges + ( edgeB->prevKey & 1 );
 		prevEdge->nextKey = edgeB->nextKey;
 	}
 
 	if ( edgeB->nextKey != B2_NULL_INDEX )
 	{
-		b2Contact* nextContact = world->contactArray + ( edgeB->nextKey >> 1 );
+		b2Contact* nextContact = b2ContactArray_Get( &world->contacts, edgeB->nextKey >> 1 );
 		b2ContactEdge* nextEdge = nextContact->edges + ( edgeB->nextKey & 1 );
 		nextEdge->prevKey = edgeB->prevKey;
 	}
@@ -423,12 +437,13 @@ void b2DestroyContact( b2World* world, b2Contact* contact, bool wakeBodies )
 		// contact is non-touching or is sleeping or is a sensor
 		B2_ASSERT( contact->setIndex != b2_awakeSet || ( contact->flags & b2_contactTouchingFlag ) == 0 ||
 				   ( contact->flags & b2_contactSensorFlag ) != 0 );
-		b2SolverSet* set = world->solverSetArray + contact->setIndex;
-		int movedIndex = b2RemoveContact( &set->contacts, contact->localIndex );
+		b2SolverSet* set = b2SolverSetArray_Get( &world->solverSets, contact->setIndex );
+		int movedIndex = b2ContactSimArray_RemoveSwap( &set->contactSims, contact->localIndex );
 		if ( movedIndex != B2_NULL_INDEX )
 		{
-			b2ContactSim* movedContact = set->contacts.data + contact->localIndex;
-			world->contactArray[movedContact->contactId].localIndex = contact->localIndex;
+			b2ContactSim* movedContactSim = set->contactSims.data + contact->localIndex;
+			b2Contact* movedContact = b2ContactArray_Get( &world->contacts, movedContactSim->contactId );
+			movedContact->localIndex = contact->localIndex;
 		}
 	}
 
@@ -453,13 +468,11 @@ b2ContactSim* b2GetContactSim( b2World* world, b2Contact* contact )
 		// contact lives in constraint graph
 		B2_ASSERT( 0 <= contact->colorIndex && contact->colorIndex < b2_graphColorCount );
 		b2GraphColor* color = world->constraintGraph.colors + contact->colorIndex;
-		B2_ASSERT( 0 <= contact->localIndex && contact->localIndex < color->contacts.count );
-		return color->contacts.data + contact->localIndex;
+		return b2ContactSimArray_Get( &color->contactSims, contact->localIndex );
 	}
 
-	b2SolverSet* set = world->solverSetArray + contact->setIndex;
-	B2_ASSERT( 0 <= contact->localIndex && contact->localIndex <= set->contacts.count );
-	return set->contacts.data + contact->localIndex;
+	b2SolverSet* set = b2SolverSetArray_Get( &world->solverSets, contact->setIndex );
+	return b2ContactSimArray_Get( &set->contactSims, contact->localIndex );
 }
 
 bool b2ShouldShapesCollide( b2Filter filterA, b2Filter filterB )
@@ -538,6 +551,7 @@ bool b2UpdateContact( b2World* world, b2ContactSim* contactSim, b2Shape* shapeA,
 
 		// Match old contact ids to new contact ids and copy the
 		// stored impulses to warm start the solver.
+		int unmatchedCount = 0;
 		for ( int i = 0; i < pointCount; ++i )
 		{
 			b2ManifoldPoint* mp2 = contactSim->manifold.points + i;
@@ -563,10 +577,49 @@ bool b2UpdateContact( b2World* world, b2ContactSim* contactSim, b2Shape* shapeA,
 					mp2->normalImpulse = mp1->normalImpulse;
 					mp2->tangentImpulse = mp1->tangentImpulse;
 					mp2->persisted = true;
+
+					// clear old impulse
+					mp1->normalImpulse = 0.0f;
+					mp1->tangentImpulse = 0.0f;
 					break;
 				}
 			}
+
+			unmatchedCount += mp2->persisted ? 0 : 1;
 		}
+
+#if 0
+		// todo I haven't found an improvement from this yet
+		// If there are unmatched new contact points, apply any left over old impulse.
+		if (unmatchedCount > 0)
+		{
+			float unmatchedNormalImpulse = 0.0f;
+			float unmatchedTangentImpulse = 0.0f;
+			for (int i = 0; i < oldManifold.pointCount; ++i)
+			{
+				b2ManifoldPoint* mp = oldManifold.points + i;
+				unmatchedNormalImpulse += mp->normalImpulse;
+				unmatchedTangentImpulse += mp->tangentImpulse;
+			}
+
+			float inverse = 1.0f / unmatchedCount;
+			unmatchedNormalImpulse *= inverse;
+			unmatchedTangentImpulse *= inverse;
+
+			for ( int i = 0; i < pointCount; ++i )
+			{
+				b2ManifoldPoint* mp2 = contactSim->manifold.points + i;
+
+				if (mp2->persisted)
+				{
+					continue;
+				}
+
+				mp2->normalImpulse = unmatchedNormalImpulse;
+				mp2->tangentImpulse = unmatchedTangentImpulse;
+			}
+		}
+#endif
 	}
 
 	if ( touching )

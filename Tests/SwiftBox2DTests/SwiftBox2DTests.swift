@@ -15,5 +15,6 @@ struct SwiftBox2DTests {
     @Test
     func visibleSymbols() {
         _=B2AABB()
+        _=B2Vec2.zero
     }
 }

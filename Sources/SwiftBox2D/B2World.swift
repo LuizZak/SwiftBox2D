@@ -53,12 +53,21 @@ public class B2World {
         step(timeStep, Int32(subSteps))
     }
 
+    /// Apply a radial explosion
+    ///
+    /// - param explosionDef: The explosion definition
+    public func explode(_ explosionDef: b2ExplosionDef) {
+        var explosionDef = explosionDef
+        explode(&explosionDef)
+    }
+
     /// Overlap test for all shapes that *potentially* overlap the provided AABB.
+    @discardableResult
     public func overlapAABB(
         _ aabb: B2AABB,
         filter: B2QueryFilter,
         callback: OverlapResultCallback
-    ) {
+    ) -> b2TreeStats {
         withoutActuallyEscaping(callback) { callback in
             withUnsafePointer(to: callback) { callback in
                 overlapAABB(
@@ -75,15 +84,41 @@ public class B2World {
         }
     }
 
+    /// Overlap test for for all shapes that overlap the provided point.
+    @discardableResult
+    public func overlapPoint(
+        _ point: B2Vec2,
+        transform: B2Transform = .identity,
+        filter: B2QueryFilter,
+        callback: OverlapResultCallback
+    ) -> b2TreeStats {
+        withoutActuallyEscaping(callback) { callback in
+            withUnsafePointer(to: callback) { callback in
+                overlapPoint(
+                    point,
+                    transform,
+                    filter,
+                    { (shapeId, ptr) in
+                        let callback = ptr!.bindMemory(to: OverlapResultCallback.self, capacity: 1)
+
+                        return callback.pointee(shapeId)
+                    },
+                    UnsafeMutableRawPointer(mutating: callback)
+                )
+            }
+        }
+    }
+
     /// Overlap test for for all shapes that overlap the provided circle.
+    @discardableResult
     public func overlapCircle(
         _ circle: B2Circle,
         transform: B2Transform = .identity,
         filter: B2QueryFilter,
         callback: OverlapResultCallback
-    ) {
+    ) -> b2TreeStats {
         var circle = circle
-        withoutActuallyEscaping(callback) { callback in
+        return withoutActuallyEscaping(callback) { callback in
             withUnsafePointer(to: callback) { callback in
                 overlapCircle(
                     &circle,
@@ -101,14 +136,15 @@ public class B2World {
     }
 
     /// Overlap test for for all shapes that overlap the provided capsule.
+    @discardableResult
     public func overlapCapsule(
         _ capsule: B2Capsule,
         transform: B2Transform = .identity,
         filter: B2QueryFilter,
         callback: OverlapResultCallback
-    ) {
+    ) -> b2TreeStats {
         var capsule = capsule
-        withoutActuallyEscaping(callback) { callback in
+        return withoutActuallyEscaping(callback) { callback in
             withUnsafePointer(to: callback) { callback in
                 overlapCapsule(
                     &capsule,
@@ -126,14 +162,15 @@ public class B2World {
     }
 
     /// Overlap test for for all shapes that overlap the provided polygon.
+    @discardableResult
     public func overlapPolygon(
         _ polygon: B2Polygon,
         transform: B2Transform = .identity,
         filter: B2QueryFilter,
         callback: OverlapResultCallback
-    ) {
+    ) -> b2TreeStats {
         var polygon = polygon
-        withoutActuallyEscaping(callback) { callback in
+        return withoutActuallyEscaping(callback) { callback in
             withUnsafePointer(to: callback) { callback in
                 overlapPolygon(
                     &polygon,
@@ -162,12 +199,13 @@ public class B2World {
     /// - parameter callback: A user implemented callback function
     ///
     /// - note: The callback function may receive shapes in any order
+    @discardableResult
     public func castRay(
         origin: B2Vec2,
         translation: B2Vec2,
         filter: B2QueryFilter,
         callback: CastResultCallback
-    ) {
+    ) -> b2TreeStats {
         withoutActuallyEscaping(callback) { callback in
             withUnsafePointer(to: callback) { callback in
                 castRay(
@@ -205,15 +243,16 @@ public class B2World {
     /// The ray-cast ignores shapes that contain the starting point.
     ///
     /// - note: The callback function may receive shapes in any order
+    @discardableResult
     public func castCircle(
         _ circle: B2Circle,
         originTransform: B2Transform = .identity,
         translation: B2Vec2,
         filter: B2QueryFilter,
         callback: CastResultCallback
-    ) {
+    ) -> b2TreeStats {
         var circle = circle
-        withoutActuallyEscaping(callback) { callback in
+        return withoutActuallyEscaping(callback) { callback in
             withUnsafePointer(to: callback) { callback in
                 castCircle(
                     &circle,
@@ -251,15 +290,16 @@ public class B2World {
     /// The ray-cast ignores shapes that contain the starting point.
     ///
     /// - note: The callback function may receive shapes in any order
+    @discardableResult
     public func castCapsule(
         _ capsule: B2Capsule,
         originTransform: B2Transform = .identity,
         translation: B2Vec2,
         filter: B2QueryFilter,
         callback: CastResultCallback
-    ) {
+    ) -> b2TreeStats {
         var capsule = capsule
-        withoutActuallyEscaping(callback) { callback in
+        return withoutActuallyEscaping(callback) { callback in
             withUnsafePointer(to: callback) { callback in
                 castCapsule(
                     &capsule,
@@ -297,15 +337,16 @@ public class B2World {
     /// The ray-cast ignores shapes that contain the starting point.
     ///
     /// - note: The callback function may receive shapes in any order
+    @discardableResult
     public func castPolygon(
         _ polygon: B2Polygon,
         originTransform: B2Transform = .identity,
         translation: B2Vec2,
         filter: B2QueryFilter,
         callback: CastResultCallback
-    ) {
+    ) -> b2TreeStats {
         var polygon = polygon
-        withoutActuallyEscaping(callback) { callback in
+        return withoutActuallyEscaping(callback) { callback in
             withUnsafePointer(to: callback) { callback in
                 castPolygon(
                     &polygon,

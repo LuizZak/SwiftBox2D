@@ -49,8 +49,11 @@ public class B2Shape {
     }
 
     /// Destroys this shape, removing it from the body that owns it.
-    public func destroy() {
-        b2DestroyShape(id)
+    ///
+    /// You may defer the body mass update which can improve performance if several shapes on a body are destroyed at once.
+    /// - seealso: B2Body.applyMassFromShapes
+    public func destroy(updateBodyMass: Bool) {
+        b2DestroyShape(id, updateBodyMass)
 
         id = b2_nullShapeId
     }

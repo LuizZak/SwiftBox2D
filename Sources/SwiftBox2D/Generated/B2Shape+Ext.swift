@@ -19,6 +19,11 @@ public extension B2Shape {
         b2Shape_GetBody(id)
     }
     
+    /// Get the world that owns this shape
+    func getWorld() -> b2WorldId {
+        b2Shape_GetWorld(id)
+    }
+    
     /// Returns true If the shape is a sensor
     func isSensor() -> Bool {
         b2Shape_IsSensor(id)
@@ -27,6 +32,18 @@ public extension B2Shape {
     /// Set the user data for a shape
     func setUserData(_ userData: UnsafeMutableRawPointer?) {
         b2Shape_SetUserData(id, userData)
+    }
+    
+    /// Set the mass density of a shape, typically in kg/m^2.
+    /// This will optionally update the mass properties on the parent body.
+    /// @see b2ShapeDef::density, b2Body_ApplyMassFromShapes
+    func setDensity(_ density: Float, _ updateBodyMass: Bool) {
+        b2Shape_SetDensity(id, density, updateBodyMass)
+    }
+    
+    /// Get the density of a shape, typically in kg/m^2
+    func getDensity() -> Float {
+        b2Shape_GetDensity(id)
     }
     
     /// Enable sensor events for this shape. Only applies to kinematic and dynamic bodies. Ignored for sensors.
@@ -160,19 +177,6 @@ public extension B2Shape {
     /// Get the closest point on a shape to a target point. Target and result are in world space.
     func getClosestPoint(_ target: B2Vec2) -> B2Vec2 {
         b2Shape_GetClosestPoint(id, target)
-    }
-    
-    ///  Get the density of a shape, typically in kg/m^2
-    /// Set the mass density of a shape, typically in kg/m^2.
-    /// This will not update the mass properties on the parent body.
-    /// @see b2ShapeDef::density, b2Body_ApplyMassFromShapes
-    var density: Float {
-        get {
-            b2Shape_GetDensity(id)
-        }
-        set(density) {
-            b2Shape_SetDensity(id, density)
-        }
     }
     
     ///  Get the friction of a shape

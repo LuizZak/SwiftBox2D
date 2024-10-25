@@ -38,36 +38,42 @@ public extension B2World {
     }
     
     /// Overlap test for all shapes that *potentially* overlap the provided AABB
-    func overlapAABB(_ aabb: B2AABB, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
+    func overlapAABB(_ aabb: B2AABB, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
         b2World_OverlapAABB(id, aabb, filter, fcn, context)
     }
     
-    /// Overlap test for for all shapes that overlap the provided circle
-    func overlapCircle(_ circle: UnsafeMutablePointer<b2Circle>?, _ transform: B2Transform, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
+    /// Overlap test for for all shapes that overlap the provided point.
+    func overlapPoint(_ point: B2Vec2, _ transform: B2Transform, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
+        b2World_OverlapPoint(id, point, transform, filter, fcn, context)
+    }
+    
+    /// Overlap test for for all shapes that overlap the provided circle. A zero radius may be used for a point query.
+    func overlapCircle(_ circle: UnsafeMutablePointer<b2Circle>?, _ transform: B2Transform, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
         b2World_OverlapCircle(id, circle, transform, filter, fcn, context)
     }
     
     /// Overlap test for all shapes that overlap the provided capsule
-    func overlapCapsule(_ capsule: UnsafeMutablePointer<b2Capsule>?, _ transform: B2Transform, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
+    func overlapCapsule(_ capsule: UnsafeMutablePointer<b2Capsule>?, _ transform: B2Transform, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
         b2World_OverlapCapsule(id, capsule, transform, filter, fcn, context)
     }
     
     /// Overlap test for all shapes that overlap the provided polygon
-    func overlapPolygon(_ polygon: UnsafeMutablePointer<b2Polygon>?, _ transform: B2Transform, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
+    func overlapPolygon(_ polygon: UnsafeMutablePointer<b2Polygon>?, _ transform: B2Transform, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
         b2World_OverlapPolygon(id, polygon, transform, filter, fcn, context)
     }
     
     /// Cast a ray into the world to collect shapes in the path of the ray.
     /// Your callback function controls whether you get the closest point, any point, or n-points.
     /// The ray-cast ignores shapes that contain the starting point.
+    /// - note: The callback function may receive shapes in any order
     /// - param worldId: The world to cast the ray against
     /// - param origin: The start point of the ray
     /// - param translation: The translation of the ray from the start point to the end point
     /// - param filter: Contains bit flags to filter unwanted shapes from the results
     /// - param fcn: A user implemented callback function
     /// - param context: A user context that is passed along to the callback function
-    /// - note: The callback function may receive shapes in any order
-    func castRay(_ origin: B2Vec2, _ translation: B2Vec2, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) {
+    /// - returns: traversal performance counters
+    func castRay(_ origin: B2Vec2, _ translation: B2Vec2, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
         b2World_CastRay(id, origin, translation, filter, fcn, context)
     }
     
@@ -78,17 +84,20 @@ public extension B2World {
     }
     
     /// Cast a circle through the world. Similar to a cast ray except that a circle is cast instead of a point.
-    func castCircle(_ circle: UnsafeMutablePointer<b2Circle>?, _ originTransform: B2Transform, _ translation: B2Vec2, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) {
+    /// @see b2World_CastRay
+    func castCircle(_ circle: UnsafeMutablePointer<b2Circle>?, _ originTransform: B2Transform, _ translation: B2Vec2, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
         b2World_CastCircle(id, circle, originTransform, translation, filter, fcn, context)
     }
     
     /// Cast a capsule through the world. Similar to a cast ray except that a capsule is cast instead of a point.
-    func castCapsule(_ capsule: UnsafeMutablePointer<b2Capsule>?, _ originTransform: B2Transform, _ translation: B2Vec2, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) {
+    /// @see b2World_CastRay
+    func castCapsule(_ capsule: UnsafeMutablePointer<b2Capsule>?, _ originTransform: B2Transform, _ translation: B2Vec2, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
         b2World_CastCapsule(id, capsule, originTransform, translation, filter, fcn, context)
     }
     
     /// Cast a polygon through the world. Similar to a cast ray except that a polygon is cast instead of a point.
-    func castPolygon(_ polygon: UnsafeMutablePointer<b2Polygon>?, _ originTransform: B2Transform, _ translation: B2Vec2, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) {
+    /// @see b2World_CastRay
+    func castPolygon(_ polygon: UnsafeMutablePointer<b2Polygon>?, _ originTransform: B2Transform, _ translation: B2Vec2, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
         b2World_CastPolygon(id, polygon, originTransform, translation, filter, fcn, context)
     }
     
@@ -129,11 +138,9 @@ public extension B2World {
     
     /// Apply a radial explosion
     /// - param worldId: The world id
-    /// - param position: The center of the explosion
-    /// - param radius: The radius of the explosion
-    /// - param impulse: The impulse of the explosion, typically in kg * m / s or N * s.
-    func explode(_ position: B2Vec2, _ radius: Float, _ impulse: Float) {
-        b2World_Explode(id, position, radius, impulse)
+    /// - param explosionDef: The explosion definition
+    func explode(_ explosionDef: UnsafeMutablePointer<b2ExplosionDef>?) {
+        b2World_Explode(id, explosionDef)
     }
     
     /// Adjust contact tuning parameters
@@ -144,6 +151,15 @@ public extension B2World {
     /// - note: Advanced feature
     func setContactTuning(_ hertz: Float, _ dampingRatio: Float, _ pushVelocity: Float) {
         b2World_SetContactTuning(id, hertz, dampingRatio, pushVelocity)
+    }
+    
+    /// Adjust joint tuning parameters
+    /// - param worldId: The world id
+    /// - param hertz: The contact stiffness (cycles per second)
+    /// - param dampingRatio: The contact bounciness with 1 being critical damping (non-dimensional)
+    /// - note: Advanced feature
+    func setJointTuning(_ hertz: Float, _ dampingRatio: Float) {
+        b2World_SetJointTuning(id, hertz, dampingRatio)
     }
     
     /// Enable/disable constraint warm starting. Advanced feature for testing. Disabling
@@ -167,9 +183,19 @@ public extension B2World {
         b2World_GetCounters(id)
     }
     
+    /// Set the user data pointer.
+    func setUserData(_ userData: UnsafeMutableRawPointer?) {
+        b2World_SetUserData(id, userData)
+    }
+    
     /// Dump memory stats to box2d_memory.txt
     func dumpMemoryStats() {
         b2World_DumpMemoryStats(id)
+    }
+    
+    /// todo testing
+    func rebuildStaticTree() {
+        b2World_RebuildStaticTree(id)
     }
     
     ///  Get the the restitution speed threshold. Typically in meters per second.
@@ -208,6 +234,17 @@ public extension B2World {
         }
         set(gravity) {
             b2World_SetGravity(id, gravity)
+        }
+    }
+    
+    /// Get the maximum linear velocity. Typically in m/s.
+    /// Set the maximum linear velocity. Typically in m/s.
+    var maximumLinearVelocity: Float {
+        get {
+            b2World_GetMaximumLinearVelocity(id)
+        }
+        set(maximumLinearVelocity) {
+            b2World_SetMaximumLinearVelocity(id, maximumLinearVelocity)
         }
     }
 }

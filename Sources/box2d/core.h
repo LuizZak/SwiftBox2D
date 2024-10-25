@@ -9,6 +9,9 @@
 
 #define B2_NULL_INDEX ( -1 )
 
+// for performance comparisons
+#define B2_RESTRICT restrict
+
 #ifdef NDEBUG
 	#define B2_DEBUG 0
 #else
@@ -22,7 +25,7 @@
 #endif
 
 // Define platform
-#if defined( _WIN64 )
+#if defined(_WIN32) || defined(_WIN64)
 	#define B2_PLATFORM_WINDOWS
 #elif defined( __ANDROID__ )
 	#define B2_PLATFORM_ANDROID
@@ -112,7 +115,7 @@
 #endif
 
 /// Tracy profiler instrumentation
-///	https://github.com/wolfpld/tracy
+/// https://github.com/wolfpld/tracy
 #ifdef BOX2D_PROFILE
 	#include <tracy/TracyC.h>
 	#define b2TracyCZoneC( ctx, color, active ) TracyCZoneC( ctx, color, active )
@@ -136,7 +139,7 @@ extern float b2_lengthUnitsPerMeter;
 #define b2_maxWorkers 64
 
 // Maximum number of colors in the constraint graph. Constraints that cannot
-//	find a color are added to the overflow set which are solved single-threaded.
+// find a color are added to the overflow set which are solved single-threaded.
 #define b2_graphColorCount 12
 
 // A small length used as a collision and constraint tolerance. Usually it is
@@ -161,6 +164,9 @@ extern float b2_lengthUnitsPerMeter;
 // @warning modifying this can have a significant impact on performance
 #define b2_aabbMargin ( 0.1f * b2_lengthUnitsPerMeter )
 
+// todo testing
+#define b2_aabbVelocityScale 0.0f
+
 // The time that a body must be still before it will go to sleep. In seconds.
 #define b2_timeToSleep 0.5f
 
@@ -174,3 +180,14 @@ extern float b2_lengthUnitsPerMeter;
 #define B2_SECRET_COOKIE 1152023
 
 #define b2CheckDef( DEF ) B2_ASSERT( DEF->internalValue == B2_SECRET_COOKIE )
+
+enum b2TreeNodeFlags
+{
+	b2_allocatedNode = 0x0001,
+	b2_enlargedNode = 0x0002,
+	b2_leafNode = 0x0004,
+};
+
+void* b2Alloc( int size );
+void b2Free( void* mem, int size );
+void* b2GrowAlloc( void* oldMem, int oldSize, int newSize );

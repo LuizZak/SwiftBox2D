@@ -11,6 +11,19 @@
 // needed for dll export
 #include "box2d/box2d.h"
 
+float b2WeldJoint_GetReferenceAngle( b2JointId jointId )
+{
+	b2JointSim* joint = b2GetJointSimCheckType( jointId, b2_weldJoint );
+	return joint->weldJoint.referenceAngle;
+}
+
+void b2WeldJoint_SetReferenceAngle( b2JointId jointId, float angleInRadians )
+{
+	B2_ASSERT( b2IsValid( angleInRadians ) );
+	b2JointSim* joint = b2GetJointSimCheckType( jointId, b2_weldJoint );
+	joint->weldJoint.referenceAngle = b2ClampFloat(angleInRadians, -b2_pi, b2_pi);
+}
+
 void b2WeldJoint_SetLinearHertz( b2JointId jointId, float hertz )
 {
 	B2_ASSERT( b2IsValid( hertz ) && hertz >= 0.0f );
@@ -97,29 +110,19 @@ void b2PrepareWeldJoint( b2JointSim* base, b2StepContext* context )
 	int idB = base->bodyIdB;
 
 	b2World* world = context->world;
-	b2Body* bodies = world->bodyArray;
 
-	b2CheckIndex( bodies, idA );
-	b2CheckIndex( bodies, idB );
-
-	b2Body* bodyA = bodies + idA;
-	b2Body* bodyB = bodies + idB;
+	b2Body* bodyA = b2BodyArray_Get( &world->bodies, idA );
+	b2Body* bodyB = b2BodyArray_Get( &world->bodies, idB );
 
 	B2_ASSERT( bodyA->setIndex == b2_awakeSet || bodyB->setIndex == b2_awakeSet );
-	b2CheckIndex( world->solverSetArray, bodyA->setIndex );
-	b2CheckIndex( world->solverSetArray, bodyB->setIndex );
-
-	b2SolverSet* setA = world->solverSetArray + bodyA->setIndex;
-	b2SolverSet* setB = world->solverSetArray + bodyB->setIndex;
+	b2SolverSet* setA = b2SolverSetArray_Get( &world->solverSets, bodyA->setIndex );
+	b2SolverSet* setB = b2SolverSetArray_Get( &world->solverSets, bodyB->setIndex );
 
 	int localIndexA = bodyA->localIndex;
 	int localIndexB = bodyB->localIndex;
 
-	B2_ASSERT( 0 <= localIndexA && localIndexA <= setA->sims.count );
-	B2_ASSERT( 0 <= localIndexB && localIndexB <= setB->sims.count );
-
-	b2BodySim* bodySimA = setA->sims.data + bodyA->localIndex;
-	b2BodySim* bodySimB = setB->sims.data + bodyB->localIndex;
+	b2BodySim* bodySimA = b2BodySimArray_Get( &setA->bodySims, localIndexA );
+	b2BodySim* bodySimB = b2BodySimArray_Get( &setB->bodySims, localIndexB );
 
 	float mA = bodySimA->invMass;
 	float iA = bodySimA->invInertia;
@@ -142,11 +145,10 @@ void b2PrepareWeldJoint( b2JointSim* base, b2StepContext* context )
 	joint->anchorB = b2RotateVector( qB, b2Sub( base->localOriginAnchorB, bodySimB->localCenter ) );
 	joint->deltaCenter = b2Sub( bodySimB->center, bodySimA->center );
 	joint->deltaAngle = b2RelativeAngle( qB, qA ) - joint->referenceAngle;
+	joint->deltaAngle = b2UnwindAngle( joint->deltaAngle );
 
 	float ka = iA + iB;
 	joint->axialMass = ka > 0.0f ? 1.0f / ka : 0.0f;
-
-	const float h = context->dt;
 
 	if ( joint->linearHertz == 0.0f )
 	{

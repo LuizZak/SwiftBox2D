@@ -4,6 +4,22 @@
 import box2d
 
 public extension B2Chain {
+    /// Get the world that owns this chain shape
+    func getWorld() -> b2WorldId {
+        b2Chain_GetWorld(id)
+    }
+    
+    /// Get the number of segments on this chain
+    func getSegmentCount() -> Int32 {
+        b2Chain_GetSegmentCount(id)
+    }
+    
+    /// Fill a user array with chain segment shape ids up to the specified capacity. Returns
+    /// the actual number of segments returned.
+    func getSegments(_ segmentArray: UnsafeMutablePointer<b2ShapeId>?, _ capacity: Int32) -> Int32 {
+        b2Chain_GetSegments(id, segmentArray, capacity)
+    }
+    
     /// Set the chain friction
     /// @see b2ChainDef::friction
     func setFriction(_ friction: Float) {
