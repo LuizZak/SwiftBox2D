@@ -37,8 +37,8 @@ public extension B2MouseJoint {
         }
     }
     
-    /// Get the mouse joint maximum force, typically in newtons
-    /// Set the mouse joint maximum force, typically in newtons
+    /// Get the mouse joint maximum force, usually in newtons
+    /// Set the mouse joint maximum force, usually in newtons
     var maxForce: Float {
         get {
             b2MouseJoint_GetMaxForce(id)

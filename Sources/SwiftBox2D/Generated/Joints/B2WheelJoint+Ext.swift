@@ -49,7 +49,7 @@ public extension B2WheelJoint {
         b2WheelJoint_IsMotorEnabled(id)
     }
     
-    /// Get the wheel joint current motor torque, typically in newton-meters
+    /// Get the wheel joint current motor torque, usually in newton-meters
     func getMotorTorque() -> Float {
         b2WheelJoint_GetMotorTorque(id)
     }
@@ -87,8 +87,8 @@ public extension B2WheelJoint {
         }
     }
     
-    /// Get the wheel joint maximum motor torque, typically in newton-meters
-    /// Set the wheel joint maximum motor torque, typically in newton-meters
+    /// Get the wheel joint maximum motor torque, usually in newton-meters
+    /// Set the wheel joint maximum motor torque, usually in newton-meters
     var maxMotorTorque: Float {
         get {
             b2WheelJoint_GetMaxMotorTorque(id)

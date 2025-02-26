@@ -3,6 +3,7 @@
 
 #include "box2d/types.h"
 
+#include "constants.h"
 #include "core.h"
 
 b2WorldDef b2DefaultWorldDef( void )
@@ -12,15 +13,13 @@ b2WorldDef b2DefaultWorldDef( void )
 	def.gravity.y = -10.0f;
 	def.hitEventThreshold = 1.0f * b2_lengthUnitsPerMeter;
 	def.restitutionThreshold = 1.0f * b2_lengthUnitsPerMeter;
-	def.contactPushoutVelocity = 3.0f * b2_lengthUnitsPerMeter;
+	def.contactPushMaxSpeed = 3.0f * b2_lengthUnitsPerMeter;
 	def.contactHertz = 30.0;
 	def.contactDampingRatio = 10.0f;
 	def.jointHertz = 60.0;
 	def.jointDampingRatio = 2.0f;
 	// 400 meters per second, faster than the speed of sound
-	def.maximumLinearVelocity = 400.0f * b2_lengthUnitsPerMeter;
-	def.frictionMixingRule = b2_mixGeometricMean;
-	def.restitutionMixingRule = b2_mixMaximum;
+	def.maximumLinearSpeed = 400.0f * b2_lengthUnitsPerMeter;
 	def.enableSleep = true;
 	def.enableContinuous = true;
 	def.internalValue = B2_SECRET_COOKIE;
@@ -59,17 +58,29 @@ b2ShapeDef b2DefaultShapeDef( void )
 	def.friction = 0.6f;
 	def.density = 1.0f;
 	def.filter = b2DefaultFilter();
-	def.enableSensorEvents = true;
-	def.enableContactEvents = true;
 	def.updateBodyMass = true;
 	def.internalValue = B2_SECRET_COOKIE;
 	return def;
 }
 
+b2SurfaceMaterial b2DefaultSurfaceMaterial( void )
+{
+	b2SurfaceMaterial material = {
+		.friction = 0.6f,
+	};
+
+	return material;
+}
+
 b2ChainDef b2DefaultChainDef( void )
 {
+	static b2SurfaceMaterial defaultMaterial = {
+		.friction = 0.6f,
+	};
+
 	b2ChainDef def = { 0 };
-	def.friction = 0.6f;
+	def.materials = &defaultMaterial;
+	def.materialCount = 1;
 	def.filter = b2DefaultFilter();
 	def.internalValue = B2_SECRET_COOKIE;
 	return def;
@@ -77,78 +88,51 @@ b2ChainDef b2DefaultChainDef( void )
 
 static void b2EmptyDrawPolygon( const b2Vec2* vertices, int vertexCount, b2HexColor color, void* context )
 {
-	B2_MAYBE_UNUSED( vertices );
-	B2_MAYBE_UNUSED( vertexCount );
-	B2_MAYBE_UNUSED( color );
-	B2_MAYBE_UNUSED( context );
+	B2_UNUSED( vertices, vertexCount, color, context );
 }
 
-static void b2EmptyDrawSolidPolygon( b2Transform transform, const b2Vec2* vertices, int vertexCount, float radius, b2HexColor color,
-							void* context )
+static void b2EmptyDrawSolidPolygon( b2Transform transform, const b2Vec2* vertices, int vertexCount, float radius,
+									 b2HexColor color, void* context )
 {
-	B2_MAYBE_UNUSED( transform );
-	B2_MAYBE_UNUSED( vertices );
-	B2_MAYBE_UNUSED( vertexCount );
-	B2_MAYBE_UNUSED( radius );
-	B2_MAYBE_UNUSED( color );
-	B2_MAYBE_UNUSED( context );
+	B2_UNUSED( transform, vertices, vertexCount, radius, color, context );
 }
 
 static void b2EmptyDrawCircle( b2Vec2 center, float radius, b2HexColor color, void* context )
 {
-	B2_MAYBE_UNUSED( center );
-	B2_MAYBE_UNUSED( radius );
-	B2_MAYBE_UNUSED( color );
-	B2_MAYBE_UNUSED( context );
+	B2_UNUSED( center, radius, color, context );
 }
 
 static void b2EmptyDrawSolidCircle( b2Transform transform, float radius, b2HexColor color, void* context )
 {
-	B2_MAYBE_UNUSED( transform );
-	B2_MAYBE_UNUSED( radius );
-	B2_MAYBE_UNUSED( color );
-	B2_MAYBE_UNUSED( context );
+	B2_UNUSED( transform, radius, color, context );
 }
 
 static void b2EmptyDrawSolidCapsule( b2Vec2 p1, b2Vec2 p2, float radius, b2HexColor color, void* context )
 {
-	B2_MAYBE_UNUSED( p1 );
-	B2_MAYBE_UNUSED( p2 );
-	B2_MAYBE_UNUSED( radius );
-	B2_MAYBE_UNUSED( color );
-	B2_MAYBE_UNUSED( context );
+	B2_UNUSED( p1, p2, radius, color, context );
 }
 
 static void b2EmptyDrawSegment( b2Vec2 p1, b2Vec2 p2, b2HexColor color, void* context )
 {
-	B2_MAYBE_UNUSED( p1 );
-	B2_MAYBE_UNUSED( p2 );
-	B2_MAYBE_UNUSED( color );
-	B2_MAYBE_UNUSED( context );
+	B2_UNUSED( p1, p2, color, context );
 }
 
 static void b2EmptyDrawTransform( b2Transform transform, void* context )
 {
-	B2_MAYBE_UNUSED( transform );
-	B2_MAYBE_UNUSED( context );
+	B2_UNUSED( transform, context );
 }
 
 static void b2EmptyDrawPoint( b2Vec2 p, float size, b2HexColor color, void* context )
 {
-	B2_MAYBE_UNUSED( p );
-	B2_MAYBE_UNUSED( size );
-	B2_MAYBE_UNUSED( color );
-	B2_MAYBE_UNUSED( context );
+	B2_UNUSED( p, size, color, context );
 }
 
-static void b2EmptyDrawString( b2Vec2 p, const char* s, void* context )
+static void b2EmptyDrawString( b2Vec2 p, const char* s, b2HexColor color, void* context )
 {
-	B2_MAYBE_UNUSED( p );
-	B2_MAYBE_UNUSED( s );
-	B2_MAYBE_UNUSED( context );
+	B2_UNUSED( p, s, color, context );
 }
 
-b2DebugDraw b2DefaultDebugDraw(void)
+b2DebugDraw b2DefaultDebugDraw( void )
 {
 	b2DebugDraw draw = { 0 };
 

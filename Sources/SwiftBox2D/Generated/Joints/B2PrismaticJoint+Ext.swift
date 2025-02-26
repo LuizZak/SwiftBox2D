@@ -49,7 +49,7 @@ public extension B2PrismaticJoint {
         b2PrismaticJoint_IsMotorEnabled(id)
     }
     
-    /// Get the prismatic joint current motor force, typically in newtons
+    /// Get the prismatic joint current motor force, usually in newtons
     func getMotorForce() -> Float {
         b2PrismaticJoint_GetMotorForce(id)
     }
@@ -88,8 +88,8 @@ public extension B2PrismaticJoint {
         }
     }
     
-    /// Get the prismatic joint motor speed, typically in meters per second
-    /// Set the prismatic joint motor speed, typically in meters per second
+    /// Get the prismatic joint motor speed, usually in meters per second
+    /// Set the prismatic joint motor speed, usually in meters per second
     var motorSpeed: Float {
         get {
             b2PrismaticJoint_GetMotorSpeed(id)
@@ -99,8 +99,8 @@ public extension B2PrismaticJoint {
         }
     }
     
-    /// Get the prismatic joint maximum motor force, typically in newtons
-    /// Set the prismatic joint maximum motor force, typically in newtons
+    /// Get the prismatic joint maximum motor force, usually in newtons
+    /// Set the prismatic joint maximum motor force, usually in newtons
     var maxMotorForce: Float {
         get {
             b2PrismaticJoint_GetMaxMotorForce(id)

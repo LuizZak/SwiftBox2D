@@ -40,35 +40,22 @@ B2_ARRAY_SOURCE( b2ContactSim, b2ContactSim );
 // - As long as contacts are created in deterministic order, island link order is deterministic.
 // - This keeps the order of contacts in islands deterministic
 
-static inline float b2MixFloats( float value1, float value2, b2MixingRule mixingRule )
-{
-	switch (mixingRule)
-	{
-		case b2_mixAverage:
-			return 0.5f * ( value1 + value2 );
-
-		case b2_mixGeometricMean:
-			return sqrtf( value1 * value2 );
-
-		case b2_mixMultiply:
-			return value1 * value2;
-			
-		case b2_mixMinimum:
-			return value1 < value2 ? value1 : value2;
-				
-		case b2_mixMaximum:
-			return value1 > value2 ? value1 : value2;
-
-		default:
-			B2_ASSERT( false );
-			return 0.0f;
-	}
-}
-
-// todo make relative for all
-// typedef b2Manifold b2ManifoldFcn(const b2Shape* shapeA, const b2Shape* shapeB, b2Transform xfB, b2DistanceCache* cache);
+// Manifold functions should compute important results in local space to improve precision. However, this
+// interface function takes two world transforms instead of a relative transform for these reasons:
+//
+// First:
+// The anchors need to be computed relative to the shape origin in world space. This is necessary so the
+// solver does not need to access static body transforms. Not even in constraint preparation. This approach
+// has world space vectors yet retains precision.
+//
+// Second:
+// b3ManifoldPoint::point is very useful for debugging and it is in world space.
+//
+// Third:
+// The user may call the manifold functions directly and they should be easy to use and have easy to use
+// results.
 typedef b2Manifold b2ManifoldFcn( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB, b2Transform xfB,
-								  b2DistanceCache* cache );
+								  b2SimplexCache* cache );
 
 struct b2ContactRegister
 {
@@ -80,83 +67,83 @@ static struct b2ContactRegister s_registers[b2_shapeTypeCount][b2_shapeTypeCount
 static bool s_initialized = false;
 
 static b2Manifold b2CircleManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB, b2Transform xfB,
-									b2DistanceCache* cache )
+									b2SimplexCache* cache )
 {
-	B2_MAYBE_UNUSED( cache );
+	B2_UNUSED( cache );
 	return b2CollideCircles( &shapeA->circle, xfA, &shapeB->circle, xfB );
 }
 
 static b2Manifold b2CapsuleAndCircleManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB, b2Transform xfB,
-											  b2DistanceCache* cache )
+											  b2SimplexCache* cache )
 {
-	B2_MAYBE_UNUSED( cache );
+	B2_UNUSED( cache );
 	return b2CollideCapsuleAndCircle( &shapeA->capsule, xfA, &shapeB->circle, xfB );
 }
 
 static b2Manifold b2CapsuleManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB, b2Transform xfB,
-									 b2DistanceCache* cache )
+									 b2SimplexCache* cache )
 {
-	B2_MAYBE_UNUSED( cache );
+	B2_UNUSED( cache );
 	return b2CollideCapsules( &shapeA->capsule, xfA, &shapeB->capsule, xfB );
 }
 
 static b2Manifold b2PolygonAndCircleManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB, b2Transform xfB,
-											  b2DistanceCache* cache )
+											  b2SimplexCache* cache )
 {
-	B2_MAYBE_UNUSED( cache );
+	B2_UNUSED( cache );
 	return b2CollidePolygonAndCircle( &shapeA->polygon, xfA, &shapeB->circle, xfB );
 }
 
 static b2Manifold b2PolygonAndCapsuleManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB, b2Transform xfB,
-											   b2DistanceCache* cache )
+											   b2SimplexCache* cache )
 {
-	B2_MAYBE_UNUSED( cache );
+	B2_UNUSED( cache );
 	return b2CollidePolygonAndCapsule( &shapeA->polygon, xfA, &shapeB->capsule, xfB );
 }
 
 static b2Manifold b2PolygonManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB, b2Transform xfB,
-									 b2DistanceCache* cache )
+									 b2SimplexCache* cache )
 {
-	B2_MAYBE_UNUSED( cache );
+	B2_UNUSED( cache );
 	return b2CollidePolygons( &shapeA->polygon, xfA, &shapeB->polygon, xfB );
 }
 
 static b2Manifold b2SegmentAndCircleManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB, b2Transform xfB,
-											  b2DistanceCache* cache )
+											  b2SimplexCache* cache )
 {
-	B2_MAYBE_UNUSED( cache );
+	B2_UNUSED( cache );
 	return b2CollideSegmentAndCircle( &shapeA->segment, xfA, &shapeB->circle, xfB );
 }
 
 static b2Manifold b2SegmentAndCapsuleManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB, b2Transform xfB,
-											   b2DistanceCache* cache )
+											   b2SimplexCache* cache )
 {
-	B2_MAYBE_UNUSED( cache );
+	B2_UNUSED( cache );
 	return b2CollideSegmentAndCapsule( &shapeA->segment, xfA, &shapeB->capsule, xfB );
 }
 
 static b2Manifold b2SegmentAndPolygonManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB, b2Transform xfB,
-											   b2DistanceCache* cache )
+											   b2SimplexCache* cache )
 {
-	B2_MAYBE_UNUSED( cache );
+	B2_UNUSED( cache );
 	return b2CollideSegmentAndPolygon( &shapeA->segment, xfA, &shapeB->polygon, xfB );
 }
 
 static b2Manifold b2ChainSegmentAndCircleManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB, b2Transform xfB,
-												   b2DistanceCache* cache )
+												   b2SimplexCache* cache )
 {
-	B2_MAYBE_UNUSED( cache );
+	B2_UNUSED( cache );
 	return b2CollideChainSegmentAndCircle( &shapeA->chainSegment, xfA, &shapeB->circle, xfB );
 }
 
 static b2Manifold b2ChainSegmentAndCapsuleManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB,
-													b2Transform xfB, b2DistanceCache* cache )
+													b2Transform xfB, b2SimplexCache* cache )
 {
 	return b2CollideChainSegmentAndCapsule( &shapeA->chainSegment, xfA, &shapeB->capsule, xfB, cache );
 }
 
 static b2Manifold b2ChainSegmentAndPolygonManifold( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB,
-													b2Transform xfB, b2DistanceCache* cache )
+													b2Transform xfB, b2SimplexCache* cache )
 {
 	return b2CollideChainSegmentAndPolygon( &shapeA->chainSegment, xfA, &shapeB->polygon, xfB, cache );
 }
@@ -248,7 +235,7 @@ void b2CreateContact( b2World* world, b2Shape* shapeA, b2Shape* shapeB )
 	int shapeIdA = shapeA->id;
 	int shapeIdB = shapeB->id;
 
-	b2Contact* contact =  b2ContactArray_Get( &world->contacts, contactId );
+	b2Contact* contact = b2ContactArray_Get( &world->contacts, contactId );
 	contact->contactId = contactId;
 	contact->setIndex = setIndex;
 	contact->colorIndex = B2_NULL_INDEX;
@@ -261,15 +248,7 @@ void b2CreateContact( b2World* world, b2Shape* shapeA, b2Shape* shapeB )
 	contact->isMarked = false;
 	contact->flags = 0;
 
-	if ( shapeA->isSensor || shapeB->isSensor )
-	{
-		contact->flags |= b2_contactSensorFlag;
-	}
-
-	if ( shapeA->enableSensorEvents || shapeB->enableSensorEvents )
-	{
-		contact->flags |= b2_contactEnableSensorEvents;
-	}
+	B2_ASSERT( shapeA->sensorIndex == B2_NULL_INDEX && shapeB->sensorIndex == B2_NULL_INDEX );
 
 	if ( shapeA->enableContactEvents || shapeB->enableContactEvents )
 	{
@@ -332,10 +311,13 @@ void b2CreateContact( b2World* world, b2Shape* shapeA, b2Shape* shapeB )
 	contactSim->invIB = 0.0f;
 	contactSim->shapeIdA = shapeIdA;
 	contactSim->shapeIdB = shapeIdB;
-	contactSim->cache = b2_emptyDistanceCache;
+	contactSim->cache = b2_emptySimplexCache;
 	contactSim->manifold = ( b2Manifold ){ 0 };
-	contactSim->friction = b2MixFloats( shapeA->friction, shapeB->friction, world->frictionMixingRule );
-	contactSim->restitution = b2MixFloats( shapeA->restitution, shapeB->restitution, world->restitutionMixingRule );
+
+	// These also get updated in the narrow phase
+	contactSim->friction = world->frictionCallback(shapeA->friction, shapeA->material, shapeB->friction, shapeB->material);
+	contactSim->restitution = world->restitutionCallback(shapeA->restitution, shapeA->material, shapeB->restitution, shapeB->material);
+
 	contactSim->tangentSpeed = 0.0f;
 	contactSim->simFlags = 0;
 
@@ -367,10 +349,20 @@ void b2DestroyContact( b2World* world, b2Contact* contact, bool wakeBodies )
 	b2Body* bodyA = b2BodyArray_Get( &world->bodies, bodyIdA );
 	b2Body* bodyB = b2BodyArray_Get( &world->bodies, bodyIdB );
 
-	// if (contactListener && contact->IsTouching())
-	//{
-	//	contactListener->EndContact(contact);
-	// }
+	uint32_t flags = contact->flags;
+
+	// End touch event
+	if ( ( flags & b2_contactTouchingFlag ) != 0 && ( flags & b2_contactEnableContactEvents ) != 0 )
+	{
+		uint16_t worldId = world->worldId;
+		const b2Shape* shapeA = b2ShapeArray_Get( &world->shapes, contact->shapeIdA );
+		const b2Shape* shapeB = b2ShapeArray_Get( &world->shapes, contact->shapeIdB );
+		b2ShapeId shapeIdA = { shapeA->id + 1, worldId, shapeA->generation };
+		b2ShapeId shapeIdB = { shapeB->id + 1, worldId, shapeB->generation };
+
+		b2ContactEndTouchEvent event = { shapeIdA, shapeIdB };
+		b2ContactEndTouchEventArray_Push( world->contactEndEvents + world->endEventArrayIndex, event );
+	}
 
 	// Remove from body A
 	if ( edgeA->prevKey != B2_NULL_INDEX )
@@ -435,8 +427,7 @@ void b2DestroyContact( b2World* world, b2Contact* contact, bool wakeBodies )
 	else
 	{
 		// contact is non-touching or is sleeping or is a sensor
-		B2_ASSERT( contact->setIndex != b2_awakeSet || ( contact->flags & b2_contactTouchingFlag ) == 0 ||
-				   ( contact->flags & b2_contactSensorFlag ) != 0 );
+		B2_ASSERT( contact->setIndex != b2_awakeSet || ( contact->flags & b2_contactTouchingFlag ) == 0 );
 		b2SolverSet* set = b2SolverSetArray_Get( &world->solverSets, contact->setIndex );
 		int movedIndex = b2ContactSimArray_RemoveSwap( &set->contactSims, contact->localIndex );
 		if ( movedIndex != B2_NULL_INDEX )
@@ -466,7 +457,7 @@ b2ContactSim* b2GetContactSim( b2World* world, b2Contact* contact )
 	if ( contact->setIndex == b2_awakeSet && contact->colorIndex != B2_NULL_INDEX )
 	{
 		// contact lives in constraint graph
-		B2_ASSERT( 0 <= contact->colorIndex && contact->colorIndex < b2_graphColorCount );
+		B2_ASSERT( 0 <= contact->colorIndex && contact->colorIndex < B2_GRAPH_COLOR_COUNT );
 		b2GraphColor* color = world->constraintGraph.colors + contact->colorIndex;
 		return b2ContactSimArray_Get( &color->contactSims, contact->localIndex );
 	}
@@ -486,107 +477,125 @@ bool b2ShouldShapesCollide( b2Filter filterA, b2Filter filterB )
 	return collide;
 }
 
-static bool b2TestShapeOverlap( const b2Shape* shapeA, b2Transform xfA, const b2Shape* shapeB, b2Transform xfB,
-								b2DistanceCache* cache )
-{
-	b2DistanceInput input;
-	input.proxyA = b2MakeShapeDistanceProxy( shapeA );
-	input.proxyB = b2MakeShapeDistanceProxy( shapeB );
-	input.transformA = xfA;
-	input.transformB = xfB;
-	input.useRadii = true;
-
-	b2DistanceOutput output = b2ShapeDistance( cache, &input, NULL, 0 );
-
-	return output.distance < 10.0f * FLT_EPSILON;
-}
-
 // Update the contact manifold and touching status. Also updates sensor overlap.
 // Note: do not assume the shape AABBs are overlapping or are valid.
 bool b2UpdateContact( b2World* world, b2ContactSim* contactSim, b2Shape* shapeA, b2Transform transformA, b2Vec2 centerOffsetA,
 					  b2Shape* shapeB, b2Transform transformB, b2Vec2 centerOffsetB )
 {
-	bool touching;
+	// Save old manifold
+	b2Manifold oldManifold = contactSim->manifold;
 
-	// Is this contact a sensor?
-	if ( shapeA->isSensor || shapeB->isSensor )
+	// Compute new manifold
+	b2ManifoldFcn* fcn = s_registers[shapeA->type][shapeB->type].fcn;
+	contactSim->manifold = fcn( shapeA, transformA, shapeB, transformB, &contactSim->cache );
+
+	// Keep these updated in case the values on the shapes are modified
+	contactSim->friction = world->frictionCallback( shapeA->friction, shapeA->material, shapeB->friction, shapeB->material );
+	contactSim->restitution = world->restitutionCallback( shapeA->restitution, shapeA->material, shapeB->restitution, shapeB->material );
+
+	// todo branch improves perf?
+	if (shapeA->rollingResistance > 0.0f || shapeB->rollingResistance > 0.0f)
 	{
-		// Sensors don't generate manifolds or hit events
-		touching = b2TestShapeOverlap( shapeA, transformA, shapeB, transformB, &contactSim->cache );
+		float radiusA = b2GetShapeRadius( shapeA );
+		float radiusB = b2GetShapeRadius( shapeB );
+		float maxRadius = b2MaxFloat( radiusA, radiusB );
+		contactSim->rollingResistance = b2MaxFloat( shapeA->rollingResistance, shapeB->rollingResistance ) * maxRadius;
 	}
 	else
 	{
-		b2Manifold oldManifold = contactSim->manifold;
+		contactSim->rollingResistance = 0.0f;
+	}
 
-		// Compute TOI
-		b2ManifoldFcn* fcn = s_registers[shapeA->type][shapeB->type].fcn;
+	contactSim->tangentSpeed = shapeA->tangentSpeed + shapeB->tangentSpeed;
 
-		contactSim->manifold = fcn( shapeA, transformA, shapeB, transformB, &contactSim->cache );
+	int pointCount = contactSim->manifold.pointCount;
+	bool touching = pointCount > 0;
 
-		int pointCount = contactSim->manifold.pointCount;
-		touching = pointCount > 0;
+	if ( touching && world->preSolveFcn && ( contactSim->simFlags & b2_simEnablePreSolveEvents ) != 0 )
+	{
+		b2ShapeId shapeIdA = { shapeA->id + 1, world->worldId, shapeA->generation };
+		b2ShapeId shapeIdB = { shapeB->id + 1, world->worldId, shapeB->generation };
 
-		if ( touching && world->preSolveFcn && ( contactSim->simFlags & b2_simEnablePreSolveEvents ) != 0 )
+		// this call assumes thread safety
+		touching = world->preSolveFcn( shapeIdA, shapeIdB, &contactSim->manifold, world->preSolveContext );
+		if ( touching == false )
 		{
-			b2ShapeId shapeIdA = { shapeA->id + 1, world->worldId, shapeA->revision };
-			b2ShapeId shapeIdB = { shapeB->id + 1, world->worldId, shapeB->revision };
+			// disable contact
+			pointCount = 0;
+			contactSim->manifold.pointCount = 0;
+		}
+	}
 
-			// this call assumes thread safety
-			touching = world->preSolveFcn( shapeIdA, shapeIdB, &contactSim->manifold, world->preSolveContext );
-			if ( touching == false )
+	// This flag is for testing
+	if ( world->enableSpeculative == false && pointCount == 2 )
+	{
+		if ( contactSim->manifold.points[0].separation > 1.5f * B2_LINEAR_SLOP )
+		{
+			contactSim->manifold.points[0] = contactSim->manifold.points[1];
+			contactSim->manifold.pointCount = 1;
+		}
+		else if ( contactSim->manifold.points[0].separation > 1.5f * B2_LINEAR_SLOP )
+		{
+			contactSim->manifold.pointCount = 1;
+		}
+
+		pointCount = contactSim->manifold.pointCount;
+	}
+
+	if ( touching && ( shapeA->enableHitEvents || shapeB->enableHitEvents ) )
+	{
+		contactSim->simFlags |= b2_simEnableHitEvent;
+	}
+	else
+	{
+		contactSim->simFlags &= ~b2_simEnableHitEvent;
+	}
+
+	if (pointCount > 0)
+	{
+		contactSim->manifold.rollingImpulse = oldManifold.rollingImpulse;
+	}
+
+	// Match old contact ids to new contact ids and copy the
+	// stored impulses to warm start the solver.
+	int unmatchedCount = 0;
+	for ( int i = 0; i < pointCount; ++i )
+	{
+		b2ManifoldPoint* mp2 = contactSim->manifold.points + i;
+
+		// shift anchors to be center of mass relative
+		mp2->anchorA = b2Sub( mp2->anchorA, centerOffsetA );
+		mp2->anchorB = b2Sub( mp2->anchorB, centerOffsetB );
+
+		mp2->normalImpulse = 0.0f;
+		mp2->tangentImpulse = 0.0f;
+		mp2->maxNormalImpulse = 0.0f;
+		mp2->normalVelocity = 0.0f;
+		mp2->persisted = false;
+
+		uint16_t id2 = mp2->id;
+
+		for ( int j = 0; j < oldManifold.pointCount; ++j )
+		{
+			b2ManifoldPoint* mp1 = oldManifold.points + j;
+
+			if ( mp1->id == id2 )
 			{
-				// disable contact
-				contactSim->manifold.pointCount = 0;
+				mp2->normalImpulse = mp1->normalImpulse;
+				mp2->tangentImpulse = mp1->tangentImpulse;
+				mp2->persisted = true;
+
+				// clear old impulse
+				mp1->normalImpulse = 0.0f;
+				mp1->tangentImpulse = 0.0f;
+				break;
 			}
 		}
 
-		if ( touching && ( shapeA->enableHitEvents || shapeB->enableHitEvents ) )
-		{
-			contactSim->simFlags |= b2_simEnableHitEvent;
-		}
-		else
-		{
-			contactSim->simFlags &= ~b2_simEnableHitEvent;
-		}
+		unmatchedCount += mp2->persisted ? 0 : 1;
+	}
 
-		// Match old contact ids to new contact ids and copy the
-		// stored impulses to warm start the solver.
-		int unmatchedCount = 0;
-		for ( int i = 0; i < pointCount; ++i )
-		{
-			b2ManifoldPoint* mp2 = contactSim->manifold.points + i;
-
-			// shift anchors to be center of mass relative
-			mp2->anchorA = b2Sub( mp2->anchorA, centerOffsetA );
-			mp2->anchorB = b2Sub( mp2->anchorB, centerOffsetB );
-
-			mp2->normalImpulse = 0.0f;
-			mp2->tangentImpulse = 0.0f;
-			mp2->maxNormalImpulse = 0.0f;
-			mp2->normalVelocity = 0.0f;
-			mp2->persisted = false;
-
-			uint16_t id2 = mp2->id;
-
-			for ( int j = 0; j < oldManifold.pointCount; ++j )
-			{
-				b2ManifoldPoint* mp1 = oldManifold.points + j;
-
-				if ( mp1->id == id2 )
-				{
-					mp2->normalImpulse = mp1->normalImpulse;
-					mp2->tangentImpulse = mp1->tangentImpulse;
-					mp2->persisted = true;
-
-					// clear old impulse
-					mp1->normalImpulse = 0.0f;
-					mp1->tangentImpulse = 0.0f;
-					break;
-				}
-			}
-
-			unmatchedCount += mp2->persisted ? 0 : 1;
-		}
+	B2_UNUSED( unmatchedCount );
 
 #if 0
 		// todo I haven't found an improvement from this yet
@@ -620,7 +629,6 @@ bool b2UpdateContact( b2World* world, b2ContactSim* contactSim, b2Shape* shapeA,
 			}
 		}
 #endif
-	}
 
 	if ( touching )
 	{
@@ -632,4 +640,11 @@ bool b2UpdateContact( b2World* world, b2ContactSim* contactSim, b2Shape* shapeA,
 	}
 
 	return touching;
+}
+
+b2Manifold b2ComputeManifold( b2Shape* shapeA, b2Transform transformA, b2Shape* shapeB, b2Transform transformB )
+{
+	b2ManifoldFcn* fcn = s_registers[shapeA->type][shapeB->type].fcn;
+	b2SimplexCache cache = { 0 };
+	return fcn( shapeA, transformA, shapeB, transformB, &cache );
 }

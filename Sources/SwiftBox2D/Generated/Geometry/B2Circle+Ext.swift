@@ -3,6 +3,7 @@
 
 import box2d
 
+/// A solid circle
 public typealias B2Circle = b2Circle
 
 extension B2Circle: @retroactive CustomStringConvertible, @retroactive Equatable, @retroactive Hashable { }

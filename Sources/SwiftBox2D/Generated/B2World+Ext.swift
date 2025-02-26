@@ -11,8 +11,8 @@ public extension B2World {
     
     /// Simulate a world for one time step. This performs collision detection, integration, and constraint solution.
     /// - param worldId: The world to simulate
-    /// - param timeStep: The amount of time to simulate, this should be a fixed number. Typically 1/60.
-    /// - param subStepCount: The number of sub-steps, increasing the sub-step count can increase accuracy. Typically 4.
+    /// - param timeStep: The amount of time to simulate, this should be a fixed number. Usually 1/60.
+    /// - param subStepCount: The number of sub-steps, increasing the sub-step count can increase accuracy. Usually 4.
     func step(_ timeStep: Float, _ subStepCount: Int32) {
         b2World_Step(id, timeStep, subStepCount)
     }
@@ -147,10 +147,10 @@ public extension B2World {
     /// - param worldId: The world id
     /// - param hertz: The contact stiffness (cycles per second)
     /// - param dampingRatio: The contact bounciness with 1 being critical damping (non-dimensional)
-    /// - param pushVelocity: The maximum contact constraint push out velocity (meters per second)
+    /// - param pushSpeed: The maximum contact constraint push out speed (meters per second)
     /// - note: Advanced feature
-    func setContactTuning(_ hertz: Float, _ dampingRatio: Float, _ pushVelocity: Float) {
-        b2World_SetContactTuning(id, hertz, dampingRatio, pushVelocity)
+    func setContactTuning(_ hertz: Float, _ dampingRatio: Float, _ pushSpeed: Float) {
+        b2World_SetContactTuning(id, hertz, dampingRatio, pushSpeed)
     }
     
     /// Adjust joint tuning parameters
@@ -173,6 +173,11 @@ public extension B2World {
         b2World_IsWarmStartingEnabled(id)
     }
     
+    /// Get the number of awake bodies.
+    func getAwakeBodyCount() -> Int32 {
+        b2World_GetAwakeBodyCount(id)
+    }
+    
     /// Get the current world performance profile
     func getProfile() -> b2Profile {
         b2World_GetProfile(id)
@@ -188,19 +193,34 @@ public extension B2World {
         b2World_SetUserData(id, userData)
     }
     
+    /// Set the friction callback. Passing NULL resets to default.
+    func setFrictionCallback(_ callback: @convention(c) (Float, Int32, Float, Int32) -> Float) {
+        b2World_SetFrictionCallback(id, callback)
+    }
+    
+    /// Set the restitution callback. Passing NULL resets to default.
+    func setRestitutionCallback(_ callback: @convention(c) (Float, Int32, Float, Int32) -> Float) {
+        b2World_SetRestitutionCallback(id, callback)
+    }
+    
     /// Dump memory stats to box2d_memory.txt
     func dumpMemoryStats() {
         b2World_DumpMemoryStats(id)
     }
     
-    /// todo testing
+    /// This is for internal testing
     func rebuildStaticTree() {
         b2World_RebuildStaticTree(id)
     }
     
-    ///  Get the the restitution speed threshold. Typically in meters per second.
+    /// This is for internal testing
+    func enableSpeculative(_ flag: Bool) {
+        b2World_EnableSpeculative(id, flag)
+    }
+    
+    ///  Get the the restitution speed threshold. Usually in meters per second.
     /// Adjust the restitution threshold. It is recommended not to make this value very small
-    /// because it will prevent bodies from sleeping. Typically in meters per second.
+    /// because it will prevent bodies from sleeping. Usually in meters per second.
     /// @see b2WorldDef
     var restitutionThreshold: Float {
         get {
@@ -211,9 +231,9 @@ public extension B2World {
         }
     }
     
-    ///  Get the the hit event speed threshold. Typically in meters per second.
-    /// Adjust the hit event threshold. This controls the collision velocity needed to generate a b2ContactHitEvent.
-    /// Typically in meters per second.
+    ///  Get the the hit event speed threshold. Usually in meters per second.
+    /// Adjust the hit event threshold. This controls the collision speed needed to generate a b2ContactHitEvent.
+    /// Usually in meters per second.
     /// @see b2WorldDef::hitEventThreshold
     var hitEventThreshold: Float {
         get {
@@ -226,7 +246,7 @@ public extension B2World {
     
     ///  Get the gravity vector
     /// Set the gravity vector for the entire world. Box2D has no concept of an up direction and this
-    /// is left as a decision for the application. Typically in m/s^2.
+    /// is left as a decision for the application. Usually in m/s^2.
     /// @see b2WorldDef
     var gravity: B2Vec2 {
         get {
@@ -237,14 +257,14 @@ public extension B2World {
         }
     }
     
-    /// Get the maximum linear velocity. Typically in m/s.
-    /// Set the maximum linear velocity. Typically in m/s.
-    var maximumLinearVelocity: Float {
+    /// Get the maximum linear speed. Usually in m/s.
+    /// Set the maximum linear speed. Usually in m/s.
+    var maximumLinearSpeed: Float {
         get {
-            b2World_GetMaximumLinearVelocity(id)
+            b2World_GetMaximumLinearSpeed(id)
         }
-        set(maximumLinearVelocity) {
-            b2World_SetMaximumLinearVelocity(id, maximumLinearVelocity)
+        set(maximumLinearSpeed) {
+            b2World_SetMaximumLinearSpeed(id, maximumLinearSpeed)
         }
     }
 }

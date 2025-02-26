@@ -9,6 +9,11 @@ public extension B2Body {
         b2Body_IsValid(id)
     }
     
+    /// Set the body name. Up to 31 characters excluding 0 termination.
+    func setName(_ name: UnsafeMutablePointer<CChar>?) {
+        b2Body_SetName(id, name)
+    }
+    
     /// Set the user data for a body
     func setUserData(_ userData: UnsafeMutableRawPointer?) {
         b2Body_SetUserData(id, userData)
@@ -56,11 +61,21 @@ public extension B2Body {
         b2Body_GetWorldVector(id, localVector)
     }
     
+    /// Get the linear velocity of a local point attached to a body. Usually in meters per second.
+    func getLocalPointVelocity(_ localPoint: B2Vec2) -> B2Vec2 {
+        b2Body_GetLocalPointVelocity(id, localPoint)
+    }
+    
+    /// Get the linear velocity of a world point attached to a body. Usually in meters per second.
+    func getWorldPointVelocity(_ worldPoint: B2Vec2) -> B2Vec2 {
+        b2Body_GetWorldPointVelocity(id, worldPoint)
+    }
+    
     /// Apply a force at a world point. If the force is not applied at the center of mass,
     /// it will generate a torque and affect the angular velocity. This optionally wakes up the body.
     /// The force is ignored if the body is not awake.
     /// - param bodyId: The body id
-    /// - param force: The world force vector, typically in newtons (N)
+    /// - param force: The world force vector, usually in newtons (N)
     /// - param point: The world position of the point of application
     /// - param wake: Option to wake up the body
     func applyForce(_ force: B2Vec2, _ point: B2Vec2, _ wake: Bool) {
@@ -79,7 +94,7 @@ public extension B2Body {
     /// Apply a torque. This affects the angular velocity without affecting the linear velocity.
     /// This optionally wakes the body. The torque is ignored if the body is not awake.
     /// - param bodyId: The body id
-    /// - param torque: about the z-axis (out of the screen), typically in N*m.
+    /// - param torque: about the z-axis (out of the screen), usually in N*m.
     /// - param wake: also wake up the body
     func applyTorque(_ torque: Float, _ wake: Bool) {
         b2Body_ApplyTorque(id, torque, wake)
@@ -90,7 +105,7 @@ public extension B2Body {
     /// is not at the center of mass. This optionally wakes the body.
     /// The impulse is ignored if the body is not awake.
     /// - param bodyId: The body id
-    /// - param impulse: the world impulse vector, typically in N*s or kg*m/s.
+    /// - param impulse: the world impulse vector, usually in N*s or kg*m/s.
     /// - param point: the world position of the point of application.
     /// - param wake: also wake up the body
     /// @warning This should be used for one-shot impulses. If you need a steady force,
@@ -102,7 +117,7 @@ public extension B2Body {
     /// Apply an impulse to the center of mass. This immediately modifies the velocity.
     /// The impulse is ignored if the body is not awake. This optionally wakes the body.
     /// - param bodyId: The body id
-    /// - param impulse: the world impulse vector, typically in N*s or kg*m/s.
+    /// - param impulse: the world impulse vector, usually in N*s or kg*m/s.
     /// - param wake: also wake up the body
     /// @warning This should be used for one-shot impulses. If you need a steady force,
     /// use a force instead, which will work better with the sub-stepping solver.
@@ -113,7 +128,7 @@ public extension B2Body {
     /// Apply an angular impulse. The impulse is ignored if the body is not awake.
     /// This optionally wakes the body.
     /// - param bodyId: The body id
-    /// - param impulse: the angular impulse, typically in units of kg*m*m/s
+    /// - param impulse: the angular impulse, usually in units of kg*m*m/s
     /// - param wake: also wake up the body
     /// @warning This should be used for one-shot impulses. If you need a steady force,
     /// use a force instead, which will work better with the sub-stepping solver.
@@ -121,12 +136,12 @@ public extension B2Body {
         b2Body_ApplyAngularImpulse(id, impulse, wake)
     }
     
-    /// Get the mass of the body, typically in kilograms
+    /// Get the mass of the body, usually in kilograms
     func getMass() -> Float {
         b2Body_GetMass(id)
     }
     
-    /// Get the rotational inertia of the body, typically in kg*m^2
+    /// Get the rotational inertia of the body, usually in kg*m^2
     func getRotationalInertia() -> Float {
         b2Body_GetRotationalInertia(id)
     }
@@ -208,10 +223,17 @@ public extension B2Body {
         b2Body_IsBullet(id)
     }
     
+    /// Enable/disable contact events on all shapes.
+    /// @see b2ShapeDef::enableContactEvents
+    /// @warning changing this at runtime may cause mismatched begin/end touch events
+    func enableContactEvents(_ flag: Bool) {
+        b2Body_EnableContactEvents(id, flag)
+    }
+    
     /// Enable/disable hit events on all shapes
     /// @see b2ShapeDef::enableHitEvents
-    func enableHitEvents(_ enableHitEvents: Bool) {
-        b2Body_EnableHitEvents(id, enableHitEvents)
+    func enableHitEvents(_ flag: Bool) {
+        b2Body_EnableHitEvents(id, flag)
     }
     
     /// Get the world that owns this body
@@ -246,7 +268,10 @@ public extension B2Body {
         b2Body_GetContactCapacity(id)
     }
     
-    /// Get the touching contact data for a body
+    /// Get the touching contact data for a body.
+    /// - note: Box2D uses speculative collision so some contact points may be separated.
+    /// - returns:s the number of elements filled in the provided array
+    /// @warning do not ignore the return value, it specifies the valid number of elements
     func getContactData(_ contactData: UnsafeMutablePointer<b2ContactData>?, _ capacity: Int32) -> Int32 {
         b2Body_GetContactData(id, contactData, capacity)
     }
@@ -269,8 +294,8 @@ public extension B2Body {
         }
     }
     
-    /// Get the linear velocity of a body's center of mass. Typically in meters per second.
-    /// Set the linear velocity of a body. Typically in meters per second.
+    /// Get the linear velocity of a body's center of mass. Usually in meters per second.
+    /// Set the linear velocity of a body. Usually in meters per second.
     var linearVelocity: B2Vec2 {
         get {
             b2Body_GetLinearVelocity(id)
@@ -338,8 +363,8 @@ public extension B2Body {
         }
     }
     
-    /// Get the sleep threshold, typically in meters per second.
-    /// Set the sleep threshold, typically in meters per second
+    /// Get the sleep threshold, usually in meters per second.
+    /// Set the sleep threshold, usually in meters per second
     var sleepThreshold: Float {
         get {
             b2Body_GetSleepThreshold(id)

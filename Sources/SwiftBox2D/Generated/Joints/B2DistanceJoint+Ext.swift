@@ -55,7 +55,7 @@ public extension B2DistanceJoint {
         b2DistanceJoint_IsMotorEnabled(id)
     }
     
-    /// Get the distance joint current motor force, typically in newtons
+    /// Get the distance joint current motor force, usually in newtons
     func getMotorForce() -> Float {
         b2DistanceJoint_GetMotorForce(id)
     }
@@ -95,8 +95,8 @@ public extension B2DistanceJoint {
         }
     }
     
-    /// Get the distance joint motor speed, typically in meters per second
-    /// Set the distance joint motor speed, typically in meters per second
+    /// Get the distance joint motor speed, usually in meters per second
+    /// Set the distance joint motor speed, usually in meters per second
     var motorSpeed: Float {
         get {
             b2DistanceJoint_GetMotorSpeed(id)
@@ -106,8 +106,8 @@ public extension B2DistanceJoint {
         }
     }
     
-    /// Get the distance joint maximum motor force, typically in newtons
-    /// Set the distance joint maximum motor force, typically in newtons
+    /// Get the distance joint maximum motor force, usually in newtons
+    /// Set the distance joint maximum motor force, usually in newtons
     var maxMotorForce: Float {
         get {
             b2DistanceJoint_GetMaxMotorForce(id)

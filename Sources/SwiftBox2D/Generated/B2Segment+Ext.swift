@@ -3,6 +3,7 @@
 
 import box2d
 
+/// A line segment with two-sided collision.
 public typealias B2Segment = b2Segment
 
 extension B2Segment: @retroactive CustomStringConvertible, @retroactive Equatable, @retroactive Hashable { }

@@ -30,7 +30,7 @@
 /// }
 /// @endcode
 /// @ingroup world
-typedef void b2TaskCallback( int32_t startIndex, int32_t endIndex, uint32_t workerIndex, void* taskContext );
+typedef void b2TaskCallback( int startIndex, int endIndex, uint32_t workerIndex, void* taskContext );
 
 /// These functions can be provided to Box2D to invoke a task system. These are designed to work well with enkiTS.
 /// Returns a pointer to the user's task object. May be nullptr. A nullptr indicates to Box2D that the work was executed
@@ -43,12 +43,21 @@ typedef void b2TaskCallback( int32_t startIndex, int32_t endIndex, uint32_t work
 /// endIndex - startIndex >= minRange
 /// The exception of course is when itemCount < minRange.
 /// @ingroup world
-typedef void* b2EnqueueTaskCallback( b2TaskCallback* task, int32_t itemCount, int32_t minRange, void* taskContext,
-									 void* userContext );
+typedef void* b2EnqueueTaskCallback( b2TaskCallback* task, int itemCount, int minRange, void* taskContext, void* userContext );
 
 /// Finishes a user task object that wraps a Box2D task.
 /// @ingroup world
 typedef void b2FinishTaskCallback( void* userTask, void* userContext );
+
+/// Optional friction mixing callback. This intentionally provides no context objects because this is called
+/// from a worker thread.
+/// @warning This function should not attempt to modify Box2D state or user application state.
+typedef float b2FrictionCallback( float frictionA, int materialA, float frictionB, int materialB );
+
+/// Optional restitution mixing callback. This intentionally provides no context objects because this is called
+/// from a worker thread.
+/// @warning This function should not attempt to modify Box2D state or user application state.
+typedef float b2RestitutionCallback( float restitutionA, int materialA, float restitutionB, int materialB );
 
 /// Result from b2World_RayCastClosest
 /// @ingroup world
@@ -63,16 +72,6 @@ typedef struct b2RayResult
 	bool hit;
 } b2RayResult;
 
-/// Mixing rules for friction and restitution
-typedef enum b2MixingRule
-{
-	b2_mixAverage,
-	b2_mixGeometricMean,
-	b2_mixMultiply,
-	b2_mixMinimum,
-	b2_mixMaximum
-} b2MixingRule;
-
 /// World definition used to create a simulation world.
 /// Must be initialized using b2DefaultWorldDef().
 /// @ingroup world
@@ -81,21 +80,24 @@ typedef struct b2WorldDef
 	/// Gravity vector. Box2D has no up-vector defined.
 	b2Vec2 gravity;
 
-	/// Restitution velocity threshold, usually in m/s. Collisions above this
+	/// Restitution speed threshold, usually in m/s. Collisions above this
 	/// speed have restitution applied (will bounce).
 	float restitutionThreshold;
 
-	/// This parameter controls how fast overlap is resolved and has units of meters per second
-	float contactPushoutVelocity;
-
-	/// Threshold velocity for hit events. Usually meters per second.
+	/// Threshold speed for hit events. Usually meters per second.
 	float hitEventThreshold;
 
-	/// Contact stiffness. Cycles per second.
+	/// Contact stiffness. Cycles per second. Increasing this increases the speed of overlap recovery, but can introduce jitter.
 	float contactHertz;
 
-	/// Contact bounciness. Non-dimensional.
+	/// Contact bounciness. Non-dimensional. You can speed up overlap recovery by decreasing this with
+	/// the trade-off that overlap resolution becomes more energetic.
 	float contactDampingRatio;
+
+	/// This parameter controls how fast overlap is resolved and usually has units of meters per second. This only
+	/// puts a cap on the resolution speed. The resolution speed is increased by increasing the hertz and/or
+	/// decreasing the damping ratio.
+	float contactPushMaxSpeed;
 
 	/// Joint stiffness. Cycles per second.
 	float jointHertz;
@@ -103,14 +105,14 @@ typedef struct b2WorldDef
 	/// Joint bounciness. Non-dimensional.
 	float jointDampingRatio;
 
-	/// Maximum linear velocity. Usually meters per second.
-	float maximumLinearVelocity;
+	/// Maximum linear speed. Usually meters per second.
+	float maximumLinearSpeed;
 
-	/// Mixing rule for friction. Default is b2_mixGeometricMean.
-	b2MixingRule frictionMixingRule;
+	/// Optional mixing callback for friction. The default uses sqrt(frictionA * frictionB).
+	b2FrictionCallback* frictionCallback;
 
-	/// Mixing rule for restitution. Default is b2_mixMaximum.
-	b2MixingRule restitutionMixingRule;
+	/// Optional mixing callback for restitution. The default uses max(restitutionA, restitutionB).
+	b2RestitutionCallback* restitutionCallback;
 
 	/// Can bodies go to sleep to improve performance
 	bool enableSleep;
@@ -121,7 +123,11 @@ typedef struct b2WorldDef
 	/// Number of workers to use with the provided task system. Box2D performs best when using only
 	/// performance cores and accessing a single L2 cache. Efficiency cores and hyper-threading provide
 	/// little benefit and may even harm performance.
-	int32_t workerCount;
+	/// @note Box2D does not create threads. This is the number of threads your applications has created
+	/// that you are allocating to b2World_Step.
+	/// @warning Do not modify the default value unless you are also providing a task system and providing
+	/// task callbacks (enqueueTask and finishTask).
+	int workerCount;
 
 	/// Function to spawn tasks
 	b2EnqueueTaskCallback* enqueueTask;
@@ -136,7 +142,7 @@ typedef struct b2WorldDef
 	void* userData;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int32_t internalValue;
+	int internalValue;
 } b2WorldDef;
 
 /// Use this to initialize your world definition
@@ -179,20 +185,20 @@ typedef struct b2BodyDef
 	/// The initial world rotation of the body. Use b2MakeRot() if you have an angle.
 	b2Rot rotation;
 
-	/// The initial linear velocity of the body's origin. Typically in meters per second.
+	/// The initial linear velocity of the body's origin. Usually in meters per second.
 	b2Vec2 linearVelocity;
 
 	/// The initial angular velocity of the body. Radians per second.
 	float angularVelocity;
 
-	/// Linear damping is use to reduce the linear velocity. The damping parameter
+	/// Linear damping is used to reduce the linear velocity. The damping parameter
 	/// can be larger than 1 but the damping effect becomes sensitive to the
 	/// time step when the damping parameter is large.
 	/// Generally linear damping is undesirable because it makes objects move slowly
 	/// as if they are floating.
 	float linearDamping;
 
-	/// Angular damping is use to reduce the angular velocity. The damping parameter
+	/// Angular damping is used to reduce the angular velocity. The damping parameter
 	/// can be larger than 1.0f but the damping effect becomes sensitive to the
 	/// time step when the damping parameter is large.
 	/// Angular damping can be use slow down rotating bodies.
@@ -201,8 +207,11 @@ typedef struct b2BodyDef
 	/// Scale the gravity applied to this body. Non-dimensional.
 	float gravityScale;
 
-	/// Sleep velocity threshold, default is 0.05 meter per second
+	/// Sleep speed threshold, default is 0.05 meters per second
 	float sleepThreshold;
+
+	/// Optional body name for debugging. Up to 31 characters (excluding null termination)
+	const char* name;
 
 	/// Use this to store application specific body data.
 	void* userData;
@@ -230,7 +239,7 @@ typedef struct b2BodyDef
 	bool allowFastRotation;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int32_t internalValue;
+	int internalValue;
 } b2BodyDef;
 
 /// Use this to initialize your body definition
@@ -271,7 +280,7 @@ typedef struct b2Filter
 	/// For example, you may want ragdolls to collide with other ragdolls but you don't want
 	/// ragdoll self-collision. In this case you would give each ragdoll a unique negative group index
 	/// and apply that group index to all shapes on the ragdoll.
-	int32_t groupIndex;
+	int groupIndex;
 } b2Filter;
 
 /// Use this to initialize your filter
@@ -332,8 +341,19 @@ typedef struct b2ShapeDef
 	/// The Coulomb (dry) friction coefficient, usually in the range [0,1].
 	float friction;
 
-	/// The restitution (bounce) usually in the range [0,1].
+	/// The coefficient of restitution (bounce) usually in the range [0,1].
+	/// https://en.wikipedia.org/wiki/Coefficient_of_restitution
 	float restitution;
+
+	/// The rolling resistance usually in the range [0,1].
+	float rollingResistance;
+
+	/// The tangent speed for conveyor belts
+	float tangentSpeed;
+
+	/// User material identifier. This is passed with query results and to friction and restitution
+	/// combining functions. It is not used internally.
+	int material;
 
 	/// The density, usually in kg/m^2.
 	float density;
@@ -346,11 +366,8 @@ typedef struct b2ShapeDef
 
 	/// A sensor shape generates overlap events but never generates a collision response.
 	/// Sensors do not collide with other sensors and do not have continuous collision.
-	/// Instead use a ray or shape cast for those scenarios.
+	/// Instead, use a ray or shape cast for those scenarios.
 	bool isSensor;
-
-	/// Enable sensor events for this shape. Only applies to kinematic and dynamic bodies. Ignored for sensors.
-	bool enableSensorEvents;
 
 	/// Enable contact events for this shape. Only applies to kinematic and dynamic bodies. Ignored for sensors.
 	bool enableContactEvents;
@@ -372,12 +389,41 @@ typedef struct b2ShapeDef
 	bool updateBodyMass;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int32_t internalValue;
+	int internalValue;
 } b2ShapeDef;
 
 /// Use this to initialize your shape definition
 /// @ingroup shape
 B2_API b2ShapeDef b2DefaultShapeDef( void );
+
+/// Surface materials allow chain shapes to have per segment surface properties.
+/// @ingroup shape
+typedef struct b2SurfaceMaterial
+{
+	/// The Coulomb (dry) friction coefficient, usually in the range [0,1].
+	float friction;
+
+	/// The coefficient of restitution (bounce) usually in the range [0,1].
+	/// https://en.wikipedia.org/wiki/Coefficient_of_restitution
+	float restitution;
+
+	/// The rolling resistance usually in the range [0,1].
+	float rollingResistance;
+
+	/// The tangent speed for conveyor belts
+	float tangentSpeed;
+
+	/// User material identifier. This is passed with query results and to friction and restitution
+	/// combining functions. It is not used internally.
+	int material;
+
+	/// Custom debug draw color.
+	uint32_t customColor;
+} b2SurfaceMaterial;
+
+/// Use this to initialize your surface material
+/// @ingroup shape
+B2_API b2SurfaceMaterial b2DefaultSurfaceMaterial( void );
 
 /// Used to create a chain of line segments. This is designed to eliminate ghost collisions with some limitations.
 /// - chains are one-sided
@@ -385,7 +431,7 @@ B2_API b2ShapeDef b2DefaultShapeDef( void );
 /// - chains have a counter-clockwise winding order
 /// - chains are either a loop or open
 /// - a chain must have at least 4 points
-/// - the distance between any two points must be greater than b2_linearSlop
+/// - the distance between any two points must be greater than B2_LINEAR_SLOP
 /// - a chain shape should not self intersect (this is not validated)
 /// - an open chain shape has NO COLLISION on the first and final edge
 /// - you may overlap two open chains on their first three and/or last three points to get smooth collision
@@ -403,25 +449,23 @@ typedef struct b2ChainDef
 	const b2Vec2* points;
 
 	/// The point count, must be 4 or more.
-	int32_t count;
+	int count;
 
-	/// The friction coefficient, usually in the range [0,1].
-	float friction;
+	/// Surface materials for each segment. These are cloned.
+	const b2SurfaceMaterial* materials;
 
-	/// The restitution (elasticity) usually in the range [0,1].
-	float restitution;
+	/// The material count. Must be 1 or count. This allows you to provide one
+	/// material for all segments or a unique material per segment.
+	int materialCount;
 
 	/// Contact filtering data.
 	b2Filter filter;
-
-	/// Custom debug draw color.
-	uint32_t customColor;
 
 	/// Indicates a closed chain formed by connecting the first and last points
 	bool isLoop;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int32_t internalValue;
+	int internalValue;
 } b2ChainDef;
 
 /// Use this to initialize your chain definition
@@ -436,40 +480,40 @@ typedef struct b2Profile
 	float pairs;
 	float collide;
 	float solve;
-	float buildIslands;
+	float mergeIslands;
+	float prepareStages;
 	float solveConstraints;
-	float prepareTasks;
-	float solverTasks;
 	float prepareConstraints;
 	float integrateVelocities;
 	float warmStart;
-	float solveVelocities;
+	float solveImpulses;
 	float integratePositions;
-	float relaxVelocities;
+	float relaxImpulses;
 	float applyRestitution;
 	float storeImpulses;
-	float finalizeBodies;
 	float splitIslands;
-	float sleepIslands;
+	float transforms;
 	float hitEvents;
-	float broadphase;
-	float continuous;
+	float refit;
+	float bullets;
+	float sleepIslands;
+	float sensors;
 } b2Profile;
 
 /// Counters that give details of the simulation size.
 typedef struct b2Counters
 {
-	int32_t bodyCount;
-	int32_t shapeCount;
-	int32_t contactCount;
-	int32_t jointCount;
-	int32_t islandCount;
-	int32_t stackUsed;
-	int32_t staticTreeHeight;
-	int32_t treeHeight;
-	int32_t byteCount;
-	int32_t taskCount;
-	int32_t colorCounts[12];
+	int bodyCount;
+	int shapeCount;
+	int contactCount;
+	int jointCount;
+	int islandCount;
+	int stackUsed;
+	int staticTreeHeight;
+	int treeHeight;
+	int byteCount;
+	int taskCount;
+	int colorCounts[12];
 } b2Counters;
 //! @endcond
 
@@ -549,7 +593,7 @@ typedef struct b2DistanceJointDef
 	void* userData;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int32_t internalValue;
+	int internalValue;
 } b2DistanceJointDef;
 
 /// Use this to initialize your joint definition
@@ -590,7 +634,7 @@ typedef struct b2MotorJointDef
 	void* userData;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int32_t internalValue;
+	int internalValue;
 } b2MotorJointDef;
 
 /// Use this to initialize your joint definition
@@ -604,7 +648,7 @@ B2_API b2MotorJointDef b2DefaultMotorJointDef( void );
 /// @ingroup mouse_joint
 typedef struct b2MouseJointDef
 {
-	/// The first attached body.
+	/// The first attached body. This is assumed to be static.
 	b2BodyId bodyIdA;
 
 	/// The second attached body.
@@ -629,7 +673,7 @@ typedef struct b2MouseJointDef
 	void* userData;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int32_t internalValue;
+	int internalValue;
 } b2MouseJointDef;
 
 /// Use this to initialize your joint definition
@@ -651,7 +695,7 @@ typedef struct b2NullJointDef
 	void* userData;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int32_t internalValue;
+	int internalValue;
 } b2NullJointDef;
 
 /// Use this to initialize your joint definition
@@ -719,7 +763,7 @@ typedef struct b2PrismaticJointDef
 	void* userData;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int32_t internalValue;
+	int internalValue;
 } b2PrismaticJointDef;
 
 /// Use this to initialize your joint definition
@@ -793,7 +837,7 @@ typedef struct b2RevoluteJointDef
 	void* userData;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int32_t internalValue;
+	int internalValue;
 } b2RevoluteJointDef;
 
 /// Use this to initialize your joint definition.
@@ -842,7 +886,7 @@ typedef struct b2WeldJointDef
 	void* userData;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int32_t internalValue;
+	int internalValue;
 } b2WeldJointDef;
 
 /// Use this to initialize your joint definition
@@ -907,7 +951,7 @@ typedef struct b2WheelJointDef
 	void* userData;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int32_t internalValue;
+	int internalValue;
 } b2WheelJointDef;
 
 /// Use this to initialize your joint definition
@@ -969,13 +1013,21 @@ typedef struct b2SensorBeginTouchEvent
 } b2SensorBeginTouchEvent;
 
 /// An end touch event is generated when a shape stops overlapping a sensor shape.
+///	These include things like setting the transform, destroying a body or shape, or changing
+///	a filter. You will also get an end event if the sensor or visitor are destroyed.
+///	Therefore you should always confirm the shape id is valid using b2Shape_IsValid.
 typedef struct b2SensorEndTouchEvent
 {
 	/// The id of the sensor shape
+	///	@warning this shape may have been destroyed
+	///	@see b2Shape_IsValid
 	b2ShapeId sensorShapeId;
 
 	/// The id of the dynamic shape that stopped touching the sensor shape
+	///	@warning this shape may have been destroyed
+	///	@see b2Shape_IsValid
 	b2ShapeId visitorShapeId;
+
 } b2SensorEndTouchEvent;
 
 /// Sensor events are buffered in the Box2D world and are available
@@ -990,10 +1042,10 @@ typedef struct b2SensorEvents
 	b2SensorEndTouchEvent* endEvents;
 
 	/// The number of begin touch events
-	int32_t beginCount;
+	int beginCount;
 
 	/// The number of end touch events
-	int32_t endCount;
+	int endCount;
 } b2SensorEvents;
 
 /// A begin touch event is generated when two shapes begin touching.
@@ -1005,17 +1057,25 @@ typedef struct b2ContactBeginTouchEvent
 	/// Id of the second shape
 	b2ShapeId shapeIdB;
 
-	/// The initial contact manifold
+	/// The initial contact manifold. This is recorded before the solver is called,
+	/// so all the impulses will be zero.
 	b2Manifold manifold;
 } b2ContactBeginTouchEvent;
 
 /// An end touch event is generated when two shapes stop touching.
+///	You will get an end event if you do anything that destroys contacts previous to the last
+///	world step. These include things like setting the transform, destroying a body
+///	or shape, or changing a filter or body type.
 typedef struct b2ContactEndTouchEvent
 {
 	/// Id of the first shape
+	///	@warning this shape may have been destroyed
+	///	@see b2Shape_IsValid
 	b2ShapeId shapeIdA;
 
 	/// Id of the second shape
+	///	@warning this shape may have been destroyed
+	///	@see b2Shape_IsValid
 	b2ShapeId shapeIdB;
 } b2ContactEndTouchEvent;
 
@@ -1053,13 +1113,13 @@ typedef struct b2ContactEvents
 	b2ContactHitEvent* hitEvents;
 
 	/// Number of begin touch events
-	int32_t beginCount;
+	int beginCount;
 
 	/// Number of end touch events
-	int32_t endCount;
+	int endCount;
 
 	/// Number of hit events
-	int32_t hitCount;
+	int hitCount;
 } b2ContactEvents;
 
 /// Body move events triggered when a body moves.
@@ -1089,7 +1149,7 @@ typedef struct b2BodyEvents
 	b2BodyMoveEvent* moveEvents;
 
 	/// Number of move events
-	int32_t moveCount;
+	int moveCount;
 } b2BodyEvents;
 
 /// The contact data for two shapes. By convention the manifold normal points
@@ -1107,12 +1167,13 @@ typedef struct b2ContactData
 /// Prototype for a contact filter callback.
 /// This is called when a contact pair is considered for collision. This allows you to
 /// perform custom logic to prevent collision between shapes. This is only called if
-/// one of the two shapes has custom filtering enabled. @see b2ShapeDef.
+/// one of the two shapes has custom filtering enabled.
 /// Notes:
 /// - this function must be thread-safe
 /// - this is only called if one of the two shapes has enabled custom filtering
 /// - this is called only for awake dynamic bodies
 /// Return false if you want to disable the collision
+/// @see b2ShapeDef
 /// @warning Do not attempt to modify the world inside this callback
 /// @ingroup world
 typedef bool b2CustomFilterFcn( b2ShapeId shapeIdA, b2ShapeId shapeIdB, void* context );
@@ -1134,7 +1195,7 @@ typedef bool b2PreSolveFcn( b2ShapeId shapeIdA, b2ShapeId shapeIdB, b2Manifold* 
 
 /// Prototype callback for overlap queries.
 /// Called for each shape found in the query.
-/// @see b2World_QueryAABB
+/// @see b2World_OverlapABB
 /// @return false to terminate the query.
 /// @ingroup world
 typedef bool b2OverlapResultFcn( b2ShapeId shapeId, void* context );
@@ -1156,164 +1217,158 @@ typedef bool b2OverlapResultFcn( b2ShapeId shapeId, void* context );
 /// @ingroup world
 typedef float b2CastResultFcn( b2ShapeId shapeId, b2Vec2 point, b2Vec2 normal, float fraction, void* context );
 
-/// These colors are used for debug draw.
+/// These colors are used for debug draw and mostly match the named SVG colors.
 /// See https://www.rapidtables.com/web/color/index.html
+/// https://johndecember.com/html/spec/colorsvg.html
+/// https://upload.wikimedia.org/wikipedia/commons/2/2b/SVG_Recognized_color_keyword_names.svg
 typedef enum b2HexColor
 {
-	b2_colorAliceBlue = 0xf0f8ff,
-	b2_colorAntiqueWhite = 0xfaebd7,
-	b2_colorAquamarine = 0x7fffd4,
-	b2_colorAzure = 0xf0ffff,
-	b2_colorBeige = 0xf5f5dc,
-	b2_colorBisque = 0xffe4c4,
+	b2_colorAliceBlue = 0xF0F8FF,
+	b2_colorAntiqueWhite = 0xFAEBD7,
+	b2_colorAqua = 0x00FFFF,
+	b2_colorAquamarine = 0x7FFFD4,
+	b2_colorAzure = 0xF0FFFF,
+	b2_colorBeige = 0xF5F5DC,
+	b2_colorBisque = 0xFFE4C4,
 	b2_colorBlack = 0x000000,
-	b2_colorBlanchedAlmond = 0xffebcd,
-	b2_colorBlue = 0x0000ff,
-	b2_colorBlueViolet = 0x8a2be2,
-	b2_colorBrown = 0xa52a2a,
-	b2_colorBurlywood = 0xdeb887,
-	b2_colorCadetBlue = 0x5f9ea0,
-	b2_colorChartreuse = 0x7fff00,
-	b2_colorChocolate = 0xd2691e,
-	b2_colorCoral = 0xff7f50,
-	b2_colorCornflowerBlue = 0x6495ed,
-	b2_colorCornsilk = 0xfff8dc,
-	b2_colorCrimson = 0xdc143c,
-	b2_colorCyan = 0x00ffff,
-	b2_colorDarkBlue = 0x00008b,
-	b2_colorDarkCyan = 0x008b8b,
-	b2_colorDarkGoldenrod = 0xb8860b,
-	b2_colorDarkGray = 0xa9a9a9,
+	b2_colorBlanchedAlmond = 0xFFEBCD,
+	b2_colorBlue = 0x0000FF,
+	b2_colorBlueViolet = 0x8A2BE2,
+	b2_colorBrown = 0xA52A2A,
+	b2_colorBurlywood = 0xDEB887,
+	b2_colorCadetBlue = 0x5F9EA0,
+	b2_colorChartreuse = 0x7FFF00,
+	b2_colorChocolate = 0xD2691E,
+	b2_colorCoral = 0xFF7F50,
+	b2_colorCornflowerBlue = 0x6495ED,
+	b2_colorCornsilk = 0xFFF8DC,
+	b2_colorCrimson = 0xDC143C,
+	b2_colorCyan = 0x00FFFF,
+	b2_colorDarkBlue = 0x00008B,
+	b2_colorDarkCyan = 0x008B8B,
+	b2_colorDarkGoldenRod = 0xB8860B,
+	b2_colorDarkGray = 0xA9A9A9,
 	b2_colorDarkGreen = 0x006400,
-	b2_colorDarkKhaki = 0xbdb76b,
-	b2_colorDarkMagenta = 0x8b008b,
-	b2_colorDarkOliveGreen = 0x556b2f,
-	b2_colorDarkOrange = 0xff8c00,
-	b2_colorDarkOrchid = 0x9932cc,
-	b2_colorDarkRed = 0x8b0000,
-	b2_colorDarkSalmon = 0xe9967a,
-	b2_colorDarkSeaGreen = 0x8fbc8f,
-	b2_colorDarkSlateBlue = 0x483d8b,
-	b2_colorDarkSlateGray = 0x2f4f4f,
-	b2_colorDarkTurquoise = 0x00ced1,
-	b2_colorDarkViolet = 0x9400d3,
-	b2_colorDeepPink = 0xff1493,
-	b2_colorDeepSkyBlue = 0x00bfff,
+	b2_colorDarkKhaki = 0xBDB76B,
+	b2_colorDarkMagenta = 0x8B008B,
+	b2_colorDarkOliveGreen = 0x556B2F,
+	b2_colorDarkOrange = 0xFF8C00,
+	b2_colorDarkOrchid = 0x9932CC,
+	b2_colorDarkRed = 0x8B0000,
+	b2_colorDarkSalmon = 0xE9967A,
+	b2_colorDarkSeaGreen = 0x8FBC8F,
+	b2_colorDarkSlateBlue = 0x483D8B,
+	b2_colorDarkSlateGray = 0x2F4F4F,
+	b2_colorDarkTurquoise = 0x00CED1,
+	b2_colorDarkViolet = 0x9400D3,
+	b2_colorDeepPink = 0xFF1493,
+	b2_colorDeepSkyBlue = 0x00BFFF,
 	b2_colorDimGray = 0x696969,
-	b2_colorDodgerBlue = 0x1e90ff,
-	b2_colorFirebrick = 0xb22222,
-	b2_colorFloralWhite = 0xfffaf0,
-	b2_colorForestGreen = 0x228b22,
-	b2_colorGainsboro = 0xdcdcdc,
-	b2_colorGhostWhite = 0xf8f8ff,
-	b2_colorGold = 0xffd700,
-	b2_colorGoldenrod = 0xdaa520,
-	b2_colorGray = 0xbebebe,
-	b2_colorGray1 = 0x1a1a1a,
-	b2_colorGray2 = 0x333333,
-	b2_colorGray3 = 0x4d4d4d,
-	b2_colorGray4 = 0x666666,
-	b2_colorGray5 = 0x7f7f7f,
-	b2_colorGray6 = 0x999999,
-	b2_colorGray7 = 0xb3b3b3,
-	b2_colorGray8 = 0xcccccc,
-	b2_colorGray9 = 0xe5e5e5,
-	b2_colorGreen = 0x00ff00,
-	b2_colorGreenYellow = 0xadff2f,
-	b2_colorHoneydew = 0xf0fff0,
-	b2_colorHotPink = 0xff69b4,
-	b2_colorIndianRed = 0xcd5c5c,
-	b2_colorIndigo = 0x4b0082,
-	b2_colorIvory = 0xfffff0,
-	b2_colorKhaki = 0xf0e68c,
-	b2_colorLavender = 0xe6e6fa,
-	b2_colorLavenderBlush = 0xfff0f5,
-	b2_colorLawnGreen = 0x7cfc00,
-	b2_colorLemonChiffon = 0xfffacd,
-	b2_colorLightBlue = 0xadd8e6,
-	b2_colorLightCoral = 0xf08080,
-	b2_colorLightCyan = 0xe0ffff,
-	b2_colorLightGoldenrod = 0xeedd82,
-	b2_colorLightGoldenrodYellow = 0xfafad2,
-	b2_colorLightGray = 0xd3d3d3,
-	b2_colorLightGreen = 0x90ee90,
-	b2_colorLightPink = 0xffb6c1,
-	b2_colorLightSalmon = 0xffa07a,
-	b2_colorLightSeaGreen = 0x20b2aa,
-	b2_colorLightSkyBlue = 0x87cefa,
-	b2_colorLightSlateBlue = 0x8470ff,
+	b2_colorDodgerBlue = 0x1E90FF,
+	b2_colorFireBrick = 0xB22222,
+	b2_colorFloralWhite = 0xFFFAF0,
+	b2_colorForestGreen = 0x228B22,
+	b2_colorFuchsia = 0xFF00FF,
+	b2_colorGainsboro = 0xDCDCDC,
+	b2_colorGhostWhite = 0xF8F8FF,
+	b2_colorGold = 0xFFD700,
+	b2_colorGoldenRod = 0xDAA520,
+	b2_colorGray = 0x808080,
+	b2_colorGreen = 0x008000,
+	b2_colorGreenYellow = 0xADFF2F,
+	b2_colorHoneyDew = 0xF0FFF0,
+	b2_colorHotPink = 0xFF69B4,
+	b2_colorIndianRed = 0xCD5C5C,
+	b2_colorIndigo = 0x4B0082,
+	b2_colorIvory = 0xFFFFF0,
+	b2_colorKhaki = 0xF0E68C,
+	b2_colorLavender = 0xE6E6FA,
+	b2_colorLavenderBlush = 0xFFF0F5,
+	b2_colorLawnGreen = 0x7CFC00,
+	b2_colorLemonChiffon = 0xFFFACD,
+	b2_colorLightBlue = 0xADD8E6,
+	b2_colorLightCoral = 0xF08080,
+	b2_colorLightCyan = 0xE0FFFF,
+	b2_colorLightGoldenRodYellow = 0xFAFAD2,
+	b2_colorLightGray = 0xD3D3D3,
+	b2_colorLightGreen = 0x90EE90,
+	b2_colorLightPink = 0xFFB6C1,
+	b2_colorLightSalmon = 0xFFA07A,
+	b2_colorLightSeaGreen = 0x20B2AA,
+	b2_colorLightSkyBlue = 0x87CEFA,
 	b2_colorLightSlateGray = 0x778899,
-	b2_colorLightSteelBlue = 0xb0c4de,
-	b2_colorLightYellow = 0xffffe0,
-	b2_colorLimeGreen = 0x32cd32,
-	b2_colorLinen = 0xfaf0e6,
-	b2_colorMagenta = 0xff00ff,
-	b2_colorMaroon = 0xb03060,
-	b2_colorMediumAquamarine = 0x66cdaa,
-	b2_colorMediumBlue = 0x0000cd,
-	b2_colorMediumOrchid = 0xba55d3,
-	b2_colorMediumPurple = 0x9370db,
-	b2_colorMediumSeaGreen = 0x3cb371,
-	b2_colorMediumSlateBlue = 0x7b68ee,
-	b2_colorMediumSpringGreen = 0x00fa9a,
-	b2_colorMediumTurquoise = 0x48d1cc,
-	b2_colorMediumVioletRed = 0xc71585,
+	b2_colorLightSteelBlue = 0xB0C4DE,
+	b2_colorLightYellow = 0xFFFFE0,
+	b2_colorLime = 0x00FF00,
+	b2_colorLimeGreen = 0x32CD32,
+	b2_colorLinen = 0xFAF0E6,
+	b2_colorMagenta = 0xFF00FF,
+	b2_colorMaroon = 0x800000,
+	b2_colorMediumAquaMarine = 0x66CDAA,
+	b2_colorMediumBlue = 0x0000CD,
+	b2_colorMediumOrchid = 0xBA55D3,
+	b2_colorMediumPurple = 0x9370DB,
+	b2_colorMediumSeaGreen = 0x3CB371,
+	b2_colorMediumSlateBlue = 0x7B68EE,
+	b2_colorMediumSpringGreen = 0x00FA9A,
+	b2_colorMediumTurquoise = 0x48D1CC,
+	b2_colorMediumVioletRed = 0xC71585,
 	b2_colorMidnightBlue = 0x191970,
-	b2_colorMintCream = 0xf5fffa,
-	b2_colorMistyRose = 0xffe4e1,
-	b2_colorMoccasin = 0xffe4b5,
-	b2_colorNavajoWhite = 0xffdead,
-	b2_colorNavyBlue = 0x000080,
-	b2_colorOldLace = 0xfdf5e6,
+	b2_colorMintCream = 0xF5FFFA,
+	b2_colorMistyRose = 0xFFE4E1,
+	b2_colorMoccasin = 0xFFE4B5,
+	b2_colorNavajoWhite = 0xFFDEAD,
+	b2_colorNavy = 0x000080,
+	b2_colorOldLace = 0xFDF5E6,
 	b2_colorOlive = 0x808000,
-	b2_colorOliveDrab = 0x6b8e23,
-	b2_colorOrange = 0xffa500,
-	b2_colorOrangeRed = 0xff4500,
-	b2_colorOrchid = 0xda70d6,
-	b2_colorPaleGoldenrod = 0xeee8aa,
-	b2_colorPaleGreen = 0x98fb98,
-	b2_colorPaleTurquoise = 0xafeeee,
-	b2_colorPaleVioletRed = 0xdb7093,
-	b2_colorPapayaWhip = 0xffefd5,
-	b2_colorPeachPuff = 0xffdab9,
-	b2_colorPeru = 0xcd853f,
-	b2_colorPink = 0xffc0cb,
-	b2_colorPlum = 0xdda0dd,
-	b2_colorPowderBlue = 0xb0e0e6,
-	b2_colorPurple = 0xa020f0,
+	b2_colorOliveDrab = 0x6B8E23,
+	b2_colorOrange = 0xFFA500,
+	b2_colorOrangeRed = 0xFF4500,
+	b2_colorOrchid = 0xDA70D6,
+	b2_colorPaleGoldenRod = 0xEEE8AA,
+	b2_colorPaleGreen = 0x98FB98,
+	b2_colorPaleTurquoise = 0xAFEEEE,
+	b2_colorPaleVioletRed = 0xDB7093,
+	b2_colorPapayaWhip = 0xFFEFD5,
+	b2_colorPeachPuff = 0xFFDAB9,
+	b2_colorPeru = 0xCD853F,
+	b2_colorPink = 0xFFC0CB,
+	b2_colorPlum = 0xDDA0DD,
+	b2_colorPowderBlue = 0xB0E0E6,
+	b2_colorPurple = 0x800080,
 	b2_colorRebeccaPurple = 0x663399,
-	b2_colorRed = 0xff0000,
-	b2_colorRosyBrown = 0xbc8f8f,
-	b2_colorRoyalBlue = 0x4169e1,
-	b2_colorSaddleBrown = 0x8b4513,
-	b2_colorSalmon = 0xfa8072,
-	b2_colorSandyBrown = 0xf4a460,
-	b2_colorSeaGreen = 0x2e8b57,
-	b2_colorSeashell = 0xfff5ee,
-	b2_colorSienna = 0xa0522d,
-	b2_colorSilver = 0xc0c0c0,
-	b2_colorSkyBlue = 0x87ceeb,
-	b2_colorSlateBlue = 0x6a5acd,
+	b2_colorRed = 0xFF0000,
+	b2_colorRosyBrown = 0xBC8F8F,
+	b2_colorRoyalBlue = 0x4169E1,
+	b2_colorSaddleBrown = 0x8B4513,
+	b2_colorSalmon = 0xFA8072,
+	b2_colorSandyBrown = 0xF4A460,
+	b2_colorSeaGreen = 0x2E8B57,
+	b2_colorSeaShell = 0xFFF5EE,
+	b2_colorSienna = 0xA0522D,
+	b2_colorSilver = 0xC0C0C0,
+	b2_colorSkyBlue = 0x87CEEB,
+	b2_colorSlateBlue = 0x6A5ACD,
 	b2_colorSlateGray = 0x708090,
-	b2_colorSnow = 0xfffafa,
-	b2_colorSpringGreen = 0x00ff7f,
-	b2_colorSteelBlue = 0x4682b4,
-	b2_colorTan = 0xd2b48c,
+	b2_colorSnow = 0xFFFAFA,
+	b2_colorSpringGreen = 0x00FF7F,
+	b2_colorSteelBlue = 0x4682B4,
+	b2_colorTan = 0xD2B48C,
 	b2_colorTeal = 0x008080,
-	b2_colorThistle = 0xd8bfd8,
-	b2_colorTomato = 0xff6347,
-	b2_colorTurquoise = 0x40e0d0,
-	b2_colorViolet = 0xee82ee,
-	b2_colorVioletRed = 0xd02090,
-	b2_colorWheat = 0xf5deb3,
-	b2_colorWhite = 0xffffff,
-	b2_colorWhiteSmoke = 0xf5f5f5,
-	b2_colorYellow = 0xffff00,
-	b2_colorYellowGreen = 0x9acd32,
-	b2_colorBox2DRed = 0xdc3132,
-	b2_colorBox2DBlue = 0x30aebf,
-	b2_colorBox2DGreen = 0x8cc924,
-	b2_colorBox2DYellow = 0xffee8c
+	b2_colorThistle = 0xD8BFD8,
+	b2_colorTomato = 0xFF6347,
+	b2_colorTurquoise = 0x40E0D0,
+	b2_colorViolet = 0xEE82EE,
+	b2_colorWheat = 0xF5DEB3,
+	b2_colorWhite = 0xFFFFFF,
+	b2_colorWhiteSmoke = 0xF5F5F5,
+	b2_colorYellow = 0xFFFF00,
+	b2_colorYellowGreen = 0x9ACD32,
+
+	b2_colorBox2DRed = 0xDC3132,
+	b2_colorBox2DBlue = 0x30AEBF,
+	b2_colorBox2DGreen = 0x8CC924,
+	b2_colorBox2DYellow = 0xFFEE8C
 } b2HexColor;
 
 /// This struct holds callbacks you can implement to draw a Box2D world.
@@ -1346,8 +1401,8 @@ typedef struct b2DebugDraw
 	/// Draw a point.
 	void ( *DrawPoint )( b2Vec2 p, float size, b2HexColor color, void* context );
 
-	/// Draw a string.
-	void ( *DrawString )( b2Vec2 p, const char* s, void* context );
+	/// Draw a string in world space
+	void ( *DrawString )( b2Vec2 p, const char* s, b2HexColor color, void* context );
 
 	/// Bounds to use if restricting drawing to a rectangular region
 	b2AABB drawingBounds;
@@ -1369,6 +1424,9 @@ typedef struct b2DebugDraw
 
 	/// Option to draw the mass and center of mass of dynamic bodies
 	bool drawMass;
+
+	/// Option to draw body names
+	bool drawBodyNames;
 
 	/// Option to draw contact points
 	bool drawContacts;

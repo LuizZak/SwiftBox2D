@@ -3,6 +3,12 @@
 
 import box2d
 
+/// A solid convex polygon. It is assumed that the interior of the polygon is to
+/// the left of each edge.
+/// Polygons have a maximum number of vertices equal to B2_MAX_POLYGON_VERTICES.
+/// In most cases you should not need many vertices for a convex polygon.
+/// @warning DO NOT fill this out manually, instead use a helper function like
+/// b2MakePolygon or b2MakeBox.
 public typealias B2Polygon = b2Polygon
 
 extension B2Polygon: @retroactive CustomStringConvertible { }

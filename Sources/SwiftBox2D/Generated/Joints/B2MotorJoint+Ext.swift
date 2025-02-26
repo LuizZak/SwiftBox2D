@@ -26,8 +26,8 @@ public extension B2MotorJoint {
         }
     }
     
-    /// Get the motor joint maximum force, typically in newtons
-    /// Set the motor joint maximum force, typically in newtons
+    /// Get the motor joint maximum force, usually in newtons
+    /// Set the motor joint maximum force, usually in newtons
     var maxForce: Float {
         get {
             b2MotorJoint_GetMaxForce(id)
@@ -37,8 +37,8 @@ public extension B2MotorJoint {
         }
     }
     
-    /// Get the motor joint maximum torque, typically in newton-meters
-    /// Set the motor joint maximum torque, typically in newton-meters
+    /// Get the motor joint maximum torque, usually in newton-meters
+    /// Set the motor joint maximum torque, usually in newton-meters
     var maxTorque: Float {
         get {
             b2MotorJoint_GetMaxTorque(id)
@@ -48,8 +48,8 @@ public extension B2MotorJoint {
         }
     }
     
-    /// Get the motor joint correction factor, typically in [0, 1]
-    /// Set the motor joint correction factor, typically in [0, 1]
+    /// Get the motor joint correction factor, usually in [0, 1]
+    /// Set the motor joint correction factor, usually in [0, 1]
     var correctionFactor: Float {
         get {
             b2MotorJoint_GetCorrectionFactor(id)

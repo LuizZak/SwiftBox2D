@@ -8,16 +8,13 @@
 #include "box2d/math_functions.h"
 #include "box2d/types.h"
 
-typedef struct b2Polygon b2Polygon;
 typedef struct b2World b2World;
-typedef struct b2JointSim b2JointSim;
-typedef struct b2ContactSim b2ContactSim;
-typedef struct b2Shape b2Shape;
-typedef struct b2Body b2Body;
 
 // Body organizational details that are not used in the solver.
 typedef struct b2Body
 {
+	char name[32];
+
 	void* userData;
 
 	// index of solver set stored in b2World
@@ -49,6 +46,11 @@ typedef struct b2Body
 	int islandPrev;
 	int islandNext;
 
+	float mass;
+
+	// Rotational inertia about the center of mass.
+	float inertia;
+
 	float sleepThreshold;
 	float sleepTime;
 
@@ -61,7 +63,7 @@ typedef struct b2Body
 
 	// This is monotonically advanced when a body is allocated in this slot
 	// Used to check for invalid b2BodyId
-	uint16_t revision;
+	uint16_t generation;
 
 	bool enableSleep;
 	bool fixedRotation;
@@ -112,10 +114,9 @@ typedef struct b2BodySim
 	b2Vec2 force;
 	float torque;
 
-	float mass, invMass;
-
-	// Rotational inertia about the center of mass.
-	float inertia, invInertia;
+	// inverse inertia
+	float invMass;
+	float invInertia;
 
 	float minExtent;
 	float maxExtent;
@@ -126,8 +127,9 @@ typedef struct b2BodySim
 	// body data can be moved around, the id is stable (used in b2BodyId)
 	int bodyId;
 
-	// todo eliminate
+	// This flag is used for debug draw
 	bool isFast;
+
 	bool isBullet;
 	bool isSpeedCapped;
 	bool allowFastRotation;

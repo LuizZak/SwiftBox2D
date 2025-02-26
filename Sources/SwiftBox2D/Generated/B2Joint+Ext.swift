@@ -49,12 +49,12 @@ public extension B2Joint {
         b2Joint_WakeBodies(id)
     }
     
-    /// Get the current constraint force for this joint
+    /// Get the current constraint force for this joint. Usually in Newtons.
     func getConstraintForce() -> B2Vec2 {
         b2Joint_GetConstraintForce(id)
     }
     
-    /// Get the current constraint torque for this joint
+    /// Get the current constraint torque for this joint. Usually in Newton * meters.
     func getConstraintTorque() -> Float {
         b2Joint_GetConstraintTorque(id)
     }

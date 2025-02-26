@@ -3,14 +3,18 @@
 
 import box2d
 
-/// These colors are used for debug draw.
+/// These colors are used for debug draw and mostly match the named SVG colors.
 /// See https://www.rapidtables.com/web/color/index.html
+/// https://johndecember.com/html/spec/colorsvg.html
+/// https://upload.wikimedia.org/wikipedia/commons/2/2b/SVG_Recognized_color_keyword_names.svg
 public typealias B2HexColor = b2HexColor
 
 public extension B2HexColor {
     static let b2ColorAliceBlue = b2_colorAliceBlue
     
     static let b2ColorAntiqueWhite = b2_colorAntiqueWhite
+    
+    static let b2ColorAqua = b2_colorAqua
     
     static let b2ColorAquamarine = b2_colorAquamarine
     
@@ -52,7 +56,7 @@ public extension B2HexColor {
     
     static let b2ColorDarkCyan = b2_colorDarkCyan
     
-    static let b2ColorDarkGoldenrod = b2_colorDarkGoldenrod
+    static let b2ColorDarkGoldenRod = b2_colorDarkGoldenRod
     
     static let b2ColorDarkGray = b2_colorDarkGray
     
@@ -90,11 +94,13 @@ public extension B2HexColor {
     
     static let b2ColorDodgerBlue = b2_colorDodgerBlue
     
-    static let b2ColorFirebrick = b2_colorFirebrick
+    static let b2ColorFireBrick = b2_colorFireBrick
     
     static let b2ColorFloralWhite = b2_colorFloralWhite
     
     static let b2ColorForestGreen = b2_colorForestGreen
+    
+    static let b2ColorFuchsia = b2_colorFuchsia
     
     static let b2ColorGainsboro = b2_colorGainsboro
     
@@ -102,33 +108,15 @@ public extension B2HexColor {
     
     static let b2ColorGold = b2_colorGold
     
-    static let b2ColorGoldenrod = b2_colorGoldenrod
+    static let b2ColorGoldenRod = b2_colorGoldenRod
     
     static let b2ColorGray = b2_colorGray
-    
-    static let b2ColorGray1 = b2_colorGray1
-    
-    static let b2ColorGray2 = b2_colorGray2
-    
-    static let b2ColorGray3 = b2_colorGray3
-    
-    static let b2ColorGray4 = b2_colorGray4
-    
-    static let b2ColorGray5 = b2_colorGray5
-    
-    static let b2ColorGray6 = b2_colorGray6
-    
-    static let b2ColorGray7 = b2_colorGray7
-    
-    static let b2ColorGray8 = b2_colorGray8
-    
-    static let b2ColorGray9 = b2_colorGray9
     
     static let b2ColorGreen = b2_colorGreen
     
     static let b2ColorGreenYellow = b2_colorGreenYellow
     
-    static let b2ColorHoneydew = b2_colorHoneydew
+    static let b2ColorHoneyDew = b2_colorHoneyDew
     
     static let b2ColorHotPink = b2_colorHotPink
     
@@ -154,9 +142,7 @@ public extension B2HexColor {
     
     static let b2ColorLightCyan = b2_colorLightCyan
     
-    static let b2ColorLightGoldenrod = b2_colorLightGoldenrod
-    
-    static let b2ColorLightGoldenrodYellow = b2_colorLightGoldenrodYellow
+    static let b2ColorLightGoldenRodYellow = b2_colorLightGoldenRodYellow
     
     static let b2ColorLightGray = b2_colorLightGray
     
@@ -170,13 +156,13 @@ public extension B2HexColor {
     
     static let b2ColorLightSkyBlue = b2_colorLightSkyBlue
     
-    static let b2ColorLightSlateBlue = b2_colorLightSlateBlue
-    
     static let b2ColorLightSlateGray = b2_colorLightSlateGray
     
     static let b2ColorLightSteelBlue = b2_colorLightSteelBlue
     
     static let b2ColorLightYellow = b2_colorLightYellow
+    
+    static let b2ColorLime = b2_colorLime
     
     static let b2ColorLimeGreen = b2_colorLimeGreen
     
@@ -186,7 +172,7 @@ public extension B2HexColor {
     
     static let b2ColorMaroon = b2_colorMaroon
     
-    static let b2ColorMediumAquamarine = b2_colorMediumAquamarine
+    static let b2ColorMediumAquaMarine = b2_colorMediumAquaMarine
     
     static let b2ColorMediumBlue = b2_colorMediumBlue
     
@@ -214,7 +200,7 @@ public extension B2HexColor {
     
     static let b2ColorNavajoWhite = b2_colorNavajoWhite
     
-    static let b2ColorNavyBlue = b2_colorNavyBlue
+    static let b2ColorNavy = b2_colorNavy
     
     static let b2ColorOldLace = b2_colorOldLace
     
@@ -228,7 +214,7 @@ public extension B2HexColor {
     
     static let b2ColorOrchid = b2_colorOrchid
     
-    static let b2ColorPaleGoldenrod = b2_colorPaleGoldenrod
+    static let b2ColorPaleGoldenRod = b2_colorPaleGoldenRod
     
     static let b2ColorPaleGreen = b2_colorPaleGreen
     
@@ -266,7 +252,7 @@ public extension B2HexColor {
     
     static let b2ColorSeaGreen = b2_colorSeaGreen
     
-    static let b2ColorSeashell = b2_colorSeashell
+    static let b2ColorSeaShell = b2_colorSeaShell
     
     static let b2ColorSienna = b2_colorSienna
     
@@ -295,8 +281,6 @@ public extension B2HexColor {
     static let b2ColorTurquoise = b2_colorTurquoise
     
     static let b2ColorViolet = b2_colorViolet
-    
-    static let b2ColorVioletRed = b2_colorVioletRed
     
     static let b2ColorWheat = b2_colorWheat
     

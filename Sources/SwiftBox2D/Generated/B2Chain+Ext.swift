@@ -20,20 +20,44 @@ public extension B2Chain {
         b2Chain_GetSegments(id, segmentArray, capacity)
     }
     
-    /// Set the chain friction
-    /// @see b2ChainDef::friction
-    func setFriction(_ friction: Float) {
-        b2Chain_SetFriction(id, friction)
-    }
-    
-    /// Set the chain restitution (bounciness)
-    /// @see b2ChainDef::restitution
-    func setRestitution(_ restitution: Float) {
-        b2Chain_SetRestitution(id, restitution)
-    }
-    
     /// Chain identifier validation. Provides validation for up to 64K allocations.
     func isValid() -> Bool {
         b2Chain_IsValid(id)
+    }
+    
+    ///  Get the chain friction
+    /// Set the chain friction
+    /// @see b2ChainDef::friction
+    var friction: Float {
+        get {
+            b2Chain_GetFriction(id)
+        }
+        set(friction) {
+            b2Chain_SetFriction(id, friction)
+        }
+    }
+    
+    ///  Get the chain restitution
+    /// Set the chain restitution (bounciness)
+    /// @see b2ChainDef::restitution
+    var restitution: Float {
+        get {
+            b2Chain_GetRestitution(id)
+        }
+        set(restitution) {
+            b2Chain_SetRestitution(id, restitution)
+        }
+    }
+    
+    ///  Get the chain material
+    /// Set the chain material
+    /// @see b2ChainDef::material
+    var material: Int32 {
+        get {
+            b2Chain_GetMaterial(id)
+        }
+        set(material) {
+            b2Chain_SetMaterial(id, material)
+        }
     }
 }

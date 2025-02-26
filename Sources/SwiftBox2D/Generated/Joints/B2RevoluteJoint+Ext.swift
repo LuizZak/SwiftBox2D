@@ -55,7 +55,7 @@ public extension B2RevoluteJoint {
         b2RevoluteJoint_IsMotorEnabled(id)
     }
     
-    /// Get the revolute joint current motor torque, typically in newton-meters
+    /// Get the revolute joint current motor torque, usually in newton-meters
     func getMotorTorque() -> Float {
         b2RevoluteJoint_GetMotorTorque(id)
     }
@@ -93,8 +93,8 @@ public extension B2RevoluteJoint {
         }
     }
     
-    /// Get the revolute joint maximum motor torque, typically in newton-meters
-    /// Set the revolute joint maximum motor torque, typically in newton-meters
+    /// Get the revolute joint maximum motor torque, usually in newton-meters
+    /// Set the revolute joint maximum motor torque, usually in newton-meters
     var maxMotorTorque: Float {
         get {
             b2RevoluteJoint_GetMaxMotorTorque(id)

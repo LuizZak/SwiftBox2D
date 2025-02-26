@@ -34,31 +34,21 @@ public extension B2Shape {
         b2Shape_SetUserData(id, userData)
     }
     
-    /// Set the mass density of a shape, typically in kg/m^2.
+    /// Set the mass density of a shape, usually in kg/m^2.
     /// This will optionally update the mass properties on the parent body.
     /// @see b2ShapeDef::density, b2Body_ApplyMassFromShapes
     func setDensity(_ density: Float, _ updateBodyMass: Bool) {
         b2Shape_SetDensity(id, density, updateBodyMass)
     }
     
-    /// Get the density of a shape, typically in kg/m^2
+    /// Get the density of a shape, usually in kg/m^2
     func getDensity() -> Float {
         b2Shape_GetDensity(id)
     }
     
-    /// Enable sensor events for this shape. Only applies to kinematic and dynamic bodies. Ignored for sensors.
-    /// @see b2ShapeDef::isSensor
-    func enableSensorEvents(_ flag: Bool) {
-        b2Shape_EnableSensorEvents(id, flag)
-    }
-    
-    /// Returns true if sensor events are enabled
-    func areSensorEventsEnabled() -> Bool {
-        b2Shape_AreSensorEventsEnabled(id)
-    }
-    
     /// Enable contact events for this shape. Only applies to kinematic and dynamic bodies. Ignored for sensors.
     /// @see b2ShapeDef::enableContactEvents
+    /// @warning changing this at run-time may lead to lost begin/end events
     func enableContactEvents(_ flag: Bool) {
         b2Shape_EnableContactEvents(id, flag)
     }
@@ -165,8 +155,30 @@ public extension B2Shape {
     }
     
     /// Get the touching contact data for a shape. The provided shapeId will be either shapeIdA or shapeIdB on the contact data.
+    /// - note: Box2D uses speculative collision so some contact points may be separated.
+    /// - returns:s the number of elements filled in the provided array
+    /// @warning do not ignore the return value, it specifies the valid number of elements
     func getContactData(_ contactData: UnsafeMutablePointer<b2ContactData>?, _ capacity: Int32) -> Int32 {
         b2Shape_GetContactData(id, contactData, capacity)
+    }
+    
+    /// Get the maximum capacity required for retrieving all the overlapped shapes on a sensor shape.
+    /// This returns 0 if the provided shape is not a sensor.
+    /// - param shapeId: the id of a sensor shape
+    /// - returns:s the required capacity to get all the overlaps in b2Shape_GetSensorOverlaps
+    func getSensorCapacity() -> Int32 {
+        b2Shape_GetSensorCapacity(id)
+    }
+    
+    /// Get the overlapped shapes for a sensor shape.
+    /// - param shapeId: the id of a sensor shape
+    /// - param overlaps: a user allocated array that is filled with the overlapping shapes
+    /// - param capacity: the capacity of overlappedShapes
+    /// - returns:s the number of elements filled in the provided array
+    /// @warning do not ignore the return value, it specifies the valid number of elements
+    /// @warning overlaps may contain destroyed shapes so use b2Shape_IsValid to confirm each overlap
+    func getSensorOverlaps(_ overlaps: UnsafeMutablePointer<b2ShapeId>?, _ capacity: Int32) -> Int32 {
+        b2Shape_GetSensorOverlaps(id, overlaps, capacity)
     }
     
     /// Get the current world AABB
@@ -174,7 +186,13 @@ public extension B2Shape {
         b2Shape_GetAABB(id)
     }
     
+    /// Get the mass data for a shape
+    func getMassData() -> b2MassData {
+        b2Shape_GetMassData(id)
+    }
+    
     /// Get the closest point on a shape to a target point. Target and result are in world space.
+    /// todo need sample
     func getClosestPoint(_ target: B2Vec2) -> B2Vec2 {
         b2Shape_GetClosestPoint(id, target)
     }
@@ -203,8 +221,22 @@ public extension B2Shape {
         }
     }
     
+    ///  Get the shape material identifier 
+    /// Set the shape material identifier
+    /// @see b2ShapeDef::material
+    var material: Int32 {
+        get {
+            b2Shape_GetMaterial(id)
+        }
+        set(material) {
+            b2Shape_SetMaterial(id, material)
+        }
+    }
+    
     ///  Get the shape filter
-    /// Set the current filter. This is almost as expensive as recreating the shape.
+    /// Set the current filter. This is almost as expensive as recreating the shape. This may cause
+    /// contacts to be immediately destroyed. However contacts are not created until the next world step.
+    /// Sensor overlap state is also not updated until the next world step.
     /// @see b2ShapeDef::filter
     var filter: b2Filter {
         get {

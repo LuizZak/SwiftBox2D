@@ -3,6 +3,8 @@
 
 import box2d
 
+/// A solid capsule can be viewed as two semicircles connected
+/// by a rectangle.
 public typealias B2Capsule = b2Capsule
 
 extension B2Capsule: @retroactive CustomStringConvertible, @retroactive Equatable, @retroactive Hashable { }
