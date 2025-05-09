@@ -13,11 +13,11 @@ public typealias B2JointType = b2JointType
 public extension B2JointType {
     static let b2DistanceJoint = b2_distanceJoint
     
+    static let b2FilterJoint = b2_filterJoint
+    
     static let b2MotorJoint = b2_motorJoint
     
     static let b2MouseJoint = b2_mouseJoint
-    
-    static let b2NullJoint = b2_nullJoint
     
     static let b2PrismaticJoint = b2_prismaticJoint
     

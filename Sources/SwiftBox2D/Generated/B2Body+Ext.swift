@@ -61,6 +61,13 @@ public extension B2Body {
         b2Body_GetWorldVector(id, localVector)
     }
     
+    /// Set the velocity to reach the given transform after a given time step.
+    /// The result will be close but maybe not exact. This is meant for kinematic bodies.
+    /// This will automatically wake the body if asleep.
+    func setTargetTransform(_ target: B2Transform, _ timeStep: Float) {
+        b2Body_SetTargetTransform(id, target, timeStep)
+    }
+    
     /// Get the linear velocity of a local point attached to a body. Usually in meters per second.
     func getLocalPointVelocity(_ localPoint: B2Vec2) -> B2Vec2 {
         b2Body_GetLocalPointVelocity(id, localPoint)
@@ -161,6 +168,7 @@ public extension B2Body {
     /// the mass and you later want to reset the mass.
     /// You may also use this when automatic mass computation has been disabled.
     /// You should call this regardless of body type.
+    /// Note that sensor shapes may have mass.
     func applyMassFromShapes() {
         b2Body_ApplyMassFromShapes(id)
     }

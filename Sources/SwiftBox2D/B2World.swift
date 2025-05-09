@@ -84,97 +84,18 @@ public class B2World {
         }
     }
 
-    /// Overlap test for for all shapes that overlap the provided point.
+    /// Overlap test for all shapes that overlap the provided shape proxy.
     @discardableResult
-    public func overlapPoint(
-        _ point: B2Vec2,
-        transform: B2Transform = .identity,
+    public func overlapShape(
+        _ shape: b2ShapeProxy,
         filter: B2QueryFilter,
         callback: OverlapResultCallback
     ) -> b2TreeStats {
-        withoutActuallyEscaping(callback) { callback in
-            withUnsafePointer(to: callback) { callback in
-                overlapPoint(
-                    point,
-                    transform,
-                    filter,
-                    { (shapeId, ptr) in
-                        let callback = ptr!.bindMemory(to: OverlapResultCallback.self, capacity: 1)
-
-                        return callback.pointee(shapeId)
-                    },
-                    UnsafeMutableRawPointer(mutating: callback)
-                )
-            }
-        }
-    }
-
-    /// Overlap test for for all shapes that overlap the provided circle.
-    @discardableResult
-    public func overlapCircle(
-        _ circle: B2Circle,
-        transform: B2Transform = .identity,
-        filter: B2QueryFilter,
-        callback: OverlapResultCallback
-    ) -> b2TreeStats {
-        var circle = circle
+        var shape = shape
         return withoutActuallyEscaping(callback) { callback in
             withUnsafePointer(to: callback) { callback in
-                overlapCircle(
-                    &circle,
-                    transform,
-                    filter,
-                    { (shapeId, ptr) in
-                        let callback = ptr!.bindMemory(to: OverlapResultCallback.self, capacity: 1)
-
-                        return callback.pointee(shapeId)
-                    },
-                    UnsafeMutableRawPointer(mutating: callback)
-                )
-            }
-        }
-    }
-
-    /// Overlap test for for all shapes that overlap the provided capsule.
-    @discardableResult
-    public func overlapCapsule(
-        _ capsule: B2Capsule,
-        transform: B2Transform = .identity,
-        filter: B2QueryFilter,
-        callback: OverlapResultCallback
-    ) -> b2TreeStats {
-        var capsule = capsule
-        return withoutActuallyEscaping(callback) { callback in
-            withUnsafePointer(to: callback) { callback in
-                overlapCapsule(
-                    &capsule,
-                    transform,
-                    filter,
-                    { (shapeId, ptr) in
-                        let callback = ptr!.bindMemory(to: OverlapResultCallback.self, capacity: 1)
-
-                        return callback.pointee(shapeId)
-                    },
-                    UnsafeMutableRawPointer(mutating: callback)
-                )
-            }
-        }
-    }
-
-    /// Overlap test for for all shapes that overlap the provided polygon.
-    @discardableResult
-    public func overlapPolygon(
-        _ polygon: B2Polygon,
-        transform: B2Transform = .identity,
-        filter: B2QueryFilter,
-        callback: OverlapResultCallback
-    ) -> b2TreeStats {
-        var polygon = polygon
-        return withoutActuallyEscaping(callback) { callback in
-            withUnsafePointer(to: callback) { callback in
-                overlapPolygon(
-                    &polygon,
-                    transform,
+                overlapShape(
+                    &shape,
                     filter,
                     { (shapeId, ptr) in
                         let callback = ptr!.bindMemory(to: OverlapResultCallback.self, capacity: 1)
@@ -235,122 +156,21 @@ public class B2World {
         }
     }
 
-    /// Cast a circle through the world. Similar to a cast ray except that a
-    /// circle is cast instead of a point.
-    ///
-    /// Your callback function controls whether you get the closest point, any
-    /// point, or n-points.
-    /// The ray-cast ignores shapes that contain the starting point.
-    ///
-    /// - note: The callback function may receive shapes in any order
+    /// Cast a shape through the world. Similar to a cast ray except that a shape
+    /// is cast instead of a point.
+    /// @see b2World_CastRay
     @discardableResult
-    public func castCircle(
-        _ circle: B2Circle,
-        originTransform: B2Transform = .identity,
+    public func castShape(
+        _ proxy: b2ShapeProxy,
         translation: B2Vec2,
         filter: B2QueryFilter,
         callback: CastResultCallback
     ) -> b2TreeStats {
-        var circle = circle
+        var proxy = proxy
         return withoutActuallyEscaping(callback) { callback in
             withUnsafePointer(to: callback) { callback in
-                castCircle(
-                    &circle,
-                    originTransform,
-                    translation,
-                    filter,
-                    { (shapeId, point, normal, fraction, ptr) in
-                        let callback = ptr!.bindMemory(to: CastResultCallback.self, capacity: 1)
-
-                        switch callback.pointee(shapeId, point, normal, fraction) {
-                        case .ignore:
-                            return -1.0
-
-                        case .terminate:
-                            return 0.0
-
-                        case .clip(let fraction):
-                            return fraction
-
-                        case .proceed:
-                            return 1.0
-                        }
-                    },
-                    UnsafeMutableRawPointer(mutating: callback)
-                )
-            }
-        }
-    }
-
-    /// Cast a capsule through the world. Similar to a cast ray except that a
-    /// capsule is cast instead of a point.
-    ///
-    /// Your callback function controls whether you get the closest point, any
-    /// point, or n-points.
-    /// The ray-cast ignores shapes that contain the starting point.
-    ///
-    /// - note: The callback function may receive shapes in any order
-    @discardableResult
-    public func castCapsule(
-        _ capsule: B2Capsule,
-        originTransform: B2Transform = .identity,
-        translation: B2Vec2,
-        filter: B2QueryFilter,
-        callback: CastResultCallback
-    ) -> b2TreeStats {
-        var capsule = capsule
-        return withoutActuallyEscaping(callback) { callback in
-            withUnsafePointer(to: callback) { callback in
-                castCapsule(
-                    &capsule,
-                    originTransform,
-                    translation,
-                    filter,
-                    { (shapeId, point, normal, fraction, ptr) in
-                        let callback = ptr!.bindMemory(to: CastResultCallback.self, capacity: 1)
-
-                        switch callback.pointee(shapeId, point, normal, fraction) {
-                        case .ignore:
-                            return -1.0
-
-                        case .terminate:
-                            return 0.0
-
-                        case .clip(let fraction):
-                            return fraction
-
-                        case .proceed:
-                            return 1.0
-                        }
-                    },
-                    UnsafeMutableRawPointer(mutating: callback)
-                )
-            }
-        }
-    }
-
-    /// Cast a polygon through the world. Similar to a cast ray except that a
-    /// polygon is cast instead of a point.
-    ///
-    /// Your callback function controls whether you get the closest point, any
-    /// point, or n-points.
-    /// The ray-cast ignores shapes that contain the starting point.
-    ///
-    /// - note: The callback function may receive shapes in any order
-    @discardableResult
-    public func castPolygon(
-        _ polygon: B2Polygon,
-        originTransform: B2Transform = .identity,
-        translation: B2Vec2,
-        filter: B2QueryFilter,
-        callback: CastResultCallback
-    ) -> b2TreeStats {
-        var polygon = polygon
-        return withoutActuallyEscaping(callback) { callback in
-            withUnsafePointer(to: callback) { callback in
-                castPolygon(
-                    &polygon,
-                    originTransform,
+                castShape(
+                    &proxy,
                     translation,
                     filter,
                     { (shapeId, point, normal, fraction, ptr) in

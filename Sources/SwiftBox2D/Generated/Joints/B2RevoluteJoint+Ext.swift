@@ -40,7 +40,8 @@ public extension B2RevoluteJoint {
         b2RevoluteJoint_GetUpperLimit(id)
     }
     
-    /// Set the revolute joint limits in radians
+    /// Set the revolute joint limits in radians. It is expected that lower <= upper
+    /// and that -0.95 * B2_PI <= lower && upper <= -0.95 * B2_PI.
     func setLimits(_ lower: Float, _ upper: Float) {
         b2RevoluteJoint_SetLimits(id, lower, upper)
     }

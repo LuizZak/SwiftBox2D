@@ -24,7 +24,9 @@ public extension B2Shape {
         b2Shape_GetWorld(id)
     }
     
-    /// Returns true If the shape is a sensor
+    /// Returns true if the shape is a sensor. It is not possible to change a shape
+    /// from sensor to solid dynamically because this breaks the contract for
+    /// sensor events.
     func isSensor() -> Bool {
         b2Shape_IsSensor(id)
     }
@@ -44,6 +46,17 @@ public extension B2Shape {
     /// Get the density of a shape, usually in kg/m^2
     func getDensity() -> Float {
         b2Shape_GetDensity(id)
+    }
+    
+    /// Enable sensor events for this shape.
+    /// @see b2ShapeDef::enableSensorEvents
+    func enableSensorEvents(_ flag: Bool) {
+        b2Shape_EnableSensorEvents(id, flag)
+    }
+    
+    /// Returns true if sensor events are enabled.
+    func areSensorEventsEnabled() -> Bool {
+        b2Shape_AreSensorEventsEnabled(id)
     }
     
     /// Enable contact events for this shape. Only applies to kinematic and dynamic bodies. Ignored for sensors.
@@ -221,7 +234,7 @@ public extension B2Shape {
         }
     }
     
-    ///  Get the shape material identifier 
+    ///  Get the shape material identifier
     /// Set the shape material identifier
     /// @see b2ShapeDef::material
     var material: Int32 {
