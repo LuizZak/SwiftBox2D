@@ -83,6 +83,24 @@ static const b2Rot b2Rot_identity = { 1.0f, 0.0f };
 static const b2Transform b2Transform_identity = { { 0.0f, 0.0f }, { 1.0f, 0.0f } };
 static const b2Mat22 b2Mat22_zero = { { 0.0f, 0.0f }, { 0.0f, 0.0f } };
 
+/// Is this a valid number? Not NaN or infinity.
+B2_API bool b2IsValidFloat( float a );
+
+/// Is this a valid vector? Not NaN or infinity.
+B2_API bool b2IsValidVec2( b2Vec2 v );
+
+/// Is this a valid rotation? Not NaN or infinity. Is normalized.
+B2_API bool b2IsValidRotation( b2Rot q );
+
+/// Is this a valid transform? Not NaN or infinity. Rotation is normalized.
+B2_API bool b2IsValidTransform( b2Transform t );
+
+/// Is this a valid bounding box? Not Nan or infinity. Upper bound greater than or equal to lower bound.
+B2_API bool b2IsValidAABB( b2AABB aabb );
+
+/// Is this a valid plane? Normal is a unit vector. Not Nan or infinity.
+B2_API bool b2IsValidPlane( b2Plane a );
+
 /// @return the minimum of two integers
 B2_INLINE int b2MinInt( int a, int b )
 {
@@ -295,7 +313,7 @@ B2_INLINE b2Vec2 b2Normalize( b2Vec2 v )
 B2_INLINE bool b2IsNormalized( b2Vec2 a )
 {
 	float aa = b2Dot( a, a );
-	return b2AbsFloat( 1.0f - aa ) < 10.0f * FLT_EPSILON;
+	return b2AbsFloat( 1.0f - aa ) < 100.0f * FLT_EPSILON;
 }
 
 /// Convert a vector into a unit vector if possible, otherwise returns the zero vector. Also
@@ -317,7 +335,7 @@ B2_INLINE b2Vec2 b2GetLengthAndNormalize( float* length, b2Vec2 v )
 B2_INLINE b2Rot b2NormalizeRot( b2Rot q )
 {
 	float mag = sqrtf( q.s * q.s + q.c * q.c );
-	float invMag = mag > 0.0 ? 1.0f / mag : 0.0f;
+	float invMag = mag > 0.0f ? 1.0f / mag : 0.0f;
 	b2Rot qn = { q.c * invMag, q.s * invMag };
 	return qn;
 }
@@ -333,7 +351,7 @@ B2_INLINE b2Rot b2IntegrateRotation( b2Rot q1, float deltaAngle )
 	// s2 = s1 + omega * h * c1
 	b2Rot q2 = { q1.c - deltaAngle * q1.s, q1.s + deltaAngle * q1.c };
 	float mag = sqrtf( q2.s * q2.s + q2.c * q2.c );
-	float invMag = mag > 0.0 ? 1.0f / mag : 0.0f;
+	float invMag = mag > 0.0f ? 1.0f / mag : 0.0f;
 	b2Rot qn = { q2.c * invMag, q2.s * invMag };
 	return qn;
 }
@@ -356,6 +374,13 @@ B2_INLINE b2Rot b2MakeRot( float radians )
 {
 	b2CosSin cs = b2ComputeCosSin( radians );
 	return B2_LITERAL( b2Rot ){ cs.cosine, cs.sine };
+}
+
+/// Make a rotation using a unit vector
+B2_INLINE b2Rot b2MakeRotFromUnitVector( b2Vec2 unitVector )
+{
+	B2_ASSERT( b2IsNormalized( unitVector ) );
+	return B2_LITERAL( b2Rot ){ unitVector.x, unitVector.y };
 }
 
 /// Compute the rotation between two unit vectors
@@ -381,7 +406,7 @@ B2_INLINE b2Rot b2NLerp( b2Rot q1, b2Rot q2, float t )
 	};
 
 	float mag = sqrtf( q.s * q.s + q.c * q.c );
-	float invMag = mag > 0.0 ? 1.0f / mag : 0.0f;
+	float invMag = mag > 0.0f ? 1.0f / mag : 0.0f;
 	b2Rot qn = { q.c * invMag, q.s * invMag };
 	return qn;
 }
@@ -439,58 +464,35 @@ B2_INLINE b2Rot b2MulRot( b2Rot q, b2Rot r )
 	return qr;
 }
 
-/// Transpose multiply two rotations: qT * r
-B2_INLINE b2Rot b2InvMulRot( b2Rot q, b2Rot r )
+/// Transpose multiply two rotations: inv(a) * b
+/// This rotates a vector local in frame b into a vector local in frame a
+B2_INLINE b2Rot b2InvMulRot( b2Rot a, b2Rot b )
 {
-	// [ qc qs] * [rc -rs] = [qc*rc+qs*rs -qc*rs+qs*rc]
-	// [-qs qc]   [rs  rc]   [-qs*rc+qc*rs qs*rs+qc*rc]
-	// s(q - r) = qc * rs - qs * rc
-	// c(q - r) = qc * rc + qs * rs
-	b2Rot qr;
-	qr.s = q.c * r.s - q.s * r.c;
-	qr.c = q.c * r.c + q.s * r.s;
-	return qr;
+	// [ ac as] * [bc -bs] = [ac*bc+qs*bs -ac*bs+as*bc]
+	// [-as ac]   [bs  bc]   [-as*bc+ac*bs as*bs+ac*bc]
+	// s(a - b) = ac * bs - as * bc
+	// c(a - b) = ac * bc + as * bs
+	b2Rot r;
+	r.s = a.c * b.s - a.s * b.c;
+	r.c = a.c * b.c + a.s * b.s;
+	return r;
 }
 
-/// relative angle between b and a (rot_b * inv(rot_a))
-B2_INLINE float b2RelativeAngle( b2Rot b, b2Rot a )
+/// Relative angle between a and b
+B2_INLINE float b2RelativeAngle( b2Rot a, b2Rot b )
 {
 	// sin(b - a) = bs * ac - bc * as
 	// cos(b - a) = bc * ac + bs * as
-	float s = b.s * a.c - b.c * a.s;
-	float c = b.c * a.c + b.s * a.s;
+	float s = a.c * b.s - a.s * b.c;
+	float c = a.c *b.c + a.s * b.s;
 	return b2Atan2( s, c );
 }
 
-/// Convert an angle in the range [-2*pi, 2*pi] into the range [-pi, pi]
+/// Convert any angle into the range [-pi, pi]
 B2_INLINE float b2UnwindAngle( float radians )
 {
-	if ( radians < -B2_PI )
-	{
-		return radians + 2.0f * B2_PI;
-	}
-	else if ( radians > B2_PI )
-	{
-		return radians - 2.0f * B2_PI;
-	}
-
-	return radians;
-}
-
-/// Convert any into the range [-pi, pi] (slow)
-B2_INLINE float b2UnwindLargeAngle( float radians )
-{
-	while ( radians > B2_PI )
-	{
-		radians -= 2.0f * B2_PI;
-	}
-
-	while ( radians < -B2_PI )
-	{
-		radians += 2.0f * B2_PI;
-	}
-
-	return radians;
+	// Assuming this is deterministic
+	return remainderf( radians, 2.0f * B2_PI );
 }
 
 /// Rotate a vector
@@ -566,12 +568,12 @@ B2_INLINE b2Mat22 b2GetInverse22( b2Mat22 A )
 		det = 1.0f / det;
 	}
 
-	b2Mat22 B = {
-		{ det * d, -det * c },
-		{ -det * b, det * a },
-	};
-	return B;
-}
+		b2Mat22 B = {
+			{ det * d, -det * c },
+			{ -det * b, det * a },
+		};
+		return B;
+	}
 
 /// Solve A * x = b, where b is a column vector. This is more efficient
 /// than computing the inverse in one-shot cases.
@@ -623,6 +625,13 @@ B2_INLINE b2AABB b2AABB_Union( b2AABB a, b2AABB b )
 	return c;
 }
 
+/// Do a and b overlap
+B2_INLINE bool b2AABB_Overlaps( b2AABB a, b2AABB b )
+{
+	return !( b.lowerBound.x > a.upperBound.x || b.lowerBound.y > a.upperBound.y || a.lowerBound.x > b.upperBound.x ||
+			  a.lowerBound.y > b.upperBound.y );
+}
+
 /// Compute the bounding box of an array of circles
 B2_INLINE b2AABB b2MakeAABB( const b2Vec2* points, int count, float radius )
 {
@@ -647,20 +656,17 @@ B2_INLINE float b2PlaneSeparation( b2Plane plane, b2Vec2 point )
 	return b2Dot( plane.normal, point ) - plane.offset;
 }
 
-/// Is this a valid number? Not NaN or infinity.
-B2_API bool b2IsValidFloat( float a );
-
-/// Is this a valid vector? Not NaN or infinity.
-B2_API bool b2IsValidVec2( b2Vec2 v );
-
-/// Is this a valid rotation? Not NaN or infinity. Is normalized.
-B2_API bool b2IsValidRotation( b2Rot q );
-
-/// Is this a valid bounding box? Not Nan or infinity. Upper bound greater than or equal to lower bound.
-B2_API bool b2IsValidAABB( b2AABB aabb );
-
-/// Is this a valid plane? Normal is a unit vector. Not Nan or infinity.
-B2_API bool b2IsValidPlane( b2Plane a );
+/// One-dimensional mass-spring-damper simulation. Returns the new velocity given the position and time step.
+/// You can then compute the new position using:
+/// position += timeStep * newVelocity
+/// This drives towards a zero position. By using implicit integration we get a stable solution
+/// that doesn't require transcendental functions.
+B2_INLINE float b2SpringDamper( float hertz, float dampingRatio, float position, float velocity, float timeStep )
+{
+	float omega = 2.0f * B2_PI * hertz;
+	float omegaH = omega * timeStep;
+	return ( velocity - omega * omegaH * position ) / ( 1.0f + 2.0f * dampingRatio * omegaH + omegaH * omegaH );
+}
 
 /// Box2D bases all length units on meters, but you may need different units for your game.
 /// You can set this value to use different units. This should be done at application startup

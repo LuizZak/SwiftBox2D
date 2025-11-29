@@ -14,6 +14,16 @@ public extension B2DistanceJoint {
         b2DistanceJoint_IsSpringEnabled(id)
     }
     
+    /// Set the force range for the spring.
+    func setSpringForceRange(_ lowerForce: Float, _ upperForce: Float) {
+        b2DistanceJoint_SetSpringForceRange(id, lowerForce, upperForce)
+    }
+    
+    /// Get the force range for the spring.
+    func getSpringForceRange(_ lowerForce: UnsafeMutablePointer<Float>?, _ upperForce: UnsafeMutablePointer<Float>?) {
+        b2DistanceJoint_GetSpringForceRange(id, lowerForce, upperForce)
+    }
+    
     /// Enable joint limit. The limit only works if the joint spring is enabled. Otherwise the joint is rigid
     /// and the limit has no effect.
     func enableLimit(_ enableLimit: Bool) {

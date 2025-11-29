@@ -37,6 +37,11 @@ public extension B2World {
         b2World_GetContactEvents(id)
     }
     
+    /// Get the joint events for the current time step. The event data is transient. Do not store a reference to this data.
+    func getJointEvents() -> b2JointEvents {
+        b2World_GetJointEvents(id)
+    }
+    
     /// Overlap test for all shapes that *potentially* overlap the provided AABB
     func overlapAABB(_ aabb: B2AABB, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
         b2World_OverlapAABB(id, aabb, filter, fcn, context)
@@ -49,7 +54,6 @@ public extension B2World {
     
     /// Cast a ray into the world to collect shapes in the path of the ray.
     /// Your callback function controls whether you get the closest point, any point, or n-points.
-    /// The ray-cast ignores shapes that contain the starting point.
     /// - note: The callback function may receive shapes in any order
     /// - param worldId: The world to cast the ray against
     /// - param origin: The start point of the ray
@@ -62,7 +66,7 @@ public extension B2World {
         b2World_CastRay(id, origin, translation, filter, fcn, context)
     }
     
-    /// Cast a ray into the world to collect the closest hit. This is a convenience function.
+    /// Cast a ray into the world to collect the closest hit. This is a convenience function. Ignores initial overlap.
     /// This is less general than b2World_CastRay() and does not allow for custom filtering.
     func castRayClosest(_ origin: B2Vec2, _ translation: B2Vec2, _ filter: B2QueryFilter) -> b2RayResult {
         b2World_CastRayClosest(id, origin, translation, filter)
@@ -117,7 +121,7 @@ public extension B2World {
     }
     
     /// Register the pre-solve callback. This is optional.
-    func setPreSolveCallback(_ fcn: @convention(c) (b2ShapeId, b2ShapeId, UnsafeMutablePointer<b2Manifold>?, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
+    func setPreSolveCallback(_ fcn: @convention(c) (b2ShapeId, b2ShapeId, b2Vec2, b2Vec2, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
         b2World_SetPreSolveCallback(id, fcn, context)
     }
     
@@ -136,15 +140,6 @@ public extension B2World {
     /// - note: Advanced feature
     func setContactTuning(_ hertz: Float, _ dampingRatio: Float, _ pushSpeed: Float) {
         b2World_SetContactTuning(id, hertz, dampingRatio, pushSpeed)
-    }
-    
-    /// Adjust joint tuning parameters
-    /// - param worldId: The world id
-    /// - param hertz: The contact stiffness (cycles per second)
-    /// - param dampingRatio: The contact bounciness with 1 being critical damping (non-dimensional)
-    /// - note: Advanced feature
-    func setJointTuning(_ hertz: Float, _ dampingRatio: Float) {
-        b2World_SetJointTuning(id, hertz, dampingRatio)
     }
     
     /// Enable/disable constraint warm starting. Advanced feature for testing. Disabling
@@ -179,12 +174,12 @@ public extension B2World {
     }
     
     /// Set the friction callback. Passing NULL resets to default.
-    func setFrictionCallback(_ callback: @convention(c) (Float, Int32, Float, Int32) -> Float) {
+    func setFrictionCallback(_ callback: @convention(c) (Float, UInt64, Float, UInt64) -> Float) {
         b2World_SetFrictionCallback(id, callback)
     }
     
     /// Set the restitution callback. Passing NULL resets to default.
-    func setRestitutionCallback(_ callback: @convention(c) (Float, Int32, Float, Int32) -> Float) {
+    func setRestitutionCallback(_ callback: @convention(c) (Float, UInt64, Float, UInt64) -> Float) {
         b2World_SetRestitutionCallback(id, callback)
     }
     

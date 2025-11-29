@@ -10,8 +10,8 @@ public class B2Joint {
     }
 
     /// Destroys this joint, removing it from the world that owns it.
-    public func destroy() {
-        b2DestroyJoint(id)
+    public func destroy(wakeAttached: Bool) {
+        b2DestroyJoint(id, wakeAttached)
 
         self.id = b2_nullJointId
     }

@@ -29,16 +29,6 @@ public extension B2Joint {
         b2Joint_GetWorld(id)
     }
     
-    /// Get the local anchor on bodyA
-    func getLocalAnchorA() -> B2Vec2 {
-        b2Joint_GetLocalAnchorA(id)
-    }
-    
-    /// Get the local anchor on bodyB
-    func getLocalAnchorB() -> B2Vec2 {
-        b2Joint_GetLocalAnchorB(id)
-    }
-    
     /// Set the user data on a joint
     func setUserData(_ userData: UnsafeMutableRawPointer?) {
         b2Joint_SetUserData(id, userData)
@@ -59,6 +49,51 @@ public extension B2Joint {
         b2Joint_GetConstraintTorque(id)
     }
     
+    /// Get the current linear separation error for this joint. Does not consider admissible movement. Usually in meters.
+    func getLinearSeparation() -> Float {
+        b2Joint_GetLinearSeparation(id)
+    }
+    
+    /// Get the current angular separation error for this joint. Does not consider admissible movement. Usually in meters.
+    func getAngularSeparation() -> Float {
+        b2Joint_GetAngularSeparation(id)
+    }
+    
+    /// Set the joint constraint tuning. Advanced feature.
+    /// - param jointId: the joint
+    /// - param hertz: the stiffness in Hertz (cycles per second)
+    /// - param dampingRatio: the non-dimensional damping ratio (one for critical damping)
+    func setConstraintTuning(_ hertz: Float, _ dampingRatio: Float) {
+        b2Joint_SetConstraintTuning(id, hertz, dampingRatio)
+    }
+    
+    /// Get the joint constraint tuning. Advanced feature.
+    func getConstraintTuning(_ hertz: UnsafeMutablePointer<Float>?, _ dampingRatio: UnsafeMutablePointer<Float>?) {
+        b2Joint_GetConstraintTuning(id, hertz, dampingRatio)
+    }
+    
+    /// Get the local frame on bodyA
+    /// Set the local frame on bodyA
+    var localFrameA: B2Transform {
+        get {
+            b2Joint_GetLocalFrameA(id)
+        }
+        set(localFrame) {
+            b2Joint_SetLocalFrameA(id, localFrame)
+        }
+    }
+    
+    /// Get the local frame on bodyB
+    /// Set the local frame on bodyB
+    var localFrameB: B2Transform {
+        get {
+            b2Joint_GetLocalFrameB(id)
+        }
+        set(localFrame) {
+            b2Joint_SetLocalFrameB(id, localFrame)
+        }
+    }
+    
     /// Is collision allowed between connected bodies?
     /// Toggle collision between connected bodies
     var collideConnected: Bool {
@@ -67,6 +102,28 @@ public extension B2Joint {
         }
         set(shouldCollide) {
             b2Joint_SetCollideConnected(id, shouldCollide)
+        }
+    }
+    
+    /// Get the force threshold for joint events (Newtons)
+    /// Set the force threshold for joint events (Newtons)
+    var forceThreshold: Float {
+        get {
+            b2Joint_GetForceThreshold(id)
+        }
+        set(threshold) {
+            b2Joint_SetForceThreshold(id, threshold)
+        }
+    }
+    
+    /// Get the torque threshold for joint events (N-m)
+    /// Set the torque threshold for joint events (N-m)
+    var torqueThreshold: Float {
+        get {
+            b2Joint_GetTorqueThreshold(id)
+        }
+        set(threshold) {
+            b2Joint_SetTorqueThreshold(id, threshold)
         }
     }
 }

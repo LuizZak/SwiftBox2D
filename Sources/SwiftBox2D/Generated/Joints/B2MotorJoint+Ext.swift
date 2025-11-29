@@ -4,58 +4,113 @@
 import box2d
 
 public extension B2MotorJoint {
-    /// Get the motor joint linear offset target
-    /// Set the motor joint linear offset target
-    var linearOffset: B2Vec2 {
+    /// Get the desired relative linear velocity in meters per second
+    /// Set the desired relative linear velocity in meters per second
+    var linearVelocity: B2Vec2 {
         get {
-            b2MotorJoint_GetLinearOffset(id)
+            b2MotorJoint_GetLinearVelocity(id)
         }
-        set(linearOffset) {
-            b2MotorJoint_SetLinearOffset(id, linearOffset)
+        set(velocity) {
+            b2MotorJoint_SetLinearVelocity(id, velocity)
         }
     }
     
-    /// Get the motor joint angular offset target in radians
-    /// Set the motor joint angular offset target in radians
-    var angularOffset: Float {
+    /// Get the desired relative angular velocity in radians per second
+    /// Set the desired relative angular velocity in radians per second
+    var angularVelocity: Float {
         get {
-            b2MotorJoint_GetAngularOffset(id)
+            b2MotorJoint_GetAngularVelocity(id)
         }
-        set(angularOffset) {
-            b2MotorJoint_SetAngularOffset(id, angularOffset)
+        set(velocity) {
+            b2MotorJoint_SetAngularVelocity(id, velocity)
         }
     }
     
     /// Get the motor joint maximum force, usually in newtons
     /// Set the motor joint maximum force, usually in newtons
-    var maxForce: Float {
+    var maxVelocityForce: Float {
         get {
-            b2MotorJoint_GetMaxForce(id)
+            b2MotorJoint_GetMaxVelocityForce(id)
         }
         set(maxForce) {
-            b2MotorJoint_SetMaxForce(id, maxForce)
+            b2MotorJoint_SetMaxVelocityForce(id, maxForce)
         }
     }
     
     /// Get the motor joint maximum torque, usually in newton-meters
     /// Set the motor joint maximum torque, usually in newton-meters
-    var maxTorque: Float {
+    var maxVelocityTorque: Float {
         get {
-            b2MotorJoint_GetMaxTorque(id)
+            b2MotorJoint_GetMaxVelocityTorque(id)
         }
         set(maxTorque) {
-            b2MotorJoint_SetMaxTorque(id, maxTorque)
+            b2MotorJoint_SetMaxVelocityTorque(id, maxTorque)
         }
     }
     
-    /// Get the motor joint correction factor, usually in [0, 1]
-    /// Set the motor joint correction factor, usually in [0, 1]
-    var correctionFactor: Float {
+    /// Get the spring linear hertz stiffness
+    /// Set the spring linear hertz stiffness
+    var linearHertz: Float {
         get {
-            b2MotorJoint_GetCorrectionFactor(id)
+            b2MotorJoint_GetLinearHertz(id)
         }
-        set(correctionFactor) {
-            b2MotorJoint_SetCorrectionFactor(id, correctionFactor)
+        set(hertz) {
+            b2MotorJoint_SetLinearHertz(id, hertz)
+        }
+    }
+    
+    /// Get the spring linear damping ratio.
+    /// Set the spring linear damping ratio. Use 1.0 for critical damping.
+    var linearDampingRatio: Float {
+        get {
+            b2MotorJoint_GetLinearDampingRatio(id)
+        }
+        set(damping) {
+            b2MotorJoint_SetLinearDampingRatio(id, damping)
+        }
+    }
+    
+    /// Get the spring angular hertz stiffness
+    /// Set the spring angular hertz stiffness
+    var angularHertz: Float {
+        get {
+            b2MotorJoint_GetAngularHertz(id)
+        }
+        set(hertz) {
+            b2MotorJoint_SetAngularHertz(id, hertz)
+        }
+    }
+    
+    /// Get the spring angular damping ratio.
+    /// Set the spring angular damping ratio. Use 1.0 for critical damping.
+    var angularDampingRatio: Float {
+        get {
+            b2MotorJoint_GetAngularDampingRatio(id)
+        }
+        set(damping) {
+            b2MotorJoint_SetAngularDampingRatio(id, damping)
+        }
+    }
+    
+    /// Get the maximum spring force in newtons.
+    /// Set the maximum spring force in newtons.
+    var maxSpringForce: Float {
+        get {
+            b2MotorJoint_GetMaxSpringForce(id)
+        }
+        set(maxForce) {
+            b2MotorJoint_SetMaxSpringForce(id, maxForce)
+        }
+    }
+    
+    /// Get the maximum spring torque in newtons * meters
+    /// Set the maximum spring torque in newtons * meters
+    var maxSpringTorque: Float {
+        get {
+            b2MotorJoint_GetMaxSpringTorque(id)
+        }
+        set(maxTorque) {
+            b2MotorJoint_SetMaxSpringTorque(id, maxTorque)
         }
     }
 }

@@ -41,7 +41,7 @@ public extension B2RevoluteJoint {
     }
     
     /// Set the revolute joint limits in radians. It is expected that lower <= upper
-    /// and that -0.95 * B2_PI <= lower && upper <= -0.95 * B2_PI.
+    /// and that -0.99 * B2_PI <= lower && upper <= -0.99 * B2_PI.
     func setLimits(_ lower: Float, _ upper: Float) {
         b2RevoluteJoint_SetLimits(id, lower, upper)
     }
@@ -80,6 +80,17 @@ public extension B2RevoluteJoint {
         }
         set(dampingRatio) {
             b2RevoluteJoint_SetSpringDampingRatio(id, dampingRatio)
+        }
+    }
+    
+    /// Get the revolute joint spring target angle, radians
+    /// Set the revolute joint spring target angle, radians
+    var targetAngle: Float {
+        get {
+            b2RevoluteJoint_GetTargetAngle(id)
+        }
+        set(angle) {
+            b2RevoluteJoint_SetTargetAngle(id, angle)
         }
     }
     

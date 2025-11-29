@@ -4,7 +4,8 @@
 import box2d
 
 public extension B2Body {
-    /// Body identifier validation. Can be used to detect orphaned ids. Provides validation for up to 64K allocations.
+    /// Body identifier validation. A valid body exists in a world and is non-null.
+    /// This can be used to detect orphaned ids. Provides validation for up to 64K allocations.
     func isValid() -> Bool {
         b2Body_IsValid(id)
     }
@@ -36,7 +37,7 @@ public extension B2Body {
     
     /// Set the world transform of a body. This acts as a teleport and is fairly expensive.
     /// - note: Generally you should create a body with then intended transform.
-    /// @see b2BodyDef::position and b2BodyDef::angle
+    /// @see b2BodyDef::position and b2BodyDef::rotation
     func setTransform(_ position: B2Vec2, _ rotation: B2Rot) {
         b2Body_SetTransform(id, position, rotation)
     }
@@ -63,6 +64,7 @@ public extension B2Body {
     
     /// Set the velocity to reach the given transform after a given time step.
     /// The result will be close but maybe not exact. This is meant for kinematic bodies.
+    /// The target is not applied if the velocity would be below the sleep threshold.
     /// This will automatically wake the body if asleep.
     func setTargetTransform(_ target: B2Transform, _ timeStep: Float) {
         b2Body_SetTargetTransform(id, target, timeStep)
@@ -107,6 +109,14 @@ public extension B2Body {
         b2Body_ApplyTorque(id, torque, wake)
     }
     
+    /// Clear the force and torque on this body. Forces and torques are automatically cleared after each world
+    /// step. So this only needs to be called if the application wants to remove the effect of previous
+    /// calls to apply forces and torques before the world step is called.
+    /// - param bodyId: The body id
+    func clearForces() {
+        b2Body_ClearForces(id)
+    }
+    
     /// Apply an impulse at a point. This immediately modifies the velocity.
     /// It also modifies the angular velocity if the point of application
     /// is not at the center of mass. This optionally wakes the body.
@@ -137,8 +147,8 @@ public extension B2Body {
     /// - param bodyId: The body id
     /// - param impulse: the angular impulse, usually in units of kg*m*m/s
     /// - param wake: also wake up the body
-    /// @warning This should be used for one-shot impulses. If you need a steady force,
-    /// use a force instead, which will work better with the sub-stepping solver.
+    /// @warning This should be used for one-shot impulses. If you need a steady torque,
+    /// use a torque instead, which will work better with the sub-stepping solver.
     func applyAngularImpulse(_ impulse: Float, _ wake: Bool) {
         b2Body_ApplyAngularImpulse(id, impulse, wake)
     }
@@ -163,7 +173,7 @@ public extension B2Body {
         b2Body_GetWorldCenterOfMass(id)
     }
     
-    /// This update the mass properties to the sum of the mass properties of the shapes.
+    /// This updates the mass properties to the sum of the mass properties of the shapes.
     /// This normally does not need to be called unless you called SetMassData to override
     /// the mass and you later want to reset the mass.
     /// You may also use this when automatic mass computation has been disabled.
@@ -183,6 +193,11 @@ public extension B2Body {
     /// which can be expensive and possibly unintuitive.
     func setAwake(_ awake: Bool) {
         b2Body_SetAwake(id, awake)
+    }
+    
+    /// Wake bodies touching this body. Works for static bodies.
+    func wakeTouching() {
+        b2Body_WakeTouching(id)
     }
     
     /// Enable or disable sleeping for this body. If sleeping is disabled the body will wake.
@@ -208,16 +223,6 @@ public extension B2Body {
     /// Enable a body by adding it to the simulation. This is expensive.
     func enable() {
         b2Body_Enable(id)
-    }
-    
-    /// Set this body to have fixed rotation. This causes the mass to be reset in all cases.
-    func setFixedRotation(_ flag: Bool) {
-        b2Body_SetFixedRotation(id, flag)
-    }
-    
-    /// Does this body have fixed rotation?
-    func isFixedRotation() -> Bool {
-        b2Body_IsFixedRotation(id)
     }
     
     /// Set this body to be a bullet. A bullet does continuous collision detection
@@ -379,6 +384,17 @@ public extension B2Body {
         }
         set(sleepThreshold) {
             b2Body_SetSleepThreshold(id, sleepThreshold)
+        }
+    }
+    
+    /// Get the motion locks for this body.
+    /// Set the motion locks on this body.
+    var motionLocks: b2MotionLocks {
+        get {
+            b2Body_GetMotionLocks(id)
+        }
+        set(locks) {
+            b2Body_SetMotionLocks(id, locks)
         }
     }
 }

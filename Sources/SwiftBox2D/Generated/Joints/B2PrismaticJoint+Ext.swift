@@ -88,6 +88,17 @@ public extension B2PrismaticJoint {
         }
     }
     
+    /// Get the prismatic joint spring target translation, usually in meters
+    /// Set the prismatic joint spring target angle, usually in meters
+    var targetTranslation: Float {
+        get {
+            b2PrismaticJoint_GetTargetTranslation(id)
+        }
+        set(translation) {
+            b2PrismaticJoint_SetTargetTranslation(id, translation)
+        }
+    }
+    
     /// Get the prismatic joint motor speed, usually in meters per second
     /// Set the prismatic joint motor speed, usually in meters per second
     var motorSpeed: Float {

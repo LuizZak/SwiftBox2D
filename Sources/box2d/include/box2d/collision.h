@@ -16,6 +16,7 @@ typedef struct b2Hull b2Hull;
  * @brief Geometry types and algorithms
  *
  * Definitions of circles, capsules, segments, and polygons. Various algorithms to compute hulls, mass properties, and so on.
+ * Functions should take the shape as the first argument to assist editor auto-complete.
  * @{
  */
 
@@ -68,7 +69,7 @@ typedef struct b2ShapeCastInput
 	bool canEncroach;
 } b2ShapeCastInput;
 
-/// Low level ray cast or shape-cast output data
+/// Low level ray cast or shape-cast output data. Returns a zero fraction and normal in the case of initial overlap.
 typedef struct b2CastOutput
 {
 	/// The surface normal at the hit point
@@ -96,7 +97,7 @@ typedef struct b2MassData
 	/// The position of the shape's centroid relative to the shape's origin.
 	b2Vec2 center;
 
-	/// The rotational inertia of the shape about the local origin.
+	/// The rotational inertia of the shape about the shape center.
 	float rotationalInertia;
 } b2MassData;
 
@@ -246,38 +247,38 @@ B2_API b2AABB b2ComputePolygonAABB( const b2Polygon* shape, b2Transform transfor
 B2_API b2AABB b2ComputeSegmentAABB( const b2Segment* shape, b2Transform transform );
 
 /// Test a point for overlap with a circle in local space
-B2_API bool b2PointInCircle( b2Vec2 point, const b2Circle* shape );
+B2_API bool b2PointInCircle( const b2Circle* shape, b2Vec2 point );
 
 /// Test a point for overlap with a capsule in local space
-B2_API bool b2PointInCapsule( b2Vec2 point, const b2Capsule* shape );
+B2_API bool b2PointInCapsule( const b2Capsule* shape, b2Vec2 point );
 
 /// Test a point for overlap with a convex polygon in local space
-B2_API bool b2PointInPolygon( b2Vec2 point, const b2Polygon* shape );
+B2_API bool b2PointInPolygon( const b2Polygon* shape, b2Vec2 point );
 
-/// Ray cast versus circle shape in local space. Initial overlap is treated as a miss.
-B2_API b2CastOutput b2RayCastCircle( const b2RayCastInput* input, const b2Circle* shape );
+/// Ray cast versus circle shape in local space.
+B2_API b2CastOutput b2RayCastCircle( const b2Circle* shape, const b2RayCastInput* input );
 
-/// Ray cast versus capsule shape in local space. Initial overlap is treated as a miss.
-B2_API b2CastOutput b2RayCastCapsule( const b2RayCastInput* input, const b2Capsule* shape );
+/// Ray cast versus capsule shape in local space.
+B2_API b2CastOutput b2RayCastCapsule( const b2Capsule* shape, const b2RayCastInput* input );
 
 /// Ray cast versus segment shape in local space. Optionally treat the segment as one-sided with hits from
 /// the left side being treated as a miss.
-B2_API b2CastOutput b2RayCastSegment( const b2RayCastInput* input, const b2Segment* shape, bool oneSided );
+B2_API b2CastOutput b2RayCastSegment( const b2Segment* shape, const b2RayCastInput* input, bool oneSided );
 
-/// Ray cast versus polygon shape in local space. Initial overlap is treated as a miss.
-B2_API b2CastOutput b2RayCastPolygon( const b2RayCastInput* input, const b2Polygon* shape );
+/// Ray cast versus polygon shape in local space.
+B2_API b2CastOutput b2RayCastPolygon( const b2Polygon* shape, const b2RayCastInput* input );
 
-/// Shape cast versus a circle. Initial overlap is treated as a miss.
-B2_API b2CastOutput b2ShapeCastCircle( const b2ShapeCastInput* input, const b2Circle* shape );
+/// Shape cast versus a circle.
+B2_API b2CastOutput b2ShapeCastCircle(const b2Circle* shape,  const b2ShapeCastInput* input );
 
-/// Shape cast versus a capsule. Initial overlap is treated as a miss.
-B2_API b2CastOutput b2ShapeCastCapsule( const b2ShapeCastInput* input, const b2Capsule* shape );
+/// Shape cast versus a capsule.
+B2_API b2CastOutput b2ShapeCastCapsule( const b2Capsule* shape, const b2ShapeCastInput* input);
 
-/// Shape cast versus a line segment. Initial overlap is treated as a miss.
-B2_API b2CastOutput b2ShapeCastSegment( const b2ShapeCastInput* input, const b2Segment* shape );
+/// Shape cast versus a line segment.
+B2_API b2CastOutput b2ShapeCastSegment( const b2Segment* shape, const b2ShapeCastInput* input );
 
-/// Shape cast versus a convex polygon. Initial overlap is treated as a miss.
-B2_API b2CastOutput b2ShapeCastPolygon( const b2ShapeCastInput* input, const b2Polygon* shape );
+/// Shape cast versus a convex polygon.
+B2_API b2CastOutput b2ShapeCastPolygon( const b2Polygon* shape, const b2ShapeCastInput* input );
 
 /// A convex hull. Used to create convex polygons.
 /// @warning Do not modify these values directly, instead use b2ComputeHull()
@@ -382,7 +383,7 @@ typedef struct b2DistanceOutput
 {
 	b2Vec2 pointA;	  ///< Closest point on shapeA
 	b2Vec2 pointB;	  ///< Closest point on shapeB
-	b2Vec2 normal;	  ///< Normal vector that points from A to B
+	b2Vec2 normal;	  ///< Normal vector that points from A to B. Invalid if distance is zero.
 	float distance;	  ///< The final distance, zero if overlapped
 	int iterations;	  ///< Number of GJK iterations used
 	int simplexCount; ///< The number of simplexes stored in the simplex array
@@ -425,7 +426,7 @@ typedef struct b2ShapeCastPairInput
 } b2ShapeCastPairInput;
 
 /// Perform a linear shape cast of shape B moving and shape A fixed. Determines the hit point, normal, and translation fraction.
-/// You may optionally supply an array to hold debug data.
+/// Initially touching shapes are treated as a miss.
 B2_API b2CastOutput b2ShapeCast( const b2ShapeCastPairInput* input );
 
 /// Make a proxy for use in overlap, shape cast, and related functions. This is a deep copy of the points.
@@ -449,7 +450,7 @@ typedef struct b2Sweep
 /// Evaluate the transform sweep at a specific time.
 B2_API b2Transform b2GetSweepTransform( const b2Sweep* sweep, float time );
 
-/// Input parameters for b2TimeOfImpact
+/// Time of impact input
 typedef struct b2TOIInput
 {
 	b2ShapeProxy proxyA; ///< The proxy for shape A
@@ -469,11 +470,20 @@ typedef enum b2TOIState
 	b2_toiStateSeparated
 } b2TOIState;
 
-/// Output parameters for b2TimeOfImpact.
+/// Time of impact output
 typedef struct b2TOIOutput
 {
-	b2TOIState state; ///< The type of result
-	float fraction;	  ///< The sweep time of the collision
+	/// The type of result
+	b2TOIState state;
+
+	/// The hit point
+	b2Vec2 point;
+
+	/// The hit normal
+	b2Vec2 normal;
+
+	/// The sweep time of the collision 
+	float fraction;
 } b2TOIOutput;
 
 /// Compute the upper bound on time before two shapes penetrate. Time is represented as
@@ -697,6 +707,12 @@ typedef bool b2TreeQueryCallbackFcn( int proxyId, uint64_t userData, void* conte
 B2_API b2TreeStats b2DynamicTree_Query( const b2DynamicTree* tree, b2AABB aabb, uint64_t maskBits,
 										b2TreeQueryCallbackFcn* callback, void* context );
 
+/// Query an AABB for overlapping proxies. The callback class is called for each proxy that overlaps the supplied AABB.
+/// No filtering is performed.
+///	@return performance data
+B2_API b2TreeStats b2DynamicTree_QueryAll( const b2DynamicTree* tree, b2AABB aabb, b2TreeQueryCallbackFcn* callback,
+										   void* context );
+
 /// This function receives clipped ray cast input for a proxy. The function
 /// returns the new ray fraction.
 /// - return a value of 0 to terminate the ray cast
@@ -785,6 +801,9 @@ typedef struct b2PlaneResult
 	/// The collision plane between the mover and a convex shape
 	b2Plane plane;
 
+	// The collision point on the shape.
+	b2Vec2 point;
+
 	/// Did the collision register a hit? If not this plane should be ignored.
 	bool hit;
 } b2PlaneResult;
@@ -810,18 +829,18 @@ typedef struct b2CollisionPlane
 /// Result returned by b2SolvePlanes
 typedef struct b2PlaneSolverResult
 {
-	/// The final position of the mover
-	b2Vec2 position;
+	/// The translation of the mover
+	b2Vec2 translation;
 
 	/// The number of iterations used by the plane solver. For diagnostics.
 	int iterationCount;
 } b2PlaneSolverResult;
 
 /// Solves the position of a mover that satisfies the given collision planes.
-/// @param position this must be the position used to generate the collision planes
+/// @param targetDelta the desired movement from the position used to generate the collision planes
 /// @param planes the collision planes
 /// @param count the number of collision planes
-B2_API b2PlaneSolverResult b2SolvePlanes( b2Vec2 position, b2CollisionPlane* planes, int count );
+B2_API b2PlaneSolverResult b2SolvePlanes( b2Vec2 targetDelta, b2CollisionPlane* planes, int count );
 
 /// Clips the velocity against the given collision planes. Planes with zero push or clipVelocity
 /// set to false are skipped.

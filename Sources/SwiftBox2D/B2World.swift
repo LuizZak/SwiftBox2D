@@ -216,12 +216,6 @@ public class B2World {
         .init(world: self, jointDef)
     }
 
-    /// Creates a new mouse joint in this world.
-    @discardableResult
-    public func createJoint(_ jointDef: b2MouseJointDef) -> B2MouseJoint {
-        .init(world: self, jointDef)
-    }
-
     /// Creates a new prismatic joint in this world.
     @discardableResult
     public func createJoint(_ jointDef: b2PrismaticJointDef) -> B2PrismaticJoint {

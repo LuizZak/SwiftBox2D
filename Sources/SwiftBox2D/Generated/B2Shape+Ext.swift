@@ -48,6 +48,16 @@ public extension B2Shape {
         b2Shape_GetDensity(id)
     }
     
+    /// Set the shape surface material
+    func setSurfaceMaterial(_ surfaceMaterial: UnsafeMutablePointer<b2SurfaceMaterial>?) {
+        b2Shape_SetSurfaceMaterial(id, surfaceMaterial)
+    }
+    
+    /// Get the shape surface material
+    func getSurfaceMaterial() -> b2SurfaceMaterial {
+        b2Shape_GetSurfaceMaterial(id)
+    }
+    
     /// Enable sensor events for this shape.
     /// @see b2ShapeDef::enableSensorEvents
     func enableSensorEvents(_ flag: Bool) {
@@ -183,15 +193,15 @@ public extension B2Shape {
         b2Shape_GetSensorCapacity(id)
     }
     
-    /// Get the overlapped shapes for a sensor shape.
+    /// Get the overlap data for a sensor shape.
     /// - param shapeId: the id of a sensor shape
-    /// - param overlaps: a user allocated array that is filled with the overlapping shapes
+    /// - param visitorIds: a user allocated array that is filled with the overlapping shapes (visitors)
     /// - param capacity: the capacity of overlappedShapes
     /// - returns:s the number of elements filled in the provided array
     /// @warning do not ignore the return value, it specifies the valid number of elements
     /// @warning overlaps may contain destroyed shapes so use b2Shape_IsValid to confirm each overlap
-    func getSensorOverlaps(_ overlaps: UnsafeMutablePointer<b2ShapeId>?, _ capacity: Int32) -> Int32 {
-        b2Shape_GetSensorOverlaps(id, overlaps, capacity)
+    func getSensorData(_ visitorIds: UnsafeMutablePointer<b2ShapeId>?, _ capacity: Int32) -> Int32 {
+        b2Shape_GetSensorData(id, visitorIds, capacity)
     }
     
     /// Get the current world AABB
@@ -199,9 +209,9 @@ public extension B2Shape {
         b2Shape_GetAABB(id)
     }
     
-    /// Get the mass data for a shape
-    func getMassData() -> b2MassData {
-        b2Shape_GetMassData(id)
+    /// Compute the mass data for a shape
+    func computeMassData() -> b2MassData {
+        b2Shape_ComputeMassData(id)
     }
     
     /// Get the closest point on a shape to a target point. Target and result are in world space.
@@ -210,9 +220,20 @@ public extension B2Shape {
         b2Shape_GetClosestPoint(id, target)
     }
     
-    ///  Get the friction of a shape
+    /// Apply a wind force to the body for this shape using the density of air. This considers
+    /// the projected area of the shape in the wind direction. This also considers
+    /// the relative velocity of the shape.
+    /// - param shapeId: the shape id
+    /// - param wind: the wind velocity in world space
+    /// - param drag: the drag coefficient, the force that opposes the relative velocity
+    /// - param lift: the lift coefficient, the force that is perpendicular to the relative velocity
+    /// - param wake: should this wake the body
+    func applyWind(_ wind: B2Vec2, _ drag: Float, _ lift: Float, _ wake: Bool) {
+        b2Shape_ApplyWind(id, wind, drag, lift, wake)
+    }
+    
+    /// Get the friction of a shape
     /// Set the friction on a shape
-    /// @see b2ShapeDef::friction
     var friction: Float {
         get {
             b2Shape_GetFriction(id)
@@ -222,9 +243,8 @@ public extension B2Shape {
         }
     }
     
-    ///  Get the shape restitution
+    /// Get the shape restitution
     /// Set the shape restitution (bounciness)
-    /// @see b2ShapeDef::restitution
     var restitution: Float {
         get {
             b2Shape_GetRestitution(id)
@@ -234,15 +254,14 @@ public extension B2Shape {
         }
     }
     
-    ///  Get the shape material identifier
-    /// Set the shape material identifier
-    /// @see b2ShapeDef::material
-    var material: Int32 {
+    /// Get the user material identifier
+    /// Set the user material identifier
+    var userMaterial: UInt64 {
         get {
-            b2Shape_GetMaterial(id)
+            b2Shape_GetUserMaterial(id)
         }
         set(material) {
-            b2Shape_SetMaterial(id, material)
+            b2Shape_SetUserMaterial(id, material)
         }
     }
     

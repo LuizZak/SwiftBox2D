@@ -4,17 +4,6 @@
 import box2d
 
 public extension B2WeldJoint {
-    /// Get the weld joint reference angle in radians
-    /// Set the weld joint reference angle in radians, must be in [-pi,pi].
-    var referenceAngle: Float {
-        get {
-            b2WeldJoint_GetReferenceAngle(id)
-        }
-        set(angleInRadians) {
-            b2WeldJoint_SetReferenceAngle(id, angleInRadians)
-        }
-    }
-    
     /// Get the weld joint linear stiffness in Hertz
     /// Set the weld joint linear stiffness in Hertz. 0 is rigid.
     var linearHertz: Float {

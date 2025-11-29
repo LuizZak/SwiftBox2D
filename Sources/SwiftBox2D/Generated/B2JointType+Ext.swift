@@ -17,8 +17,6 @@ public extension B2JointType {
     
     static let b2MotorJoint = b2_motorJoint
     
-    static let b2MouseJoint = b2_mouseJoint
-    
     static let b2PrismaticJoint = b2_prismaticJoint
     
     static let b2RevoluteJoint = b2_revoluteJoint
