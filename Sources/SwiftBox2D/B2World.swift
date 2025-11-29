@@ -3,14 +3,14 @@ import box2d
 public class B2World {
     /// Common callback function for ray and shape casts.
     public typealias CastResultCallback = (
-        _ shapeId: b2ShapeId,
+        _ shape: B2Shape,
         _ point: b2Vec2,
         _ normal: b2Vec2,
         _ fraction: Float
     ) -> CastResult
 
     /// Common callback for overlap queries.
-    public typealias OverlapResultCallback = (_ shapeId: b2ShapeId) -> Bool
+    public typealias OverlapResultCallback = (_ shape: B2Shape) -> Bool
 
     /// Gets the ID of this world.
     private(set) public var id: b2WorldId
@@ -77,7 +77,7 @@ public class B2World {
                     { (shapeId, ptr) in
                         let callback = ptr!.bindMemory(to: OverlapResultCallback.self, capacity: 1)
 
-                        return callback.pointee(shapeId)
+                        return callback.pointee(B2Shape(id: shapeId))
                     },
                     UnsafeMutableRawPointer(mutating: callback)
                 )
@@ -101,7 +101,7 @@ public class B2World {
                     { (shapeId, ptr) in
                         let callback = ptr!.bindMemory(to: OverlapResultCallback.self, capacity: 1)
 
-                        return callback.pointee(shapeId)
+                        return callback.pointee(B2Shape(id: shapeId))
                     },
                     UnsafeMutableRawPointer(mutating: callback)
                 )
@@ -137,7 +137,7 @@ public class B2World {
                     { (shapeId, point, normal, fraction, ptr) in
                         let callback = ptr!.bindMemory(to: CastResultCallback.self, capacity: 1)
 
-                        switch callback.pointee(shapeId, point, normal, fraction) {
+                        switch callback.pointee(B2Shape(id: shapeId), point, normal, fraction) {
                         case .ignore:
                             return -1.0
 
@@ -177,7 +177,7 @@ public class B2World {
                     { (shapeId, point, normal, fraction, ptr) in
                         let callback = ptr!.bindMemory(to: CastResultCallback.self, capacity: 1)
 
-                        switch callback.pointee(shapeId, point, normal, fraction) {
+                        switch callback.pointee(B2Shape(id: shapeId), point, normal, fraction) {
                         case .ignore:
                             return -1.0
 
