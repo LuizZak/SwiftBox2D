@@ -4,7 +4,8 @@ public class B2Chain {
     /// Gets the ID of this chain.
     private(set) public var id: b2ChainId
 
-    init(id: b2ChainId) {
+    /// Instantiates a `B2Chain` from a given chain ID.
+    public init(id: b2ChainId) {
         self.id = id
     }
 

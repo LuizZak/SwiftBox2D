@@ -15,7 +15,8 @@ public class B2World {
     /// Gets the ID of this world.
     private(set) public var id: b2WorldId
 
-    init(id: b2WorldId) {
+    /// Instantiates a `B2World` from a given world ID.
+    public init(id: b2WorldId) {
         self.id = id
     }
 

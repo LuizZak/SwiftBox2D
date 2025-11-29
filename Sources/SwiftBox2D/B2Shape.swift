@@ -4,7 +4,8 @@ public class B2Shape {
     /// Gets the ID of this shape.
     private(set) public var id: b2ShapeId
 
-    init(id: b2ShapeId) {
+    /// Instantiates a `B2Shape` from a given shape ID.
+    public init(id: b2ShapeId) {
         self.id = id
     }
 

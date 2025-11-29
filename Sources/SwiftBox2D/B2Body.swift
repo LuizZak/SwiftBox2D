@@ -4,7 +4,8 @@ public class B2Body {
     /// Gets the ID of this body.
     private(set) public var id: b2BodyId
 
-    init(id: b2BodyId) {
+    /// Instantiates a `B2Body` from a given body ID.
+    public init(id: b2BodyId) {
         self.id = id
     }
 

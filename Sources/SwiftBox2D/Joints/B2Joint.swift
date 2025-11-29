@@ -5,7 +5,8 @@ public class B2Joint {
     /// Gets the ID of this joint.
     private(set) public var id: b2JointId
 
-    init(id: b2JointId) {
+    /// Instantiates a generic `B2Joint` from an ID.
+    public init(id: b2JointId) {
         self.id = id
     }
 
