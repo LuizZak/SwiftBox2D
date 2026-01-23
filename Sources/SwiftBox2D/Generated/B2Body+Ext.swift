@@ -64,10 +64,14 @@ public extension B2Body {
     
     /// Set the velocity to reach the given transform after a given time step.
     /// The result will be close but maybe not exact. This is meant for kinematic bodies.
-    /// The target is not applied if the velocity would be below the sleep threshold.
-    /// This will automatically wake the body if asleep.
-    func setTargetTransform(_ target: B2Transform, _ timeStep: Float) {
-        b2Body_SetTargetTransform(id, target, timeStep)
+    /// The target is not applied if the velocity would be below the sleep threshold and
+    /// the body is currently asleep.
+    /// - param bodyId: The body id
+    /// - param target: The target transform for the body
+    /// - param timeStep: The time step of the next call to b2World_Step
+    /// - param wake: Option to wake the body or not
+    func setTargetTransform(_ target: B2Transform, _ timeStep: Float, _ wake: Bool) {
+        b2Body_SetTargetTransform(id, target, timeStep, wake)
     }
     
     /// Get the linear velocity of a local point attached to a body. Usually in meters per second.

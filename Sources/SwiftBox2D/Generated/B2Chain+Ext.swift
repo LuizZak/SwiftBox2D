@@ -20,12 +20,10 @@ public extension B2Chain {
         b2Chain_GetSegments(id, segmentArray, capacity)
     }
 
-    /* Currently, this declaration is undefined in the box2d library.
     /// Get the number of materials used on this chain. Must be 1 or the number of segments.
     func getSurfaceMaterialCount() -> Int32 {
         b2Chain_GetSurfaceMaterialCount(id)
     }
-    */
 
     /// Set a chain material. If the chain has only one material, this material is applied to all
     /// segments. Otherwise it is applied to a single segment.

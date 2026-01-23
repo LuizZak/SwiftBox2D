@@ -394,6 +394,15 @@ B2_INLINE bool b2IsNormalizedRot( b2Rot q )
 	return 1.0f - 0.0006f < qq && qq < 1.0f + 0.0006f;
 }
 
+/// Get the inverse of a rotation
+B2_INLINE b2Rot b2InvertRot( b2Rot a )
+{
+	return B2_LITERAL( b2Rot ){
+		.c = a.c,
+		.s = -a.s,
+	};
+}
+
 /// Normalized linear interpolation
 /// https://fgiesen.wordpress.com/2012/08/15/linear-interpolation-past-present-and-future/
 ///	https://web.archive.org/web/20170825184056/http://number-none.com/product/Understanding%20Slerp,%20Then%20Not%20Using%20It/
@@ -484,7 +493,7 @@ B2_INLINE float b2RelativeAngle( b2Rot a, b2Rot b )
 	// sin(b - a) = bs * ac - bc * as
 	// cos(b - a) = bc * ac + bs * as
 	float s = a.c * b.s - a.s * b.c;
-	float c = a.c *b.c + a.s * b.s;
+	float c = a.c * b.c + a.s * b.s;
 	return b2Atan2( s, c );
 }
 
@@ -568,12 +577,12 @@ B2_INLINE b2Mat22 b2GetInverse22( b2Mat22 A )
 		det = 1.0f / det;
 	}
 
-		b2Mat22 B = {
-			{ det * d, -det * c },
-			{ -det * b, det * a },
-		};
-		return B;
-	}
+	b2Mat22 B = {
+		{ det * d, -det * c },
+		{ -det * b, det * a },
+	};
+	return B;
+}
 
 /// Solve A * x = b, where b is a column vector. This is more efficient
 /// than computing the inverse in one-shot cases.

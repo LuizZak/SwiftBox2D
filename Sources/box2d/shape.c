@@ -10,6 +10,7 @@
 #include "sensor.h"
 
 // needed for dll export
+#include "solver_set.h"
 #include "box2d/box2d.h"
 
 #include <stddef.h>
@@ -181,6 +182,10 @@ static b2ShapeId b2CreateShape( b2BodyId bodyId, const b2ShapeDef* def, const vo
 	{
 		b2UpdateBodyMassData( world, body );
 	}
+	else
+	{
+		body->flags |= b2_dirtyMass;
+	}
 
 	b2ValidateSolverSets( world );
 
@@ -198,8 +203,7 @@ b2ShapeId b2CreateCapsuleShape( b2BodyId bodyId, const b2ShapeDef* def, const b2
 	float lengthSqr = b2DistanceSquared( capsule->center1, capsule->center2 );
 	if ( lengthSqr <= B2_LINEAR_SLOP * B2_LINEAR_SLOP )
 	{
-		b2Circle circle = { b2Lerp( capsule->center1, capsule->center2, 0.5f ), capsule->radius };
-		return b2CreateShape( bodyId, def, &circle, b2_circleShape );
+		return b2_nullShapeId;
 	}
 
 	return b2CreateShape( bodyId, def, capsule, b2_capsuleShape );
@@ -1421,6 +1425,12 @@ void b2Shape_SetCapsule( b2ShapeId shapeId, const b2Capsule* capsule )
 		return;
 	}
 
+	float lengthSqr = b2DistanceSquared( capsule->center1, capsule->center2 );
+	if ( lengthSqr <= B2_LINEAR_SLOP * B2_LINEAR_SLOP )
+	{
+		return;
+	}
+
 	b2Shape* shape = b2GetShape( world, shapeId );
 	shape->capsule = *capsule;
 	shape->type = b2_capsuleShape;
@@ -1483,6 +1493,13 @@ b2ChainId b2Shape_GetParentChain( b2ShapeId shapeId )
 	}
 
 	return (b2ChainId){ 0 };
+}
+
+int b2Chain_GetSurfaceMaterialCount( b2ChainId chainId )
+{
+	b2World* world = b2GetWorld( chainId.world0 );
+	b2ChainShape* chainShape = b2GetChainShape( world, chainId );
+	return chainShape->materialCount;
 }
 
 void b2Chain_SetSurfaceMaterial( b2ChainId chainId, const b2SurfaceMaterial* material, int materialIndex )
