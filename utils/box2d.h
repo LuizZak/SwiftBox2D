@@ -18,6 +18,9 @@
 #define __declspec(x)
 #define _declspec(x)
 
+/// Work around for Mac-specific features
+#define _Float16 float
+
 /// Work around Darwin-specific header declarations
 #define __asm(x)
 
