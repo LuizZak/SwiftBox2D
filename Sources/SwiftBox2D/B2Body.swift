@@ -28,25 +28,25 @@ public class B2Body {
 
     /// Creates a new capsule shape on this body.
     @discardableResult
-    public func createShape(_ capsule: B2Capsule, shape: b2ShapeDef) -> B2Shape {
-        B2Shape(body: self, shape: shape, capsule: capsule)
+    public func createShape(_ capsule: B2Capsule, shapeDef: b2ShapeDef) -> B2Shape {
+        B2Shape(body: self, shapeDef: shapeDef, capsule: capsule)
     }
 
     /// Creates a new circle shape on this body.
     @discardableResult
-    public func createShape(_ circle: B2Circle, shape: b2ShapeDef) -> B2Shape {
-        B2Shape(body: self, shape: shape, circle: circle)
+    public func createShape(_ circle: B2Circle, shapeDef: b2ShapeDef) -> B2Shape {
+        B2Shape(body: self, shapeDef: shapeDef, circle: circle)
     }
 
     /// Creates a new polygon shape on this body.
     @discardableResult
-    public func createShape(_ polygon: B2Polygon, shape: b2ShapeDef) -> B2Shape {
-        B2Shape(body: self, shape: shape, polygon: polygon)
+    public func createShape(_ polygon: B2Polygon, shapeDef: b2ShapeDef) -> B2Shape {
+        B2Shape(body: self, shapeDef: shapeDef, polygon: polygon)
     }
 
     /// Creates a new segment shape on this body.
     @discardableResult
-    public func createShape(_ segment: B2Segment, shape: b2ShapeDef) -> B2Shape {
-        B2Shape(body: self, shape: shape, segment: segment)
+    public func createShape(_ segment: B2Segment, shapeDef: b2ShapeDef) -> B2Shape {
+        B2Shape(body: self, shapeDef: shapeDef, segment: segment)
     }
 }
