@@ -1,0 +1,58 @@
+//
+//  LibTessTriangulate.swift
+//  Squishy2048
+//
+//  Created by Luiz Fernando Silva on 28/02/17.
+//  Copyright © 2017 Luiz Fernando Silva. All rights reserved.
+//
+
+import SwiftBox2D
+import LibTessSwift
+
+class LibTessTriangulate {
+    
+    static let tess = TessC()!
+    
+    /// Triangulates a set of vertices using LibTessSwift
+    static func process(polygon: [B2Vec2]) -> (vertices: [B2Vec2], indices: [Int])? {
+        
+        // Try a simple triangulation, and fallback to libtess if it fails
+        if let simple = Triangulate.processIndices(polygon: polygon) {
+            return (polygon, simple)
+        }
+        
+        let polySize = 3
+        
+        let contour = polygon.map {
+            CVector3(x: TESSreal($0.x), y: TESSreal($0.y), z: 0.0)
+        }
+        
+        tess.addContour(contour)
+        
+        do {
+            try tess.tessellate(windingRule: .evenOdd, elementType: .polygons,
+                                polySize: polySize)
+        } catch {
+            return nil
+        }
+        
+        var result: [B2Vec2] = []
+        var indices: [Int] = []
+        
+        for vertex in tess.vertices! {
+            result.append(B2Vec2(vertex.x, vertex.y))
+        }
+        
+        for i in 0..<tess.elementCount {
+            for j in 0..<polySize {
+                let index = tess.elements![i * polySize + j]
+                if index == -1 {
+                    continue
+                }
+                indices.append(index)
+            }
+        }
+        
+        return (result, indices)
+    }
+}
