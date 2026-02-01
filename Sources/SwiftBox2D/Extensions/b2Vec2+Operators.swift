@@ -8,18 +8,23 @@ extension b2Vec2 {
 
 extension b2Vec2 {
     @inlinable
+    public static prefix func - (value: Self) -> Self {
+        return b2Neg(value)
+    }
+    
+    @inlinable
     public static func + (lhs: Self, rhs: Self) -> Self {
-        binaryOp(lhs, rhs, +)
+        b2Add(lhs, rhs)
     }
 
     @inlinable
     public static func - (lhs: Self, rhs: Self) -> Self {
-        binaryOp(lhs, rhs, -)
+        b2Sub(lhs, rhs)
     }
 
     @inlinable
     public static func * (lhs: Self, rhs: Self) -> Self {
-        binaryOp(lhs, rhs, *)
+        b2Mul(lhs, rhs)
     }
 
     @inlinable
