@@ -8,7 +8,7 @@
 
 import Cocoa
 import MetalKit
-import JelloSwift
+import SwiftBox2D
 
 // Our macOS specific view controller
 class GameViewController: NSViewController {
@@ -52,13 +52,13 @@ class GameViewController: NSViewController {
 
         mtkView.delegate = renderer
         mtkView.onMouseDown = { point in
-            newRenderer.demoScene.touchDown(at: Vector2(x: point.x, y: point.y))
+            newRenderer.demoScene.touchDown(at: B2Vec2(x: Float(point.x), y: Float(point.y)))
         }
         mtkView.onMouseMoved = { point in
-            newRenderer.demoScene.touchMoved(at: Vector2(x: point.x, y: point.y))
+            newRenderer.demoScene.touchMoved(at: B2Vec2(x: Float(point.x), y: Float(point.y)))
         }
         mtkView.onMouseUp = { point in
-            newRenderer.demoScene.touchEnded(at: Vector2(x: point.x, y: point.y))
+            newRenderer.demoScene.touchEnded(at: B2Vec2(x: Float(point.x), y: Float(point.y)))
         }
         
         addDetailModeButton()

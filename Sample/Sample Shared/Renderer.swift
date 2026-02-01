@@ -141,12 +141,14 @@ class Renderer: NSObject, MTKViewDelegate {
             return
         }
         
-        renderEncoder.setVertexBuffer(vertexBuffer.buffer, offset: 0, index: 0)
-        renderEncoder
-            .drawIndexedPrimitives(type: .triangle,
-                                   indexCount: buffer.indices.count,
-                                   indexType: .uint32,
-                                   indexBuffer: indexBuffer.buffer,
-                                   indexBufferOffset: 0)
+        if !buffer.indices.isEmpty {
+            renderEncoder.setVertexBuffer(vertexBuffer.buffer, offset: 0, index: 0)
+            renderEncoder
+                .drawIndexedPrimitives(type: .triangle,
+                                       indexCount: buffer.indices.count,
+                                       indexType: .uint32,
+                                       indexBuffer: indexBuffer.buffer,
+                                       indexBufferOffset: 0)
+        }
     }
 }

@@ -1,26 +1,26 @@
 import Foundation
 import CoreGraphics
-import JelloSwift
+import SwiftBox2D
 import simd
 
-extension Vector2 {
+var renderingScale: B2Vec2 = B2Vec2(x: 1, y: 1)
+var renderingOffset: B2Vec2 = B2Vec2(x: 0, y: 0)
+
+extension B2Vec2 {
+    typealias NativeMatrixType = Matrix3x3
     
     /// Helper post-fix alias for global function `toWorldCoords(self)`
-    var inWorldCoords: Vector2 {
-        return JelloSwift.toWorldCoords(self)
+    var inWorldCoords: B2Vec2 {
+        return self
     }
 
     /// Helper post-fix alias for global function `toScreenCoords(self)`
-    var inScreenCoords: Vector2 {
-        return JelloSwift.toScreenCoords(self)
-    }
-    
-    init(x: CGFloat, y: CGFloat) {
-        self.init(x: x.native, y: y.native)
+    var inScreenCoords: B2Vec2 {
+        return self
     }
 }
 
-protocol DemoSceneDelegate: class {
+protocol DemoSceneDelegate: AnyObject {
     func didUpdatePhysicsTimer(intervalCount: Int,
                                timeMilliRounded: TimeInterval,
                                fps: TimeInterval,
@@ -31,8 +31,6 @@ protocol DemoSceneDelegate: class {
 class DemoScene {
     weak var delegate: DemoSceneDelegate?
     
-    var world = World()
-    
     var boundsSize: CGSize
     
     /// Main OpenGL VAO in which all bodies will be rendered on
@@ -42,31 +40,26 @@ class DemoScene {
     var renderLabelStopwatch = Stopwatch(startTime: 0)
     var intervals: [CFAbsoluteTime] = []
     
-    var viewportMatrix = Vector2.matrix(scalingBy: 1.0 / (renderingScale / 2), translatingBy: renderingOffset)
-    let baseRenderingScale = Vector2(x: 25.8, y: 25.8)
+    var viewportMatrix = B2Vec2.matrix(scalingBy: 1.0 / (renderingScale / 2), translatingBy: renderingOffset)
+    let baseRenderingScale = B2Vec2(x: 25.8, y: 25.8)
     
     let labelUpdateInterval = 0.5
     
     var inputMode = InputMode.dragBody
     
-    // The current point being dragged around
-    var draggingPoint: (Body, Int)? = nil
-    
     // The location of the user's finger, in physics world coordinates
-    var pointerLocation = Vector2.zero
+    var pointerLocation = B2Vec2.zero
     
     /// Whether to perform a detailed render of the scene. Detailed rendering
     /// renders, along with the body shape, the body's normals, global shape and
     /// axis, and collision normals
     var useDetailedRender = true
     
-    var collisions: [BodyCollisionInformation] = []
-    
     init(boundsSize: CGSize, delegate: DemoSceneDelegate?) {
         self.boundsSize = boundsSize
         self.delegate = delegate
         vertexBuffer = VertexBuffer()
-        renderingOffset = Vector2(x: 300, y: 384)
+        renderingOffset = B2Vec2(x: 300, y: 384)
         renderingScale = baseRenderingScale
     }
     
@@ -106,55 +99,19 @@ class DemoScene {
         
         let sw = Stopwatch.startNew()
         
-        world.joints.forEach(drawJoint)
-        world.bodies.forEach(drawBody)
-        
-        // Render rays from ray bodies
-        for body in world.bodies {
-            guard let comp = body.component(ofType: BodyRayComponent.self) else {
-                continue
-            }
-            
-            for point in body.pointMasses {
-                let vertex = point.position
-                let normal = point.normal
-
-                let start = vertex - normal * 0.1
-                let end = vertex + normal * comp.rayLength
-
-                let pt
-                    = world.rayCast(from: start,
-                                    to: end,
-                                    ignoreTest: { [world] in $0 == body || (comp.ignoreJoinedBodies && world.areBodiesJoined(body, $0)) })?.retPt ?? end
-
-                drawLine(from: vertex, to: pt, color: comp.color.toUIntARGB())
-                drawCircle(center: pt, radius: 0.1, color: comp.color.toUIntARGB())
-            }
-        }
-        
-        drawDrag()
-        
         if useDetailedRender {
-            // Draw collisions
-            for info in collisions {
-                let pointB = info.hitPt
-                let normal = info.normal
-                
-                drawLine(from: pointB, to: pointB + normal / 4, color: 0xFFFF0000)
-            }
+            
         }
         
         // Adjust viewport by the aspect ratio
-        let viewportMatrix = matrixForOrthoProjection(width: boundsSize.width, height: boundsSize.height)
+        let viewportMatrix = matrixForOrthoProjection(width: Float(boundsSize.width), height: Float(boundsSize.height))
         
         // Matrix to transform JelloSwift's coordinates into proper coordinates
         // for OpenGL
-        let mat = Vector2.matrix(scalingBy: renderingScale, rotatingBy: 0, translatingBy: renderingOffset)
+        let mat = B2Vec2.matrix(scalingBy: renderingScale, rotatingBy: 0, translatingBy: renderingOffset)
         
         // Convert point to screen coordinates
         vertexBuffer.applyTransformation((mat * viewportMatrix).matrix4x4())
-        
-        collisions.removeAll(keepingCapacity: true)
         
         if let duration = renderLabelStopwatch.duration, duration > labelUpdateInterval {
             renderLabelStopwatch.reset()
@@ -167,33 +124,10 @@ class DemoScene {
     }
     
     func updateWithTimeSinceLastUpdate(_ timeSinceLast: CFTimeInterval) {
-        /* Called before each frame is rendered */
-        updateDrag()
-        
         // Update the physics world
         for _ in 0..<5 {
-            self.world.update(1.0 / 200)
+            
         }
-    }
-    
-    // Updates the dragging functionality
-    func updateDrag() {
-        // Dragging point
-        guard let (body, pIndex) = draggingPoint, inputMode == InputMode.dragBody else {
-            return
-        }
-        
-        let p = body.pointMasses[pIndex]
-        
-        let dragForce = calculateSpringForce(posA: p.position, 
-                                             velA: p.velocity, 
-                                             posB: pointerLocation,
-                                             velB: Vector2.zero,
-                                             distance: 0, 
-                                             springK: 700, 
-                                             springD: 20)
-        
-        body.applyForce(dragForce, toPointMassAt: pIndex)
     }
     
     /// Enum used to modify the input mode of the test simulation
@@ -207,325 +141,35 @@ class DemoScene {
 
 // MARK: - Input
 extension DemoScene {
-    func touchDown(at screenPoint: Vector2) {
+    func touchDown(at screenPoint: B2Vec2) {
         let worldPoint = screenPoint.inWorldCoords
         
-        /* Called when a touch begins */
-        if inputMode == .createBall {
-            createBouncyBall(worldPoint)
-        } else if inputMode == .dragBody {
-            // Select the closest point-mass to drag
-            pointerLocation = worldPoint
-            
-            draggingPoint = world.closestPointMass(to: pointerLocation)
-        }
+//        /* Called when a touch begins */
+//        if inputMode == .createBall {
+//            createBouncyBall(worldPoint)
+//        } else if inputMode == .dragBody {
+//            // Select the closest point-mass to drag
+//            pointerLocation = worldPoint
+//            
+//            draggingPoint = world.closestPointMass(to: pointerLocation)
+//        }
     }
     
-    func touchMoved(at screenPoint: Vector2) {
+    func touchMoved(at screenPoint: B2Vec2) {
         let worldPoint = screenPoint.inWorldCoords
         
         pointerLocation = worldPoint
     }
     
-    func touchEnded(at screenPoint: Vector2) {
+    func touchEnded(at screenPoint: B2Vec2) {
         // Reset dragging point
-        draggingPoint = nil
+        
     }
 }
 
 extension DemoScene {
     func initializeLevel() {
-        let size = CGSize(width: 1024, height: 768)
         
-        // Create basic shapes
-        let vec = (Vector2(x: size.width, y: 400) / 2).inWorldCoords
-        
-        // Add a Raycasting component
-        createBouncyBall(vec).addComponent(ofType: BodyRayComponent.self)
-        
-        for i in 0..<6 {
-            let v = vec + Vector2(x: CGFloat(i - 3), y: CGFloat(2 + i * 1))
-            
-            let ball = createBouncyBall(v)
-            
-            let color = Color(hue: CGFloat(i) / 6, saturation: 0.8, brightness: 0.9, alpha: CGFloat(0x7D) / 255)
-            ball.objectTag = color
-        }
-        
-        // Create a few pinned bodies
-        let pb1 = createBouncyBall(Vector2(x: size.width * 0.2, y: size.height / 2).inWorldCoords, pinned: true, radius: 3)
-        let pb2 = createBouncyBall(Vector2(x: size.width * 0.8, y: size.height / 2).inWorldCoords, pinned: true, radius: 3)
-        pb1.component(ofType: SpringComponent.self)?.setShapeMatchingConstants(200, 10)
-        pb2.component(ofType: SpringComponent.self)?.setShapeMatchingConstants(200, 10)
-        
-        pb1.objectTag = UInt(0x7DEFEF99)
-        pb2.objectTag = UInt(0x7DEFEF99)
-        
-        // Create some free boxes around the level
-        createBox(Vector2(x: size.width / 2, y: size.height / 3).inWorldCoords, size: .unit * 2)
-        createBox(Vector2(x: size.width * 0.4, y: size.height / 3).inWorldCoords, size: .unit * 2)
-        let nonRotatingBox = createBox(Vector2(x: size.width * 0.6, y: size.height / 3).inWorldCoords, size: .unit * 2)
-        
-        // Lock the rotation of the third box
-        nonRotatingBox.freeRotate = false
-        
-        // Create a pinned box in the middle of the level
-        let pinnedBox = createBox(Vector2(x: size.width / 2, y: size.height / 2).inWorldCoords, size: .unit * 2, pinned: true)
-        // Increase the velocity damping of the pinned box so it won't jiggle around nonstop
-        pinnedBox.velDamping = 0.99
-        
-        // Create two kinematic boxes
-        let box1 = createBox(Vector2(x: size.width * 0.3, y: size.height / 2).inWorldCoords, size: .unit * 4, kinematic: true)
-        let box2 = createBox(Vector2(x: size.width * 0.7, y: size.height / 2).inWorldCoords, size: .unit * 4, kinematic: true)
-        
-        box1.objectTag = UInt(0x7DFF0000)
-        box2.objectTag = UInt(0x7DFF0000)
-        
-        // Create a few structures to showcase the joints feature
-        do {
-            let (bouncy1, bouncy2) = createLinkedBouncyBalls(Vector2(x: size.width / 2, y: size.height * 0.65).inWorldCoords)
-            bouncy1.objectTag = UInt(0x7DDE22DE)
-            bouncy2.objectTag = UInt(0x7DDE22DE)
-        }
-        
-        createBallBoxLinkedStructure(Vector2(x: size.width * 0.8, y: size.height * 0.8).inWorldCoords)
-        
-        do {
-            let (left, box, right) = createScaleStructure(Vector2(x: size.width * 0.4, y: size.height * 0.8).inWorldCoords)
-            
-            left.objectTag = UInt(0x7D22EFEF)
-            box.objectTag = UInt(0x7D116666)
-            right.objectTag = UInt(0x7D22EFEF)
-        }
-        
-        createCarStructure(Vector2(x: size.width * 0.12, y: 90).inWorldCoords)
-        createBox(Vector2(x: size.width * 0.5, y: 16).inWorldCoords, size: Vector2(x: 34, y: 1), isStatic: true).objectTag = UInt(0x7D999999)
-        
-        // Create the ground box
-        let box = ClosedShape.create { box in
-            box.addVertex(x: -10, y:   1)
-            box.addVertex(x:  0,  y: 0.6) // A little inward slope
-            box.addVertex(x:  10, y:   1)
-            box.addVertex(x:  10, y:  -1)
-            box.addVertex(x: -10, y:  -1)
-        }
-        
-        let platform = Body(world: world, shape: box, pointMasses: [JFloat.infinity], position: Vector2(x: size.width / 2, y: 150).inWorldCoords)
-        platform.isStatic = true
-        platform.objectTag = UInt(0x7D999999)
-        
-        // Relax the world a bit to reduce 'popping'
-        world.relaxWorld(timestep: 1.0 / 600, iterations: 120 * 3)
-    }
-    
-    // MARK: - Helper body creation methods
-    
-    /// Creates a box at the specified world coordinates with the specified size
-    @discardableResult
-    func createBox(_ pos: Vector2, size: Vector2, pinned: Bool = false,
-                   kinematic: Bool = false, isStatic: Bool = false,
-                   angle: JFloat = 0, mass: JFloat = 0.5) -> Body {
-        
-        // Create the closed shape for the box's physics body
-        let shape = ClosedShape
-            .rectangle(ofSides: size)
-            .transformedBy(rotatingBy: angle)
-        
-        var comps = [BodyComponentCreator]()
-        
-        // Add a spring body component - spring bodies have string physics that attract the inner points, it's one of the
-        // forces that holds a body together
-        comps.append(SpringComponentCreator(shapeMatchingOn: true, edgeSpringK: 600, edgeSpringDamp: 20, shapeSpringK: 100, shapeSpringDamp: 60))
-        
-        if !pinned {
-            // Add a gravity component that will pull the body down
-            comps.append(GravityComponentCreator())
-        }
-        
-        let body = Body(world: world, shape: shape, pointMasses: [isStatic ? JFloat.infinity : mass], position: pos, kinematic: kinematic, components: comps)
-        body.isPined = pinned
-        
-        // In order to have the box behave correctly, we need to add some internal springs to the body
-        let springComp = body.component(ofType: SpringComponent.self)
-        
-        // The two first arguments are the indexes of the point masses to link, the next two are the spring constants,
-        // and the last one is the distance the spring will try to mantain the two point masses at.
-        // Specifying the distance as -1 sets it as the current distance between the specified point masses
-        springComp?.addInternalSpring(body, pointA: 0, pointB: 2, springK: 100, damping: 10)
-        springComp?.addInternalSpring(body, pointA: 1, pointB: 3, springK: 100, damping: 10)
-        
-        return body
-    }
-    
-    /// Creates a bouncy ball at the specified world coordinates
-    @discardableResult
-    func createBouncyBall(_ pos: Vector2, pinned: Bool = false, kinematic: Bool = false, radius: JFloat = 1, mass: JFloat = 0.5, def: Int = 12) -> Body {
-        // Create the closed shape for the ball's physics body
-        let shape = ClosedShape
-            .circle(ofRadius: radius, pointCount: def)
-            .transformedBy(scalingBy: Vector2(x: 0.3, y: 0.3))
-        
-        var comps = [BodyComponentCreator]()
-        
-        // Add a spring body component - spring bodies have string physics that attract the inner points, it's one of the
-        // forces that holds a body together
-        comps.append(SpringComponentCreator(shapeMatchingOn: true, edgeSpringK: 600, edgeSpringDamp: 20, shapeSpringK: 10, shapeSpringDamp: 20))
-        
-        // Add a pressure component - pressure applies an outwards-going force that basically
-        // tries to expand the body as if filled with air, like a balloon
-        comps.append(PressureComponentCreator(gasAmmount: 90))
-        
-        // Add a gravity component taht will pull the body down
-        comps.append(GravityComponentCreator())
-        
-        let body = Body(world: world, shape: shape, pointMasses: [mass], position: pos, kinematic: kinematic, components: comps)
-        
-        body.isPined = pinned
-        
-        return body
-    }
-    
-    /// Creates two linked bouncy balls in a given position in the world
-    @discardableResult
-    func createLinkedBouncyBalls(_ pos: Vector2) -> (left: Body, right: Body) {
-        let b1 = createBouncyBall(pos - Vector2(x: 1, y: 0), pinned: false, kinematic: false, radius: 1)
-        let b2 = createBouncyBall(pos + Vector2(x: 1, y: 0), pinned: false, kinematic: false, radius: 1)
-        
-        // Create the joint links
-        let l1 = BodyJointLink(body: b1)
-        let l2 = BodyJointLink(body: b2)
-        
-        let joint = SpringBodyJoint(on: world, link1: l1, link2: l2, coefficient: 100, damping: 20)
-        
-        world.addJoint(joint)
-        
-        return (b1, b2)
-    }
-    
-    /// Creates a pinned box with a ball attached to one of its edges
-    @discardableResult
-    func createBallBoxLinkedStructure(_ pos: Vector2) -> (ball: Body, box: Body) {
-        let b1 = createBouncyBall(pos - Vector2(x: 0, y: 2), pinned: false, kinematic: false, radius: 1, mass: 1)
-        let b2 = createBox(pos, size: Vector2.unit * 2, pinned: true, kinematic: false, mass: 1)
-        
-        // Create the joint links
-        let l1 = BodyJointLink(body: b1)
-        let l2 = EdgeJointLink(body: b2, edgeIndex: 2, edgeRatio: 0.5)
-        
-        world.addJoint(SpringBodyJoint(on: world, link1: l1, link2: l2, coefficient: 100, damping: 20))
-        
-        // Allow relaxation of bodies
-        b1.component(ofType: GravityComponent.self)?.relaxable = true
-        b2.component(ofType: GravityComponent.self)?.relaxable = true
-        b1.addComponent(ofType: StickyRayComponent.self)
-        
-        return (b1, b2)
-    }
-    
-    /// Creates a pinned box with two balls attached to one of its edges
-    @discardableResult
-    func createScaleStructure(_ pos: Vector2) -> (leftBall: Body, scale: Body, rightBall: Body) {
-        let b1 = createBox(pos, size: Vector2(x: 4, y: 2), pinned: true, kinematic: false)
-        let b2 = createBouncyBall(pos + Vector2(x: -1.2, y: -2), pinned: false, kinematic: false, radius: 1)
-        let b3 = createBouncyBall(pos + Vector2(x:  1.2, y: -2), pinned: false, kinematic: false, radius: 1)
-        
-        // Create the joints that link the box with the left sphere
-        let l1 = BodyJointLink(body: b2)
-        let l2 = EdgeJointLink(body: b1, edgeIndex: 2, edgeRatio: 0.8)
-        
-        // Create the joints that link the box with the right sphere
-        let l3 = BodyJointLink(body: b3)
-        let l4 = EdgeJointLink(body: b1, edgeIndex: 2, edgeRatio: 0.2)
-        
-        // Create the joints
-        let joint1 = SpringBodyJoint(on: world, link1: l1, link2: l2, coefficient: 10, damping: 2)
-        let joint2 = SpringBodyJoint(on: world, link1: l3, link2: l4, coefficient: 40, damping: 5)
-        
-        joint2.restDistance = joint2.restDistance.minimumDistance <-> joint2.restDistance.minimumDistance + 2
-        
-        // Enable collision between the bodies
-        joint1.allowCollisions = true
-        joint2.allowCollisions = true
-        
-        world.addJoint(joint1)
-        world.addJoint(joint2)
-        
-        // Allow relaxation of bodies
-        b1.component(ofType: GravityComponent.self)?.relaxable = true
-        b2.component(ofType: GravityComponent.self)?.relaxable = true
-        b3.component(ofType: GravityComponent.self)?.relaxable = true
-        
-        // Relax these bodies a bit
-        world.relaxBodies(in: [b1, b2, b3], timestep: 1 / 600.0, iterations: 120 * 8)
-        
-        return (b2, b1, b3)
-    }
-    
-    /// Creates a car structure
-    @discardableResult
-    func createCarStructure(_ pos: Vector2) -> (car: Body, leftWheel: Body, rightWheel: Body) {
-        var carShape = ClosedShape()
-        
-        // Add the car shape vertices
-        carShape.begin()
-        
-        // Points created in an external editor tool
-        carShape.addVertex(x: -0.7937825232354604, y: -0.30250560258972364)
-        carShape.addVertex(x: -1.336418182150189,  y: 0.09174228082403624)
-        carShape.addVertex(x: -2.007152743584187,  y: 0.09174228082403624)
-        carShape.addVertex(x: -2.549788402498916,  y: -0.30250560258972364)
-        carShape.addVertex(x: -2.7570567806966455, y: -0.9404120779458979)
-        carShape.addVertex(x: -4.144927650095719,  y: -0.9404120779458979)
-        carShape.addVertex(x: -4.144927650095719,  y: 0.4418818905641408)
-        carShape.addVertex(x: -2.982614013609058,  y: 1.4496338285486368)
-        carShape.addVertex(x: -1.2336781172394489, y: 1.8443237218438626)
-        carShape.addVertex(x: 1.2758186165123433,  y: 1.8443237218438626)
-        carShape.addVertex(x: 3.1062068496621604,  y: 0.6077200296906478)
-        carShape.addVertex(x: 4.693548953434301,   y: 0.29764251031080285)
-        carShape.addVertex(x: 4.422231123976936,   y: -0.9404120779458979)
-        carShape.addVertex(x: 2.59178042860568,    y: -0.9404120779458979)
-        carShape.addVertex(x: 2.3845120315923336,  y: -0.3025056116022918)
-        carShape.addVertex(x: 1.8418764096417257,  y: 0.09174231580466982)
-        carShape.addVertex(x: 1.1711418119107195,  y: 0.09174231580466982)
-        carShape.addVertex(x: 0.6285061899601116,  y: -0.3025056116022918)
-        carShape.addVertex(x: 0.42123779294676533, y: -0.9404120779458979)
-        carShape.addVertex(x: -0.5865141450377307, y: -0.9404120779458979)
-        
-        // Scale down
-        carShape.transformOwnBy(scalingBy: Vector2(x: 0.65, y: 0.65))
-        carShape.finish(recentering: true)
-        
-        let bodyOffset = Vector2(x: 0, y: 0.4)
-        
-        let carBody = Body(world: world, shape: carShape, pointMasses: [0.7], position: pos + bodyOffset, components: [SpringComponentCreator(shapeMatchingOn: true, edgeSpringK: 300, edgeSpringDamp: 30, shapeSpringK: 600, shapeSpringDamp: 30), GravityComponentCreator()])
-        
-        let leftWheel  = createBouncyBall(carBody.derivedPos + Vector2.rotate(Vector2(x: -1.1, y: -0.5) - bodyOffset, by: carBody.derivedAngle), pinned: false, kinematic: false, radius: 0.5, mass: 0.5)
-        let rightWheel = createBouncyBall(carBody.derivedPos + Vector2.rotate(Vector2(x:  1.1, y: -0.5) - bodyOffset, by: carBody.derivedAngle), pinned: false, kinematic: false, radius: 0.5, mass: 0.5)
-        
-        // Create the left wheel constraint
-        let ljWheel = BodyJointLink(body: leftWheel)
-        let ljCar = ShapeJointLink(body: carBody, pointMassIndexes: [19, 0, 1, 2, 3, 4])
-        ljCar.offset = Vector2(x: 0, y: -0.6)
-        
-        let leftJoint = SpringBodyJoint(on: world, link1: ljWheel, link2: ljCar, coefficient: 100, damping: 15, distance: 0.0)
-        leftJoint.allowCollisions = true
-        
-        let rjWheel = BodyJointLink(body: rightWheel)
-        let rjCar = ShapeJointLink(body: carBody, pointMassIndexes: [13, 14, 15, 16, 17, 18])
-        rjCar.offset = Vector2(x: 0, y: -0.6)
-        
-        let rightJoint = SpringBodyJoint(on: world, link1: rjWheel, link2: rjCar, coefficient: 100, damping: 15, distance: 0.0)
-        rightJoint.allowCollisions = true
-        
-        world.addJoint(leftJoint)
-        world.addJoint(rightJoint)
-        
-        // Tint car
-        carBody.objectTag = UInt(0x7D21AFC3)
-        leftWheel.objectTag = UInt(0x7D333333)
-        rightWheel.objectTag = UInt(0x7D333333)
-        
-        return (carBody, leftWheel, rightWheel)
     }
 }
 
@@ -537,17 +181,19 @@ extension DemoScene {
     /// a [0, 0] vector projects into the top-left (1, -1), and [width, height]
     /// projects into the bottom-right (-1, 1).
     ///
-    func matrixForOrthoProjection(width: CGFloat, height: CGFloat) -> Vector2.NativeMatrixType {
-        let size = Vector2(x: width, y: height)
-        let scaledSize = Vector2(x: 1 / width, y: 1 / height) * 2
+    func matrixForOrthoProjection(width: Float, height: Float) -> B2Vec2.NativeMatrixType {
+        let size = B2Vec2(x: width, y: height)
+        let scaledSize = B2Vec2(x: 1 / width, y: 1 / height) * 2
         
-        let matrix = Vector2.matrix(translatingBy: -size / 2)
-        return matrix * Vector2.matrix(scalingBy: scaledSize)
+        let matrix = B2Vec2.matrix(translatingBy: -size / 2)
+        return matrix * B2Vec2.matrix(scalingBy: scaledSize)
     }
     
-    func drawLine(from start: Vector2, to end: Vector2, color: UInt = 0xFFFFFFFF, width: JFloat = 0.5) {
+#if false
+    
+    func drawLine(from start: B2Vec2, to end: B2Vec2, color: UInt = 0xFFFFFFFF, width: Float = 0.5) {
         
-        let normal = ((start - end).normalized().perpendicular() / 15) * width
+        let normal = ((start - end).normalized.perpendicular() / 15) * width
         
         let i0 = vertexBuffer.addVertex(start + normal, color: color)
         let i1 = vertexBuffer.addVertex(end + normal, color: color)
@@ -565,7 +211,7 @@ extension DemoScene {
         vertexBuffer.addTriangleWithIndices(i2, p1, i3)
     }
     
-    func drawCircle(center point: Vector2, radius: JFloat, sides: Int = 10, color: UInt = 0xFFFFFFFF) {
+    func drawCircle(center point: B2Vec2, radius: Float, sides: Int = 10, color: UInt = 0xFFFFFFFF) {
         let prevColor = vertexBuffer.currentColor
         vertexBuffer.currentColor = color
         defer {
@@ -594,7 +240,7 @@ extension DemoScene {
         }
     }
     
-    func drawPolyOutline(_ points: [Vector2], color: UInt = 0xFFFFFFFF, width: JFloat = 0.5) {
+    func drawPolyOutline(_ points: [B2Vec2], color: UInt = 0xFFFFFFFF, width: Float = 0.5) {
         guard var last = points.last else {
             return
         }
@@ -632,7 +278,7 @@ extension DemoScene {
             let clamped = joint.restDistance.clamp(value: distance)
             
             if clamped > 0 {
-                var overhead: JFloat
+                var overhead: Float
                 
                 if distance < clamped {
                     overhead = distance / clamped
@@ -656,7 +302,7 @@ extension DemoScene {
             let springWidth = 0.2
             let segmentCount = Int((joint.restDistance.minimumDistance / 0.1).rounded(.up))
             
-            func positionForSegment(_ offset: Int) -> Vector2 {
+            func positionForSegment(_ offset: Int) -> B2Vec2 {
                 if offset == 0 {
                     return start
                 }
@@ -664,10 +310,10 @@ extension DemoScene {
                     return end
                 }
                 
-                let segPosition = start.ratio(JFloat(offset) / JFloat(segmentCount), to: end)
-                let segPerp = (end - start).perpendicular().normalized() * JFloat(springWidth)
+                let segPosition = start.ratio(Float(offset) / Float(segmentCount), to: end)
+                let segPerp = (end - start).perpendicular().normalized() * Float(springWidth)
                 
-                let segmentPosition: Vector2
+                let segmentPosition: B2Vec2
                 
                 if offset.isMultiple(of: 2) {
                     segmentPosition = segPosition + segPerp
@@ -698,7 +344,7 @@ extension DemoScene {
                 drawLine(from: start, to: end, color: color)
                 
             case let .ranged(min, max):
-                let length: JFloat = 0.3
+                let length: Float = 0.3
                 let dir = (end - start).normalized()
                 var startRange = start + dir * min
                 var endRange = start + dir * max
@@ -795,27 +441,19 @@ extension DemoScene {
         drawPolyOutline(shapePoints, color: 0xFF000000)
         
         // Draw the body axis
-        let axisUp    = [body.derivedPos, body.derivedPos + Vector2(x: 0, y: 0.6).rotated(by: body.derivedAngle)]
-        let axisRight = [body.derivedPos, body.derivedPos + Vector2(x: 0.6, y: 0).rotated(by: body.derivedAngle)]
+        let axisUp    = [body.derivedPos, body.derivedPos + B2Vec2(x: 0, y: 0.6).rotated(by: body.derivedAngle)]
+        let axisRight = [body.derivedPos, body.derivedPos + B2Vec2(x: 0.6, y: 0).rotated(by: body.derivedAngle)]
         
         // Rep Up vector
         drawLine(from: axisUp[0], to: axisUp[1], color: 0xFFED0000)
         // Green Right vector
         drawLine(from: axisRight[0], to: axisRight[1], color: 0xFF00ED00)
     }
-}
-
-extension DemoScene: CollisionObserver {
-    func bodiesDidCollide(_ infos: [BodyCollisionInformation]) {
-        collisions.append(contentsOf: infos)
-    }
     
-    func bodyCollision(_ info: BodyCollisionInformation, didExceedPenetrationThreshold penetrationThreshold: JFloat) {
-        print("penetration above Penetration Threshold!!  penetration = \(info.penetration), threshold = \(penetrationThreshold), difference = \(info.penetration-penetrationThreshold)")
-    }
+#endif // false
 }
 
-extension Vector2.NativeMatrixType {
+extension B2Vec2.NativeMatrixType {
     
     /// Returns a 4x4 floating-point transformation matrix for this matrix
     /// object

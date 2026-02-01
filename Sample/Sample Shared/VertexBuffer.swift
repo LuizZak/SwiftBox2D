@@ -6,9 +6,9 @@
 //  Copyright © 2017 Luiz Fernando Silva. All rights reserved.
 //
 
-import JelloSwift
 import simd
 import CoreGraphics
+import SwiftBox2D
 
 // MARK: Vector aliases -
 
@@ -18,25 +18,25 @@ import CoreGraphics
 // TODO: Once Swift gets inlining SIMD in debug mode, remove this Vector3 struct
 // in favor of SIMD structures
 
-struct Vector3: Hashable {
-    var x: Float
-    var y: Float
-    var z: Float
+public struct Vector3: Hashable {
+    public var x: Float
+    public var y: Float
+    public var z: Float
     
-    init() {
+    public init() {
         self.x = 0
         self.y = 0
         self.z = 0
     }
     
-    init(x: Float, y: Float, z: Float) {
+    public init(x: Float, y: Float, z: Float) {
         self.x = x
         self.y = y
         self.z = z
     }
 }
 #else
-typealias Vector3 = SIMD3<Float>
+public typealias Vector3 = SIMD3<Float>
 #endif
 
 extension Vector3 {
@@ -271,31 +271,31 @@ struct VertexBuffer {
     
     /// Adds a new vertex to this vertex buffer, with the current color component.
     @discardableResult
-    mutating func addVertex(x: JFloat, y: JFloat) -> IndexType {
+    mutating func addVertex(x: Float, y: Float) -> IndexType {
         return self.addVertex(x: CGFloat(x), y: CGFloat(y), color: currentColor)
     }
     
     /// Adds a new vertex, specifying the color component to go along with it.
     @discardableResult
     mutating func addVertex(x: CGFloat, y: CGFloat, color: UInt) -> IndexType {
-        return addVertex(Vector2(x: x, y: y), color: color)
+        return addVertex(B2Vec2(x: Float(x), y: Float(y)), color: color)
     }
     
     /// Adds a new vertex, specifying the color component to go along with it.
     @discardableResult
-    mutating func addVertex(x: JFloat, y: JFloat, color: UInt) -> IndexType {
-        return addVertex(Vector2(x: CGFloat(x), y: CGFloat(y)), color: color)
+    mutating func addVertex(x: Float, y: Float, color: UInt) -> IndexType {
+        return addVertex(B2Vec2(x: x, y: y), color: color)
     }
     
     /// Adds a new vertex, specifying the color component to go along with it.
     @discardableResult
-    mutating func addVertex(_ vec: Vector2) -> IndexType {
+    mutating func addVertex(_ vec: B2Vec2) -> IndexType {
         return addVertex(vec, color: currentColor)
     }
     
     /// Adds a new vertex, specifying the color component to go along with it.
     @discardableResult
-    mutating func addVertex(_ vec: Vector2, color: UInt) -> IndexType {
+    mutating func addVertex(_ vec: B2Vec2, color: UInt) -> IndexType {
         let a = (color >> 24) & 0xff
         let r = (color >> 16) & 0xff
         let g = (color >> 8) & 0xff
@@ -336,7 +336,7 @@ struct VertexBuffer {
     }
     
     /// Creates a vertex buffer from a given set of vectors
-    static func fromVectors(_ vectors: [Vector2]) -> VertexBuffer {
+    static func fromVectors(_ vectors: [B2Vec2]) -> VertexBuffer {
         
         let vertexes = vectors.map { vec -> Vertex in
             let pos = Vector3(x: vec.x, y: vec.y, z: 0)

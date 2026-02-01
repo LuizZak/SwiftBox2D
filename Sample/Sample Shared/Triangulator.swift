@@ -9,7 +9,7 @@
 //  http://flipcode.net/archives/Efficient_Polygon_Triangulation.shtml
 //
 
-import JelloSwift
+import SwiftBox2D
 
 class Triangulate {
     /// Triangulates a contour/polygon, returning the resulting triangulated
@@ -19,12 +19,12 @@ class Triangulate {
     /// vertices array back to the original provided polygon array indices.
     ///
     /// Returns nil, if the operation failed.
-    public static func process(polygon: [Vector2]) -> (vertices: [Vector2], indices: [Int])? {
+    public static func process(polygon: [B2Vec2]) -> (vertices: [B2Vec2], indices: [Int])? {
         guard let indices = processIndices(polygon: polygon) else {
             return nil
         }
         
-        var points: [Vector2] = []
+        var points: [B2Vec2] = []
         points.reserveCapacity(indices.count)
         for ind in indices {
             points.append(polygon[ind])
@@ -37,7 +37,7 @@ class Triangulate {
     /// that to the points on the polygon array to form the triangles.
     ///
     /// Returns nil, if the operation failed.
-    public static func processIndices(polygon: [Vector2]) -> [Int]? {
+    public static func processIndices(polygon: [B2Vec2]) -> [Int]? {
         
         let pointCount = polygon.count
         if pointCount < 3 {
@@ -115,8 +115,8 @@ class Triangulate {
     }
 
     // compute area of a contour/polygon
-    public static func area(_ contour: [Vector2]) -> JFloat {
-        var area: JFloat = 0.0
+    public static func area(_ contour: [B2Vec2]) -> Float {
+        var area: Float = 0.0
         var prev = contour.count - 1
         
         for cur in 0..<contour.count {
@@ -129,7 +129,7 @@ class Triangulate {
     
     // decide if point Px/Py is inside triangle defined by
     // (Ax,Ay) (Bx,By) (Cx,Cy)
-    private static func insideTriangle(A: Vector2, B: Vector2, C: Vector2, P: Vector2) -> Bool {
+    private static func insideTriangle(A: B2Vec2, B: B2Vec2, C: B2Vec2, P: B2Vec2) -> Bool {
         let a = C - B
         let b = A - C
         let c = B - A
@@ -144,7 +144,7 @@ class Triangulate {
         return ((aCROSSbp >= 0.0) && (bCROSScp >= 0.0) && (cCROSSap >= 0.0))
     }
     
-    private static func snip(contour: [Vector2], u: Int, v: Int, w: Int, n: Int, V: [Int]) -> Bool {
+    private static func snip(contour: [B2Vec2], u: Int, v: Int, w: Int, n: Int, V: [Int]) -> Bool {
         let A = contour[V[u]]
         let B = contour[V[v]]
         let C = contour[V[w]]
