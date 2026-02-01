@@ -273,6 +273,11 @@ extension Vector3 {
     static public func /= (lhs: inout Vector3, rhs: Float) {
         lhs = lhs / rhs
     }
+    
+    // Matrix interaction
+    static public func * (lhs: Matrix3x3, rhs: Self) -> Self {
+        return lhs.transformPoint(rhs)
+    }
 }
 
 // MARK: Misc math

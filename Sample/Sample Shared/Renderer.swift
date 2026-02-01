@@ -20,6 +20,7 @@ class Renderer: NSObject, MTKViewDelegate {
     private var pipelineState: MTLRenderPipelineState!
     private var vertexBuffer: MetalBuffer<VertexBuffer.VertexType>
     private var indexBuffer: MetalBuffer<VertexBuffer.IndexType>
+    private var clearColor = MTLClearColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)
     
     var demoScene: DemoScene!
     
@@ -105,8 +106,7 @@ class Renderer: NSObject, MTKViewDelegate {
             renderPassDescriptor.colorAttachments[0].texture = drawable.texture
         }
         
-        renderPassDescriptor.colorAttachments[0]
-            .clearColor = MTLClearColor(red: 0.85, green: 0.85, blue: 0.85, alpha: 1.0)
+        renderPassDescriptor.colorAttachments[0].clearColor = clearColor
         
         guard let commandBuffer = metalCommandQueue.makeCommandBuffer() else {
             return

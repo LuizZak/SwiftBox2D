@@ -315,7 +315,17 @@ struct VertexBuffer {
         for i in 0..<vertices.count {
             var vert = vertices[i]
             let result = SIMD4<Float>(vert.position.x, vert.position.y, vert.position.z, 1) * matrix
-            vert.position = Vector3(x: result.x, y: result.y, z: result.z)
+            vert.position = Vector3(x: result.x, y: result.y, z: 1.0)
+            
+            vertices[i] = vert
+        }
+    }
+    
+    mutating func applyTransformation(_ matrix: float3x3) {
+        for i in 0..<vertices.count {
+            var vert = vertices[i]
+            let result = SIMD3<Float>(vert.position.x, vert.position.y, vert.position.z) * matrix
+            vert.position = Vector3(x: result.x, y: result.y, z: 1.0)
             
             vertices[i] = vert
         }

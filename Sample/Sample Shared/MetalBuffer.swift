@@ -25,7 +25,7 @@ class MetalBuffer<T> {
         
         buffer.contents()
             .assumingMemoryBound(to: T.self)
-            .assign(from: data, count: data.count)
+            .update(from: data, count: data.count)
         
         return true
     }

@@ -11,12 +11,12 @@ extension B2Vec2 {
     
     /// Helper post-fix alias for global function `toWorldCoords(self)`
     var inWorldCoords: B2Vec2 {
-        return self
+        return (self - renderingOffset) / renderingScale
     }
 
     /// Helper post-fix alias for global function `toScreenCoords(self)`
     var inScreenCoords: B2Vec2 {
-        return self
+        return self * renderingScale + renderingOffset
     }
 }
 
@@ -33,6 +33,10 @@ class DemoScene {
     
     var boundsSize: CGSize
     
+    var sizeAsPoint: B2Vec2 {
+        B2Vec2(x: Float(boundsSize.width), y: Float(boundsSize.height))
+    }
+    
     /// Main OpenGL VAO in which all bodies will be rendered on
     var vertexBuffer: VertexBuffer
     
@@ -40,8 +44,7 @@ class DemoScene {
     var renderLabelStopwatch = Stopwatch(startTime: 0)
     var intervals: [CFAbsoluteTime] = []
     
-    var viewportMatrix = B2Vec2.matrix(scalingBy: 1.0 / (renderingScale / 2), translatingBy: renderingOffset)
-    let baseRenderingScale = B2Vec2(x: 25.8, y: 25.8)
+    let baseRenderingScale = B2Vec2(x: 20.0, y: 20.0)
     
     let labelUpdateInterval = 0.5
     
@@ -55,11 +58,16 @@ class DemoScene {
     /// axis, and collision normals
     var useDetailedRender = true
     
+    var dragInfo: DragInfo?
+    var dragForce: Float = 100.0
+    
+    var world: B2World!
+    
     init(boundsSize: CGSize, delegate: DemoSceneDelegate?) {
         self.boundsSize = boundsSize
         self.delegate = delegate
         vertexBuffer = VertexBuffer()
-        renderingOffset = B2Vec2(x: 300, y: 384)
+        renderingOffset = sizeAsPoint / 2
         renderingScale = baseRenderingScale
     }
     
@@ -103,15 +111,18 @@ class DemoScene {
             
         }
         
+        drawWorld()
+        
         // Adjust viewport by the aspect ratio
         let viewportMatrix = matrixForOrthoProjection(width: Float(boundsSize.width), height: Float(boundsSize.height))
         
-        // Matrix to transform JelloSwift's coordinates into proper coordinates
+        // Matrix to transform SwiftBox2D's coordinates into proper coordinates
         // for OpenGL
         let mat = B2Vec2.matrix(scalingBy: renderingScale, rotatingBy: 0, translatingBy: renderingOffset)
         
         // Convert point to screen coordinates
-        vertexBuffer.applyTransformation((mat * viewportMatrix).matrix4x4())
+        let screenMatrix = mat * viewportMatrix
+        vertexBuffer.applyTransformation(screenMatrix.matrix3x3())
         
         if let duration = renderLabelStopwatch.duration, duration > labelUpdateInterval {
             renderLabelStopwatch.reset()
@@ -124,10 +135,12 @@ class DemoScene {
     }
     
     func updateWithTimeSinceLastUpdate(_ timeSinceLast: CFTimeInterval) {
-        // Update the physics world
-        for _ in 0..<5 {
-            
+        if let dragInfo {
+            dragInfo.mouseDragBody.setTargetTransform(.init(p: pointerLocation, q: .identity), 1 / 60.0, true)
         }
+        
+        // Update the physics world
+        world.step(1 / 60.0, 4)
     }
     
     /// Enum used to modify the input mode of the test simulation
@@ -137,6 +150,11 @@ class DemoScene {
         /// Allows dragging bodies around
         case dragBody
     }
+    
+    struct DragInfo {
+        let mouseDragBody: B2Body
+        let mouseDragJoint: B2Joint
+    }
 }
 
 // MARK: - Input
@@ -144,15 +162,55 @@ extension DemoScene {
     func touchDown(at screenPoint: B2Vec2) {
         let worldPoint = screenPoint.inWorldCoords
         
-//        /* Called when a touch begins */
-//        if inputMode == .createBall {
-//            createBouncyBall(worldPoint)
-//        } else if inputMode == .dragBody {
-//            // Select the closest point-mass to drag
-//            pointerLocation = worldPoint
-//            
-//            draggingPoint = world.closestPointMass(to: pointerLocation)
-//        }
+        let tolerance: B2Vec2 = .init(x: 0.01, y: 0.01)
+        let aabb = B2AABB(lowerBound: worldPoint - tolerance, upperBound: worldPoint + tolerance)
+        
+        var hitBody: B2Body?
+        world.overlapAABB(aabb, filter: .default) { shape in
+            let body = B2Body(id: shape.getBody())
+            if body.type != .b2DynamicBody {
+                return true
+            }
+            
+            if shape.testPoint(worldPoint) {
+                hitBody = body
+                return false
+            }
+            
+            return true
+        }
+        
+        if let hitBody {
+            var bodyDef = b2BodyDef.default
+            bodyDef.type = .b2KinematicBody
+            bodyDef.position = worldPoint
+            bodyDef.enableSleep = false
+            
+            let mouseBody = world.createBody(bodyDef)
+            
+            var jointDef = b2MotorJointDef.default
+            jointDef.base.bodyIdA = mouseBody.id
+            jointDef.base.bodyIdB = hitBody.id
+            jointDef.base.localFrameB.p = hitBody.getLocalPoint(worldPoint)
+            jointDef.linearHertz = 7.5
+            jointDef.linearDampingRatio = 1.0
+            
+            let massData = hitBody.massData
+            let g = world.gravity.length
+            let mg = massData.mass * g
+            
+            jointDef.maxSpringForce = dragForce * mg
+            
+            if massData.mass > 0.0 {
+                // This acts like angular friction
+                let lever = (massData.rotationalInertia / massData.mass).squareRoot()
+                jointDef.maxVelocityTorque = 0.25 * lever * mg
+            }
+            
+            let mouseJoint = world.createJoint(jointDef)
+            
+            dragInfo = .init(mouseDragBody: mouseBody, mouseDragJoint: mouseJoint)
+        }
     }
     
     func touchMoved(at screenPoint: B2Vec2) {
@@ -163,13 +221,74 @@ extension DemoScene {
     
     func touchEnded(at screenPoint: B2Vec2) {
         // Reset dragging point
-        
+        if let dragInfo {
+            dragInfo.mouseDragJoint.destroy(wakeAttached: true)
+            dragInfo.mouseDragBody.destroy()
+            self.dragInfo = nil
+        }
     }
 }
 
 extension DemoScene {
     func initializeLevel() {
+        let worldDef = b2WorldDef.default
+        world = B2World(worldDef)
         
+        createCenterCircle()
+        createFloorBox()
+        createConnectedBalls()
+    }
+    
+    func createFloorBox() {
+        createBox(
+            center: (sizeAsPoint * B2Vec2(x: 0, y: 0)).inWorldCoords,
+            size: (sizeAsPoint * B2Vec2(x: 2, y: 0.1)) / renderingScale.absolute
+        )
+    }
+    
+    func createCenterCircle() {
+        var bodyDef = b2BodyDef.default
+        bodyDef.type = .b2DynamicBody
+        bodyDef.position = (sizeAsPoint / 2.0).inWorldCoords
+        
+        let circle = B2Circle(center: .zero, radius: 3.0)
+        
+        let body = world.createBody(bodyDef)
+        body.createShape(circle, shapeDef: .default)
+    }
+    
+    func createConnectedBalls() {
+        var bodyDef = b2BodyDef.default
+        bodyDef.type = .b2DynamicBody
+        
+        let circle = B2Circle(center: .zero, radius: 1.0)
+        
+        bodyDef.position = (sizeAsPoint * B2Vec2(x: 0.1, y: 0.5)).inWorldCoords
+        let body1 = world.createBody(bodyDef)
+        body1.createShape(circle, shapeDef: .default)
+        
+        bodyDef.position = (sizeAsPoint * B2Vec2(x: 0.3, y: 0.5)).inWorldCoords
+        let body2 = world.createBody(bodyDef)
+        body2.createShape(circle, shapeDef: .default)
+        
+        var jointDef = b2DistanceJointDef.default
+        jointDef.base.bodyIdA = body1.id
+        jointDef.base.bodyIdB = body2.id
+        jointDef.length = body1.getPosition().distance(to: body2.getPosition())
+        world.createJoint(jointDef)
+    }
+    
+    @discardableResult
+    func createBox(center: B2Vec2, size: B2Vec2) -> B2Body {
+        var bodyDef = b2BodyDef.default
+        bodyDef.position = center
+        
+        let polygon = B2Polygon.makeBox(halfWidth: size.x / 2, halfHeight: size.y / 2)
+        
+        let body = world.createBody(bodyDef)
+        body.createShape(polygon, shapeDef: .default)
+        
+        return body
     }
 }
 
@@ -189,11 +308,50 @@ extension DemoScene {
         return matrix * B2Vec2.matrix(scalingBy: scaledSize)
     }
     
-#if false
+    func drawWorld() {
+        var debugDraw = b2DebugDraw.default
+        
+        debugDraw.context = Unmanaged.passUnretained(self).toOpaque()
+        debugDraw.DrawCircleFcn = { (position, radius, color, ptr) in
+            let demoScene = Unmanaged<DemoScene>.fromOpaque(ptr!).takeUnretainedValue()
+            
+            demoScene.drawCircle(center: position, radius: radius, color: UInt(color.rawValue) | 0xFF000000)
+        }
+        debugDraw.DrawSolidCircleFcn = { (transform, radius, color, ptr) in
+            let demoScene = Unmanaged<DemoScene>.fromOpaque(ptr!).takeUnretainedValue()
+            
+            demoScene.drawCircle(center: transform.p, radius: radius, color: UInt(color.rawValue) | 0xFF000000)
+        }
+        debugDraw.DrawPolygonFcn = { (vertices: UnsafePointer<B2Vec2>?, vertexCount: Int32, color, ptr) in
+            let buffer = UnsafeBufferPointer(start: vertices!, count: Int(vertexCount))
+            let demoScene = Unmanaged<DemoScene>.fromOpaque(ptr!).takeUnretainedValue()
+            
+            demoScene.drawPolyOutline(Array(buffer), color: UInt(color.rawValue) | 0xFF000000, width: 1)
+        }
+        debugDraw.DrawLineFcn = { (p1, p2, color, ptr) in
+            let demoScene = Unmanaged<DemoScene>.fromOpaque(ptr!).takeUnretainedValue()
+            
+            demoScene.drawLine(from: p1, to: p2, color: UInt(color.rawValue) | 0xFF000000)
+        }
+        debugDraw.DrawTransformFcn = { (transform, ptr) in
+            let demoScene = Unmanaged<DemoScene>.fromOpaque(ptr!).takeUnretainedValue()
+            
+            let origin = b2TransformPoint(transform, B2Vec2.zero)
+            
+            demoScene.drawCircle(center: origin, radius: 0.25)
+        }
+        
+        debugDraw.drawBounds = true
+        debugDraw.drawJoints = true
+        debugDraw.drawShapes = true
+        debugDraw.drawContactPoints = true
+        debugDraw.drawMass = true
+        
+        world.draw(&debugDraw)
+    }
     
     func drawLine(from start: B2Vec2, to end: B2Vec2, color: UInt = 0xFFFFFFFF, width: Float = 0.5) {
-        
-        let normal = ((start - end).normalized.perpendicular() / 15) * width
+        let normal = ((start - end).normalized.leftPerpendicular() / 15) * width
         
         let i0 = vertexBuffer.addVertex(start + normal, color: color)
         let i1 = vertexBuffer.addVertex(end + normal, color: color)
@@ -204,35 +362,38 @@ extension DemoScene {
         vertexBuffer.addTriangleWithIndices(i2, i3, i0)
         
         // Draw a pointy line to make the line look less squared
-        let p0 = vertexBuffer.addVertex(start - normal.perpendicular(), color: color)
-        let p1 = vertexBuffer.addVertex(end + normal.perpendicular(), color: color)
+        let p0 = vertexBuffer.addVertex(start - normal.leftPerpendicular(), color: color)
+        let p1 = vertexBuffer.addVertex(end + normal.leftPerpendicular(), color: color)
         
         vertexBuffer.addTriangleWithIndices(i0, p0, i1)
         vertexBuffer.addTriangleWithIndices(i2, p1, i3)
     }
     
-    func drawCircle(center point: B2Vec2, radius: Float, sides: Int = 10, color: UInt = 0xFFFFFFFF) {
+    func drawCircle(center point: B2Vec2, radius: Float, sides: Int = 40, color: UInt = 0xFFFFFFFF) {
         let prevColor = vertexBuffer.currentColor
         vertexBuffer.currentColor = color
         defer {
             vertexBuffer.currentColor = prevColor
         }
         
-        let shape =
-            ClosedShape
-                .circle(ofRadius: radius, pointCount: sides)
-                .transformedBy(translatingBy: point)
+        var vertices: [B2Vec2] = []
+        for i in 0..<sides {
+            let angle = (Float(i) / Float(sides)) * (Float.pi * 2.0)
+            let vertex = point + B2Vec2(x: cos(angle), y: sin(angle)) * radius
+            
+            vertices.append(vertex)
+        }
         
         // Add triangles that connect the edges to a center vertex to form the
         // circle
         let center = vertexBuffer.addVertex(point)
         
-        for vert in shape.localVertices {
+        for vert in vertices {
             vertexBuffer.addVertex(x: vert.x, y: vert.y)
         }
         
-        for vert in 0..<shape.localVertices.count {
-            let next = (vert + 1) % shape.localVertices.count
+        for vert in 0..<vertices.count {
+            let next = (vert + 1) % vertices.count
             
             vertexBuffer.addTriangleWithIndices(center + UInt32(vert) + 1,
                                                 center + UInt32(next) + 1,
@@ -250,6 +411,8 @@ extension DemoScene {
             last = point
         }
     }
+    
+#if false
     
     /// Renders the dragging shape line
     func drawDrag() {
@@ -454,7 +617,6 @@ extension DemoScene {
 }
 
 extension B2Vec2.NativeMatrixType {
-    
     /// Returns a 4x4 floating-point transformation matrix for this matrix
     /// object
     func matrix4x4() -> float4x4 {
@@ -464,6 +626,22 @@ extension B2Vec2.NativeMatrixType {
         matrix[1] = .init(x: Float(self[1, 0]), y: Float(self[1, 1]), z: 0, w: Float(self[1, 2]))
         matrix[2] = .init(x: Float(self[2, 0]), y: Float(self[2, 1]), z: 1, w: Float(self[2, 2]))
         matrix[3] = .init(x: 0, y: 0, z: 0, w: 1)
+        
+        return matrix
+    }
+    
+    /// Returns a 3x3 floating-point transformation matrix for this matrix
+    /// object
+    func matrix3x3() -> float3x3 {
+        var matrix = float3x3(diagonal: [1, 1, 1])
+        
+//        matrix[0] = .init(x: Float(self[0, 0]), y: Float(self[0, 1]), z: 0)
+//        matrix[1] = .init(x: Float(self[1, 0]), y: Float(self[1, 1]), z: 0)
+//        matrix[2] = .init(x: Float(self[2, 0]), y: Float(self[2, 1]), z: 1)
+        
+        matrix[0] = .init(x: Float(self[0, 0]), y: Float(self[0, 1]), z: Float(self[0, 2]))
+        matrix[1] = .init(x: Float(self[1, 0]), y: Float(self[1, 1]), z: Float(self[1, 2]))
+        matrix[2] = .init(x: Float(self[2, 0]), y: Float(self[2, 1]), z: Float(self[2, 2]))
         
         return matrix
     }

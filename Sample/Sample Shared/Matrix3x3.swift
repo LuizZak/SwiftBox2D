@@ -296,7 +296,6 @@ public struct Matrix3x3: CustomStringConvertible {
     /// translation to the vector.
     @inlinable
     public func transformPoint(_ vec: Vector3) -> Vector3 {
-
         let px = vec.dot(r0Vec)
         let py = vec.dot(r1Vec)
         let pz = vec.dot(r2Vec)
