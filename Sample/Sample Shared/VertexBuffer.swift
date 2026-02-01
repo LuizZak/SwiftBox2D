@@ -347,7 +347,6 @@ struct VertexBuffer {
     
     /// Creates a vertex buffer from a given set of vectors
     static func fromVectors(_ vectors: [B2Vec2]) -> VertexBuffer {
-        
         let vertexes = vectors.map { vec -> Vertex in
             let pos = Vector3(x: vec.x, y: vec.y, z: 0)
             return Vertex(position: pos, color: .white)

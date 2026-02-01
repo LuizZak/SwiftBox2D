@@ -144,12 +144,12 @@ class GameView: MTKView {
     
     func createLabels() {
         physicsTimeLabel.backgroundColor = .clear
-        physicsTimeLabel.textColor = .black
+        physicsTimeLabel.textColor = .white
         physicsTimeLabel.isBezeled = false
         physicsTimeLabel.isBordered = false
         physicsTimeLabel.isEditable = false
         renderTimeLabel.backgroundColor = .clear
-        renderTimeLabel.textColor = .black
+        renderTimeLabel.textColor = .white
         renderTimeLabel.isBezeled = false
         renderTimeLabel.isBordered = false
         renderTimeLabel.isEditable = false

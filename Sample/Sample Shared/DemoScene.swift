@@ -61,6 +61,8 @@ class DemoScene {
     var dragInfo: DragInfo?
     var dragForce: Float = 100.0
     
+    var raycastBody: B2Body?
+    
     var world: B2World!
     
     init(boundsSize: CGSize, delegate: DemoSceneDelegate?) {
@@ -112,6 +114,36 @@ class DemoScene {
         }
         
         drawWorld()
+        
+        if let raycastBody {
+            
+            let rayCount = 30
+            let rayLength: Float = 10.0
+            
+            for i in 0..<rayCount {
+                let angle = Float(i) / Float(rayCount) * Float.pi * 2.0
+                let start = raycastBody.getPosition()
+                let translation = B2Vec2.fromAngle(angle) * rayLength
+                
+                var closest: B2Vec2 = start + translation
+                var closestFraction: Float = 1.0
+                
+                world.castRay(origin: start, translation: translation, filter: .default) { shape, point, normal, fraction in
+                    if shape.getBody() == raycastBody.id {
+                        return .proceed
+                    }
+                    
+                    if fraction < closestFraction {
+                        closest = point
+                        closestFraction = fraction
+                    }
+                    
+                    return .clip(fraction: fraction)
+                }
+                
+                drawLine(from: start, to: closest, color: 0xFFFF0000, width: 1.0)
+            }
+        }
         
         // Adjust viewport by the aspect ratio
         let viewportMatrix = matrixForOrthoProjection(width: Float(boundsSize.width), height: Float(boundsSize.height))
@@ -234,7 +266,7 @@ extension DemoScene {
         let worldDef = b2WorldDef.default
         world = B2World(worldDef)
         
-        createCenterCircle()
+        raycastBody = createCenterCircle()
         createFloorBox()
         createConnectedBalls()
     }
@@ -246,7 +278,8 @@ extension DemoScene {
         )
     }
     
-    func createCenterCircle() {
+    @discardableResult
+    func createCenterCircle() -> B2Body {
         var bodyDef = b2BodyDef.default
         bodyDef.type = .b2DynamicBody
         bodyDef.position = (sizeAsPoint / 2.0).inWorldCoords
@@ -255,6 +288,8 @@ extension DemoScene {
         
         let body = world.createBody(bodyDef)
         body.createShape(circle, shapeDef: .default)
+        
+        return body
     }
     
     func createConnectedBalls() {
