@@ -61,3 +61,10 @@ extension B2Vec2 {
         return b2DistanceSquared(self, other)
     }
 }
+
+extension B2Vec2 {
+    public static func fromAngle(_ angle: Float) -> B2Vec2 {
+        let cosSin = b2ComputeCosSin(angle)
+        return B2Vec2(x: cosSin.cosine, y: cosSin.sine)
+    }
+}

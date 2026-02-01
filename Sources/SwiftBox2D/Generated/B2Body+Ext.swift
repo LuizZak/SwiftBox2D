@@ -254,7 +254,7 @@ public extension B2Body {
     }
     
     /// Get the world that owns this body
-    func getWorld() -> b2WorldId {
+    func getWorld() -> B2WorldId {
         b2Body_GetWorld(id)
     }
     

@@ -15,12 +15,12 @@ public extension B2Shape {
     }
     
     /// Get the id of the body that a shape is attached to
-    func getBody() -> b2BodyId {
+    func getBody() -> B2BodyId {
         b2Shape_GetBody(id)
     }
     
     /// Get the world that owns this shape
-    func getWorld() -> b2WorldId {
+    func getWorld() -> B2WorldId {
         b2Shape_GetWorld(id)
     }
     
@@ -168,7 +168,7 @@ public extension B2Shape {
     
     /// Get the parent chain id if the shape type is a chain segment, otherwise
     /// returns b2_nullChainId.
-    func getParentChain() -> b2ChainId {
+    func getParentChain() -> B2ChainId {
         b2Shape_GetParentChain(id)
     }
     

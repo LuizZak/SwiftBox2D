@@ -15,17 +15,17 @@ public extension B2Joint {
     }
     
     /// Get body A id on a joint
-    func getBodyA() -> b2BodyId {
+    func getBodyA() -> B2BodyId {
         b2Joint_GetBodyA(id)
     }
     
     /// Get body B id on a joint
-    func getBodyB() -> b2BodyId {
+    func getBodyB() -> B2BodyId {
         b2Joint_GetBodyB(id)
     }
     
     /// Get the world that owns this joint
-    func getWorld() -> b2WorldId {
+    func getWorld() -> B2WorldId {
         b2Joint_GetWorld(id)
     }
     
