@@ -61,7 +61,7 @@ class DemoScene {
     var dragInfo: DragInfo?
     var dragForce: Float = 100.0
     
-    var raycastBody: B2Body?
+    var rayCastBody: RayCastBody?
     
     var world: B2World!
     
@@ -115,35 +115,7 @@ class DemoScene {
         
         drawWorld()
         
-        if let raycastBody {
-            
-            let rayCount = 30
-            let rayLength: Float = 10.0
-            
-            for i in 0..<rayCount {
-                let angle = Float(i) / Float(rayCount) * Float.pi * 2.0
-                let start = raycastBody.getPosition()
-                let translation = B2Vec2.fromAngle(angle) * rayLength
-                
-                var closest: B2Vec2 = start + translation
-                var closestFraction: Float = 1.0
-                
-                world.castRay(origin: start, translation: translation, filter: .default) { shape, point, normal, fraction in
-                    if shape.getBody() == raycastBody.id {
-                        return .proceed
-                    }
-                    
-                    if fraction < closestFraction {
-                        closest = point
-                        closestFraction = fraction
-                    }
-                    
-                    return .clip(fraction: fraction)
-                }
-                
-                drawLine(from: start, to: closest, color: 0xFFFF0000, width: 1.0)
-            }
-        }
+        rayCastBody?.draw(in: self)
         
         // Adjust viewport by the aspect ratio
         let viewportMatrix = matrixForOrthoProjection(width: Float(boundsSize.width), height: Float(boundsSize.height))
@@ -170,6 +142,8 @@ class DemoScene {
         if let dragInfo {
             dragInfo.mouseDragBody.setTargetTransform(.init(p: pointerLocation, q: .identity), 1 / 60.0, true)
         }
+        
+        rayCastBody?.update(world: world, timeStep: 1 / 60.0)
         
         // Update the physics world
         world.step(1 / 60.0, 4)
@@ -266,7 +240,9 @@ extension DemoScene {
         let worldDef = b2WorldDef.default
         world = B2World(worldDef)
         
-        raycastBody = createCenterCircle()
+        let circleBody = createCenterCircle()
+        rayCastBody = RayCastBody(body: circleBody)
+        
         createFloorBox()
         createConnectedBalls()
     }
@@ -679,5 +655,49 @@ extension B2Vec2.NativeMatrixType {
         matrix[2] = .init(x: Float(self[2, 0]), y: Float(self[2, 1]), z: Float(self[2, 2]))
         
         return matrix
+    }
+}
+
+class RayCastBody {
+    let body: B2Body
+    var rayJoints: [RayJointPair] = []
+    var latestRayCasts: [RayCastResult] = []
+    
+    init(body: B2Body) {
+        self.body = body
+        _generateRayJoints()
+    }
+    
+    private func _generateRayJoints() {
+        rayJoints = []
+        
+        let rayCount = 64
+        let rayLength: Float = 7.0
+        
+        for i in 0..<rayCount {
+            let angle = Float(i) / Float(rayCount) * Float.pi * 2.0
+            let rayDirection = B2Vec2.fromAngle(angle) * rayLength
+            
+            let rayJoint = RayJointPair(body: body, rayDirection: rayDirection)
+            rayJoints.append(rayJoint)
+        }
+    }
+    
+    func update(world: B2World, timeStep: Float) {
+        latestRayCasts = []
+        
+        let origin = body.getPosition()
+        
+        for rayJoint in rayJoints {
+            if let result = rayJoint.update(world: world, origin: origin, ignore: [body]) {
+                latestRayCasts.append(result)
+            }
+        }
+    }
+    
+    func draw(in demoScene: DemoScene) {
+        for latestRayCast in latestRayCasts {
+            demoScene.drawLine(from: latestRayCast.origin, to: latestRayCast.point, color: 0xFFFF0000, width: 1.0)
+        }
     }
 }

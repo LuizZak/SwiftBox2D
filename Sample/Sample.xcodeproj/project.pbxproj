@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		255B0A4A2F30F17900DFBD62 /* RayJointPair.swift in Sources */ = {isa = PBXBuildFile; fileRef = 255B0A492F30F17300DFBD62 /* RayJointPair.swift */; };
+		255B0A4B2F30F17900DFBD62 /* RayJointPair.swift in Sources */ = {isa = PBXBuildFile; fileRef = 255B0A492F30F17300DFBD62 /* RayJointPair.swift */; };
 		256822E72F2F9BFE00006059 /* SwiftBox2D in Frameworks */ = {isa = PBXBuildFile; productRef = 256822E62F2F9BFE00006059 /* SwiftBox2D */; };
 		256822E92F2F9C3C00006059 /* SwiftBox2D in Frameworks */ = {isa = PBXBuildFile; productRef = 256822E82F2F9C3C00006059 /* SwiftBox2D */; };
 		256822EB2F2FA22200006059 /* Matrix3x3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 256822EA2F2FA21F00006059 /* Matrix3x3.swift */; };
@@ -49,6 +51,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		255B0A492F30F17300DFBD62 /* RayJointPair.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RayJointPair.swift; sourceTree = "<group>"; };
 		256822EA2F2FA21F00006059 /* Matrix3x3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Matrix3x3.swift; sourceTree = "<group>"; };
 		256822ED2F2FA25700006059 /* Vector3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Vector3.swift; sourceTree = "<group>"; };
 		256822F02F2FA3A200006059 /* B2Vec2+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "B2Vec2+Ext.swift"; sourceTree = "<group>"; };
@@ -114,6 +117,7 @@
 		A0461FB122D8AD57001EAF92 /* Sample Shared */ = {
 			isa = PBXGroup;
 			children = (
+				255B0A492F30F17300DFBD62 /* RayJointPair.swift */,
 				256822F02F2FA3A200006059 /* B2Vec2+Ext.swift */,
 				256822ED2F2FA25700006059 /* Vector3.swift */,
 				256822EA2F2FA21F00006059 /* Matrix3x3.swift */,
@@ -288,6 +292,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A0461FD822D8AD5A001EAF92 /* Renderer.swift in Sources */,
+				255B0A4B2F30F17900DFBD62 /* RayJointPair.swift in Sources */,
 				A0C42ADE22D8C3C300E8F467 /* LibTessTriangulate.swift in Sources */,
 				A0461FC022D8AD5A001EAF92 /* GameViewController.swift in Sources */,
 				256822F12F2FA3A500006059 /* B2Vec2+Ext.swift in Sources */,
@@ -308,6 +313,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A0461FD922D8AD5A001EAF92 /* Renderer.swift in Sources */,
+				255B0A4A2F30F17900DFBD62 /* RayJointPair.swift in Sources */,
 				A0C42ADF22D8C3C300E8F467 /* LibTessTriangulate.swift in Sources */,
 				A0461FD122D8AD5A001EAF92 /* GameViewController.swift in Sources */,
 				256822F22F2FA3A500006059 /* B2Vec2+Ext.swift in Sources */,
