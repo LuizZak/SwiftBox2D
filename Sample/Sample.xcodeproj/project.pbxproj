@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -80,6 +80,10 @@
 		A0FCA66522DAB1C3000C2481 /* img_simple.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = img_simple.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		25649CA22F3133E300BD6B11 /* InputHelpers */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = InputHelpers; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		A0461FB722D8AD5A001EAF92 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -117,6 +121,7 @@
 		A0461FB122D8AD57001EAF92 /* Sample Shared */ = {
 			isa = PBXGroup;
 			children = (
+				25649CA22F3133E300BD6B11 /* InputHelpers */,
 				255B0A492F30F17300DFBD62 /* RayJointPair.swift */,
 				256822F02F2FA3A200006059 /* B2Vec2+Ext.swift */,
 				256822ED2F2FA25700006059 /* Vector3.swift */,
@@ -190,6 +195,9 @@
 			);
 			dependencies = (
 			);
+			fileSystemSynchronizedGroups = (
+				25649CA22F3133E300BD6B11 /* InputHelpers */,
+			);
 			name = "Sample iOS";
 			packageProductDependencies = (
 				A0C42ACA22D8BBFB00E8F467 /* LibTessSwift */,
@@ -210,6 +218,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				25649CA22F3133E300BD6B11 /* InputHelpers */,
 			);
 			name = "Sample macOS";
 			packageProductDependencies = (

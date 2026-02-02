@@ -52,6 +52,7 @@ class DemoScene {
     
     // The location of the user's finger, in physics world coordinates
     var pointerLocation = B2Vec2.zero
+    var keyMap: KeyMap = .init()
     
     /// Whether to perform a detailed render of the scene. Detailed rendering
     /// renders, along with the body shape, the body's normals, global shape and
@@ -143,7 +144,34 @@ class DemoScene {
             dragInfo.mouseDragBody.setTargetTransform(.init(p: pointerLocation, q: .identity), 1 / 60.0, true)
         }
         
+        let moveForce: Float = 1200.0
+        var moveVector: B2Vec2 = .zero
+        if keyMap.isKeyDown(.a) {
+            rayCastBody?.body.applyForceToCenter(B2Vec2(x: -moveForce, y: 0), true)
+            
+            moveVector.x += -1
+        }
+        if keyMap.isKeyDown(.d) {
+            rayCastBody?.body.applyForceToCenter(B2Vec2(x: moveForce, y: 0), true)
+            
+            moveVector.x += 1
+        }
+        if keyMap.isKeyDown(.w) {
+            rayCastBody?.body.applyForceToCenter(B2Vec2(x: 0, y: moveForce), true)
+            
+            moveVector.y += 1
+        }
+        if keyMap.isKeyDown(.s) {
+            rayCastBody?.body.applyForceToCenter(B2Vec2(x: 0, y: -moveForce), true)
+            
+            moveVector.y += -1
+        }
+        
         rayCastBody?.update(world: world, timeStep: 1 / 60.0)
+        
+        if moveVector != .zero {
+            rayCastBody?.cullJoints(headingVector: moveVector)
+        }
         
         // Update the physics world
         world.step(1 / 60.0, 4)
@@ -232,6 +260,14 @@ extension DemoScene {
             dragInfo.mouseDragBody.destroy()
             self.dragInfo = nil
         }
+    }
+    
+    func onKeyDown(keyCode: KeyCode) {
+        keyMap.setKeyDown(keyCode)
+    }
+    
+    func onKeyUp(keyCode: KeyCode) {
+        keyMap.setKeyUp(keyCode)
     }
 }
 
@@ -737,6 +773,19 @@ class RayCastBody {
         for rayJoint in rayJoints {
             if let result = rayJoint.update(world: world, origin: origin, ignore: [body]) {
                 latestRayCasts.append(result)
+            }
+        }
+    }
+    
+    func cullJoints(headingVector: B2Vec2) {
+        guard headingVector.length >= 0.001 else {
+            return
+        }
+        
+        for rayJoint in rayJoints {
+            let dot = rayJoint.rayTranslation.dot(headingVector)
+            if dot < 0 {
+                rayJoint.detachJoint()
             }
         }
     }

@@ -60,6 +60,16 @@ class GameViewController: NSViewController {
         mtkView.onMouseUp = { point in
             newRenderer.demoScene.touchEnded(at: B2Vec2(x: Float(point.x), y: Float(point.y)))
         }
+        mtkView.onKeyDown = { event in
+            if let keyCode = KeyCode(rawValue: event.keyCode) {
+                newRenderer.demoScene.onKeyDown(keyCode: keyCode)
+            }
+        }
+        mtkView.onKeyUp = { event in
+            if let keyCode = KeyCode(rawValue: event.keyCode) {
+                newRenderer.demoScene.onKeyUp(keyCode: keyCode)
+            }
+        }
         
         addDetailModeButton()
     }
@@ -113,9 +123,15 @@ class GameView: MTKView {
     let physicsTimeLabel = NSTextField()
     let renderTimeLabel = NSTextField()
     
+    override var acceptsFirstResponder: Bool {
+        return true
+    }
+    
     var onMouseDown: ((NSPoint) -> Void)?
     var onMouseMoved: ((NSPoint) -> Void)?
     var onMouseUp: ((NSPoint) -> Void)?
+    var onKeyDown: ((NSEvent) -> Void)?
+    var onKeyUp: ((NSEvent) -> Void)?
     
     override init(frame frameRect: CGRect, device: MTLDevice?) {
         super.init(frame: frameRect, device: device)
@@ -187,5 +203,13 @@ class GameView: MTKView {
         super.mouseUp(with: event)
         
         onMouseUp?(convert(event.locationInWindow, from: nil))
+    }
+    
+    override func keyDown(with event: NSEvent) {
+        onKeyDown?(event)
+    }
+    
+    override func keyUp(with event: NSEvent) {
+        onKeyUp?(event)
     }
 }
