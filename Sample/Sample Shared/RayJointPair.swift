@@ -23,7 +23,7 @@ class RayJointPair {
     func rayCast(world: B2World, origin: B2Vec2, ignore: [B2Body] = []) -> RayCastResult? {
         var latest: RayCastResult?
         
-        world.castRay(origin: origin, translation: rayTranslation, filter: .default) { shape, point, normal, fraction in
+        world.castRay(origin: origin, translation: rayTranslation, filter: .default()) { shape, point, normal, fraction in
             let bodyId = shape.getBody()
             for body in ignore {
                 if body.id == bodyId {
@@ -77,7 +77,7 @@ class RayJointPair {
             detachJoint()
             
             if let result {
-                var jointDef = b2DistanceJointDef.default
+                var jointDef = b2DistanceJointDef.default()
                 jointDef.base.bodyIdA = body.id
                 jointDef.base.bodyIdB = result.body.id
                 jointDef.base.localFrameA = .identity

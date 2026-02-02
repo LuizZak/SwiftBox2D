@@ -200,7 +200,7 @@ extension DemoScene {
         let aabb = B2AABB(lowerBound: worldPoint - tolerance, upperBound: worldPoint + tolerance)
         
         var hitBody: B2Body?
-        world.overlapAABB(aabb, filter: .default) { shape in
+        world.overlapAABB(aabb, filter: .default()) { shape in
             let body = B2Body(id: shape.getBody())
             if body.type != .b2DynamicBody {
                 return true
@@ -215,14 +215,14 @@ extension DemoScene {
         }
         
         if let hitBody {
-            var bodyDef = b2BodyDef.default
+            var bodyDef = b2BodyDef.default()
             bodyDef.type = .b2KinematicBody
             bodyDef.position = worldPoint
             bodyDef.enableSleep = false
             
             let mouseBody = world.createBody(bodyDef)
             
-            var jointDef = b2MotorJointDef.default
+            var jointDef = b2MotorJointDef.default()
             jointDef.base.bodyIdA = mouseBody.id
             jointDef.base.bodyIdB = hitBody.id
             jointDef.base.localFrameB.p = hitBody.getLocalPoint(worldPoint)
@@ -273,7 +273,7 @@ extension DemoScene {
 
 extension DemoScene {
     func initializeLevel() {
-        let worldDef = b2WorldDef.default
+        let worldDef = b2WorldDef.default()
         world = B2World(worldDef)
         
         let circleBody = createCenterCircle()
@@ -304,33 +304,33 @@ extension DemoScene {
     
     @discardableResult
     func createCenterCircle() -> B2Body {
-        var bodyDef = b2BodyDef.default
+        var bodyDef = b2BodyDef.default()
         bodyDef.type = .b2DynamicBody
         bodyDef.position = (sizeAsPoint / 2.0).inWorldCoords
         
         let circle = B2Circle(center: .zero, radius: 3.0)
         
         let body = world.createBody(bodyDef)
-        body.createShape(circle, shapeDef: .default)
+        body.createShape(circle, shapeDef: .default())
         
         return body
     }
     
     func createConnectedBalls() {
-        var bodyDef = b2BodyDef.default
+        var bodyDef = b2BodyDef.default()
         bodyDef.type = .b2DynamicBody
         
         let circle = B2Circle(center: .zero, radius: 1.0)
         
         bodyDef.position = (sizeAsPoint * B2Vec2(x: 0.1, y: 0.5)).inWorldCoords
         let body1 = world.createBody(bodyDef)
-        body1.createShape(circle, shapeDef: .default)
+        body1.createShape(circle, shapeDef: .default())
         
         bodyDef.position = (sizeAsPoint * B2Vec2(x: 0.3, y: 0.5)).inWorldCoords
         let body2 = world.createBody(bodyDef)
-        body2.createShape(circle, shapeDef: .default)
+        body2.createShape(circle, shapeDef: .default())
         
-        var jointDef = b2DistanceJointDef.default
+        var jointDef = b2DistanceJointDef.default()
         jointDef.base.bodyIdA = body1.id
         jointDef.base.bodyIdB = body2.id
         jointDef.length = body1.getPosition().distance(to: body2.getPosition())
@@ -339,13 +339,13 @@ extension DemoScene {
     
     @discardableResult
     func createBox(center: B2Vec2, size: B2Vec2) -> B2Body {
-        var bodyDef = b2BodyDef.default
+        var bodyDef = b2BodyDef.default()
         bodyDef.position = center
         
         let polygon = B2Polygon.makeBox(halfWidth: size.x / 2, halfHeight: size.y / 2)
         
         let body = world.createBody(bodyDef)
-        body.createShape(polygon, shapeDef: .default)
+        body.createShape(polygon, shapeDef: .default())
         
         return body
     }
@@ -368,7 +368,7 @@ extension DemoScene {
     }
     
     func drawWorld() {
-        var debugDraw = b2DebugDraw.default
+        var debugDraw = b2DebugDraw.default()
         
         debugDraw.context = Unmanaged.passUnretained(self).toOpaque()
         debugDraw.DrawCircleFcn = { (position, radius, color, ptr) in
