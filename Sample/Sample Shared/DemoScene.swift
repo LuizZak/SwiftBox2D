@@ -243,13 +243,25 @@ extension DemoScene {
         let circleBody = createCenterCircle()
         rayCastBody = RayCastBody(body: circleBody)
         
-        createFloorBox()
+        createSideBoxes()
         createConnectedBalls()
     }
     
-    func createFloorBox() {
+    func createSideBoxes() {
         createBox(
             center: (sizeAsPoint * B2Vec2(x: 0, y: 0)).inWorldCoords,
+            size: (sizeAsPoint * B2Vec2(x: 2, y: 0.1)) / renderingScale.absolute
+        )
+        createBox(
+            center: (sizeAsPoint * B2Vec2(x: 0, y: 0)).inWorldCoords,
+            size: (sizeAsPoint * B2Vec2(x: 0.1, y: 2)) / renderingScale.absolute
+        )
+        createBox(
+            center: (sizeAsPoint * B2Vec2(x: 1, y: 0)).inWorldCoords,
+            size: (sizeAsPoint * B2Vec2(x: 0.1, y: 2)) / renderingScale.absolute
+        )
+        createBox(
+            center: (sizeAsPoint * B2Vec2(x: 0, y: 1)).inWorldCoords,
             size: (sizeAsPoint * B2Vec2(x: 2, y: 0.1)) / renderingScale.absolute
         )
     }
@@ -339,6 +351,19 @@ extension DemoScene {
             
             demoScene.drawPolyOutline(Array(buffer), color: UInt(color.rawValue) | 0xFF000000, width: 1)
         }
+        debugDraw.DrawSolidPolygonFcn = { (transform, vertices, vertexCount, radius, color, ptr) in
+            let buffer = UnsafeBufferPointer(start: vertices!, count: Int(vertexCount))
+            let demoScene = Unmanaged<DemoScene>.fromOpaque(ptr!).takeUnretainedValue()
+            
+            var transformed: [B2Vec2] = []
+            
+            for point in buffer {
+                let modified = transform * point
+                transformed.append(modified)
+            }
+            
+            demoScene.drawPolyFilled(transformed, color: UInt(color.rawValue) | 0xFF000000)
+        }
         debugDraw.DrawLineFcn = { (p1, p2, color, ptr) in
             let demoScene = Unmanaged<DemoScene>.fromOpaque(ptr!).takeUnretainedValue()
             
@@ -420,6 +445,31 @@ extension DemoScene {
         for point in points {
             drawLine(from: point, to: last, color: color, width: width)
             last = point
+        }
+    }
+    
+    func drawPolyFilled(_ points: [B2Vec2], color: UInt = 0xFFFFFFFF) {
+        // Triangulate body's polygon
+        guard let (vertices, indices) = LibTessTriangulate.process(polygon: points) else {
+            return
+        }
+        
+        let start = UInt32(vertexBuffer.vertices.count)
+        
+        let prev = vertexBuffer.currentColor
+        vertexBuffer.currentColor = color
+        
+        for vert in vertices {
+            vertexBuffer.addVertex(x: vert.x, y: vert.y)
+        }
+        
+        vertexBuffer.currentColor = prev
+        
+        // Add vertex index triplets
+        for i in 0..<indices.count / 3 {
+            vertexBuffer.addTriangleWithIndices(start + UInt32(indices[i * 3]),
+                                                start + UInt32(indices[i * 3 + 1]),
+                                                start + UInt32(indices[i * 3 + 2]))
         }
     }
     
@@ -645,10 +695,6 @@ extension B2Vec2.NativeMatrixType {
     /// object
     func matrix3x3() -> float3x3 {
         var matrix = float3x3(diagonal: [1, 1, 1])
-        
-//        matrix[0] = .init(x: Float(self[0, 0]), y: Float(self[0, 1]), z: 0)
-//        matrix[1] = .init(x: Float(self[1, 0]), y: Float(self[1, 1]), z: 0)
-//        matrix[2] = .init(x: Float(self[2, 0]), y: Float(self[2, 1]), z: 1)
         
         matrix[0] = .init(x: Float(self[0, 0]), y: Float(self[0, 1]), z: Float(self[0, 2]))
         matrix[1] = .init(x: Float(self[1, 0]), y: Float(self[1, 1]), z: Float(self[1, 2]))

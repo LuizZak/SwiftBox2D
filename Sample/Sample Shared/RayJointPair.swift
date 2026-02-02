@@ -1,15 +1,15 @@
 import SwiftBox2D
 
 class RayJointPair {
-    var rayDirection: B2Vec2
+    var rayTranslation: B2Vec2
     var body: B2Body
     var jointDist: Float = 0.0
-    var toleranceDist: Float = 0.15
+    var toleranceDist: Float = 0.4
     var joint: B2DistanceJoint?
     
     init(body: B2Body, rayDirection: B2Vec2) {
         self.body = body
-        self.rayDirection = rayDirection
+        self.rayTranslation = rayDirection
     }
     
     @discardableResult
@@ -23,7 +23,7 @@ class RayJointPair {
     func rayCast(world: B2World, origin: B2Vec2, ignore: [B2Body] = []) -> RayCastResult? {
         var latest: RayCastResult?
         
-        world.castRay(origin: origin, translation: rayDirection, filter: .default) { shape, point, normal, fraction in
+        world.castRay(origin: origin, translation: rayTranslation, filter: .default) { shape, point, normal, fraction in
             let bodyId = shape.getBody()
             for body in ignore {
                 if body.id == bodyId {
@@ -55,6 +55,8 @@ class RayJointPair {
     }
     
     func updateJoint(world: B2World, result: RayCastResult?) {
+        let resultPoint = result?.point ?? (body.getPosition() + rayTranslation)
+        
         var recreateJoint = false
         if let joint {
             let pointA = joint.worldPointA()
@@ -64,10 +66,8 @@ class RayJointPair {
                 recreateJoint = true
             }
             
-            if let result {
-                if result.point.distance(to: pointB) > toleranceDist {
-                    recreateJoint = true
-                }
+            if resultPoint.distance(to: pointB) > toleranceDist {
+                recreateJoint = true
             }
         } else {
             recreateJoint = true
@@ -82,7 +82,7 @@ class RayJointPair {
                 jointDef.base.bodyIdB = result.body.id
                 jointDef.base.localFrameA = .identity
                 jointDef.base.localFrameB = .init(p: result.body.getLocalPoint(result.point), q: .identity)
-                jointDef.length = rayDirection.length
+                jointDef.length = rayTranslation.length * 0.95
                 jointDef.maxLength = jointDef.length * 1.2
                 jointDef.enableSpring = true
                 jointDef.hertz = 2.0
@@ -90,7 +90,7 @@ class RayJointPair {
                 
                 self.joint = world.createJoint(jointDef)
                 
-                jointDist = rayDirection.length
+                jointDist = rayTranslation.length
             }
         }
     }
