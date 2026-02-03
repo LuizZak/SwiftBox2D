@@ -44,7 +44,12 @@
             { "cName": "b2AABB", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
             { "cName": "b2Rot", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
             { "cName": "b2Transform", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
-            { "cName": "b2Mat22", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] }
+            { "cName": "b2Mat22", "conformances": ["Equatable", "Hashable", "CustomStringConvertible"] },
+            { "cName": "b2BodyId", "conformances": ["Equatable", "Hashable"] },
+            { "cName": "b2ShapeId", "conformances": ["Equatable", "Hashable"] },
+            { "cName": "b2WorldId", "conformances": ["Equatable", "Hashable"] },
+            { "cName": "b2ChainId", "conformances": ["Equatable", "Hashable"] },
+            { "cName": "b2JointId", "conformances": ["Equatable", "Hashable"] }
         ],
         "filters": {
             "enums": ["b2BodyType", "b2ShapeType", "b2JointType", "b2HexColor"],

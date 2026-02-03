@@ -5,37 +5,37 @@ import box2d
 
 public extension B2Chain {
     /// Get the world that owns this chain shape
-    func getWorld() -> b2WorldId {
+    func getWorld() -> B2WorldId {
         b2Chain_GetWorld(id)
     }
-
+    
     /// Get the number of segments on this chain
     func getSegmentCount() -> Int32 {
         b2Chain_GetSegmentCount(id)
     }
-
+    
     /// Fill a user array with chain segment shape ids up to the specified capacity. Returns
     /// the actual number of segments returned.
     func getSegments(_ segmentArray: UnsafeMutablePointer<b2ShapeId>?, _ capacity: Int32) -> Int32 {
         b2Chain_GetSegments(id, segmentArray, capacity)
     }
-
+    
     /// Get the number of materials used on this chain. Must be 1 or the number of segments.
     func getSurfaceMaterialCount() -> Int32 {
         b2Chain_GetSurfaceMaterialCount(id)
     }
-
+    
     /// Set a chain material. If the chain has only one material, this material is applied to all
     /// segments. Otherwise it is applied to a single segment.
     func setSurfaceMaterial(_ material: UnsafeMutablePointer<b2SurfaceMaterial>?, _ materialIndex: Int32) {
         b2Chain_SetSurfaceMaterial(id, material, materialIndex)
     }
-
+    
     /// Get a chain material by index.
     func getSurfaceMaterial(_ materialIndex: Int32) -> b2SurfaceMaterial {
         b2Chain_GetSurfaceMaterial(id, materialIndex)
     }
-
+    
     /// Chain identifier validation. Provides validation for up to 64K allocations.
     func isValid() -> Bool {
         b2Chain_IsValid(id)
