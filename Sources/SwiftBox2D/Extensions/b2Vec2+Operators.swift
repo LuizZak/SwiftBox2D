@@ -92,6 +92,26 @@ extension b2Vec2 {
     public static func / (lhs: Float, rhs: Self) -> Self {
         binaryOp(lhs, rhs, /)
     }
+    
+    @inlinable
+    public static func += (lhs: inout Self, rhs: Self) {
+        lhs = lhs + rhs
+    }
+    
+    @inlinable
+    public static func -= (lhs: inout Self, rhs: Self) {
+        lhs = lhs - rhs
+    }
+    
+    @inlinable
+    public static func *= (lhs: inout Self, rhs: Self) {
+        lhs = lhs * rhs
+    }
+    
+    @inlinable
+    public static func /= (lhs: inout Self, rhs: Self) {
+        lhs = lhs / rhs
+    }
 
     // MARK: Internal
 

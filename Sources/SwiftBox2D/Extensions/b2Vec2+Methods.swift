@@ -28,6 +28,12 @@ extension B2Vec2 {
         return b2LengthSquared(self)
     }
     
+    /// Returns the angle, in radians, of this vector
+    @inlinable
+    public var angle: Float {
+        return B2Rot(fromNormalized: normalized).angle
+    }
+    
     @inlinable
     public func dot(_ other: Self) -> Float {
         return b2Dot(self, other)
