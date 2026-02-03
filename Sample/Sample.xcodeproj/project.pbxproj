@@ -81,6 +81,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		255ED3E42F3277930085705A /* Utils */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Utils; sourceTree = "<group>"; };
 		25649CA22F3133E300BD6B11 /* InputHelpers */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = InputHelpers; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -121,6 +122,7 @@
 		A0461FB122D8AD57001EAF92 /* Sample Shared */ = {
 			isa = PBXGroup;
 			children = (
+				255ED3E42F3277930085705A /* Utils */,
 				25649CA22F3133E300BD6B11 /* InputHelpers */,
 				255B0A492F30F17300DFBD62 /* RayJointPair.swift */,
 				256822F02F2FA3A200006059 /* B2Vec2+Ext.swift */,
@@ -196,6 +198,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				255ED3E42F3277930085705A /* Utils */,
 				25649CA22F3133E300BD6B11 /* InputHelpers */,
 			);
 			name = "Sample iOS";
@@ -220,6 +223,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				255ED3E42F3277930085705A /* Utils */,
 				25649CA22F3133E300BD6B11 /* InputHelpers */,
 			);
 			name = "Sample macOS";

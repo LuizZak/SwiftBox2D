@@ -1,15 +1,21 @@
 import SwiftBox2D
 
 class RayJointPair {
-    var rayTranslation: B2Vec2
+    var rayLength: Float
+    var angle: B2Rot
     var body: B2Body
     var jointDist: Float = 0.0
     var toleranceDist: Float = 0.4
     var joint: B2DistanceJoint?
     
-    init(body: B2Body, rayDirection: B2Vec2) {
+    var rayTranslation: B2Vec2 {
+        B2Vec2(x: rayLength, y: 0).rotated(by: angle * body.getRotation())
+    }
+    
+    init(body: B2Body, rayLength: Float, angle: B2Rot) {
         self.body = body
-        self.rayTranslation = rayDirection
+        self.rayLength = rayLength
+        self.angle = angle
     }
     
     @discardableResult

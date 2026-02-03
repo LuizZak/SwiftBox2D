@@ -12,43 +12,6 @@ import SwiftBox2D
 
 // MARK: Vector aliases -
 
-// MARK: Vector3
-
-#if DEBUG
-// TODO: Once Swift gets inlining SIMD in debug mode, remove this Vector3 struct
-// in favor of SIMD structures
-
-public struct Vector3: Hashable {
-    public var x: Float
-    public var y: Float
-    public var z: Float
-    
-    public init() {
-        self.x = 0
-        self.y = 0
-        self.z = 0
-    }
-    
-    public init(x: Float, y: Float, z: Float) {
-        self.x = x
-        self.y = y
-        self.z = z
-    }
-}
-#else
-public typealias Vector3 = SIMD3<Float>
-#endif
-
-extension Vector3 {
-    init(x: CGFloat, y: CGFloat, z: CGFloat) {
-        self.init(x: Float(x), y: Float(y), z: Float(z))
-    }
-    
-    init(x: Double, y: Double, z: Double) {
-        self.init(x: Float(x), y: Float(y), z: Float(z))
-    }
-}
-
 // MARK: Vector4
 typealias Vector4 = packed_float4
 

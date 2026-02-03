@@ -1,6 +1,49 @@
 import Foundation
 import SwiftBox2D
 
+// MARK: Vector3
+
+#if DEBUG
+// TODO: Once Swift gets inlining SIMD in debug mode, remove this Vector3 struct
+// in favor of SIMD structures
+
+public struct Vector3: Hashable {
+    public var x: Float
+    public var y: Float
+    public var z: Float
+    
+    public init() {
+        self.x = 0
+        self.y = 0
+        self.z = 0
+    }
+    
+    public init(x: Float, y: Float, z: Float) {
+        self.x = x
+        self.y = y
+        self.z = z
+    }
+    
+    public init(_ x: Float, _ y: Float, _ z: Float) {
+        self.x = x
+        self.y = y
+        self.z = z
+    }
+}
+#else
+public typealias Vector3 = SIMD3<Float>
+#endif
+
+extension Vector3 {
+    init(x: CGFloat, y: CGFloat, z: CGFloat) {
+        self.init(x: Float(x), y: Float(y), z: Float(z))
+    }
+    
+    init(x: Double, y: Double, z: Double) {
+        self.init(x: Float(x), y: Float(y), z: Float(z))
+    }
+}
+
 /// Represents a 2D vector
 extension Vector3 {
 
@@ -41,31 +84,26 @@ extension Vector3 {
     /// Inits a vector 3 with three integer components
     @inlinable
     public init(x: Int, y: Int, z: Int) {
-        self.x = Float(x)
-        self.y = Float(y)
-        self.z = Float(z)
+        self.init(Float(x), Float(y), Float(z))
     }
 
     /// Inits a vector 3 with X, Y, and Z defined as a given float
     @inlinable
     public init(value: Float) {
-        x = value
-        y = value
-        z = value
+        self.init(value, value, value)
     }
 
     /// Inits a vector 3 with the X, and Y components of a given vector 2, and
     /// the specified value for the Z component.
     @inlinable
     public init(_ vec: B2Vec2, z: Float) {
-        (self.x, self.y) = (vec.x, vec.y)
-        self.z = z
+        self.init(vec.x, vec.y, z)
     }
 
     /// Inits a vector 3 with X, Y, and Z defined as a given tuple
     @inlinable
     public init(_ value: (Float, Float, Float)) {
-        (x, y, z) = value
+        self.init(value.0, value.1, value.2)
     }
 
     /// Returns the distance between this Vector3 and another Vector3

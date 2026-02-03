@@ -184,7 +184,7 @@ class DemoScene {
             }
             
             if let time = keyMap.keyHeldTime(.space), time == 0.0 {
-                if timeSinceLastJump > 0.016 && rayCastBody.jointCount() >= 3 {
+                if timeSinceLastJump > 0.016 && rayCastBody.jointCount() >= 2 {
                     let angleVec = B2Vec2.fromAngle(rayCastBody.averageAngle())
                     
                     timeSinceLastJump = 0.0
@@ -196,6 +196,19 @@ class DemoScene {
             
             if timeSinceLastJump <= 0.1 {
                 rayCastBody.cullAllJoints()
+            }
+            
+            if rayCastBody.jointCount() > 1 {
+                let angle = rayCastBody.averageAngle()
+                
+                let torque = calculateTorsionSpringTorque(
+                    angle: rayCastBody.body.getRotation().angle, angularMomentum: rayCastBody.body.angularVelocity,
+                    targetAngle: angle, targetAngularMomentum: 0.0,
+                    springK: 800.0,
+                    springD: 80.0
+                )
+                
+                rayCastBody.body.applyTorque(torque, true)
             }
         }
         
@@ -336,6 +349,8 @@ extension DemoScene {
         var bodyDef = b2BodyDef.default()
         bodyDef.type = .b2DynamicBody
         bodyDef.position = (sizeAsPoint / 3.0).inWorldCoords
+        bodyDef.angularDamping = 0.9
+        bodyDef.rotation = B2Rot(fromRadians: 0.0)
         
         let circle = B2Circle(center: .zero, radius: 1.5)
         
@@ -431,22 +446,30 @@ extension DemoScene {
         var debugDraw = b2DebugDraw.default()
         
         debugDraw.context = Unmanaged.passUnretained(self).toOpaque()
+        // Circles
         debugDraw.DrawCircleFcn = { (position, radius, color, ptr) in
             let demoScene = Unmanaged<DemoScene>.fromOpaque(ptr!).takeUnretainedValue()
             
-            demoScene.drawCircle(center: position, radius: radius, color: UInt(color.rawValue) | 0xFF000000)
+            demoScene.drawCircle(center: position, radius: radius, color: color.toUInt)
         }
+        // Solid circles
         debugDraw.DrawSolidCircleFcn = { (transform, radius, color, ptr) in
             let demoScene = Unmanaged<DemoScene>.fromOpaque(ptr!).takeUnretainedValue()
             
-            demoScene.drawCircle(center: transform.p, radius: radius, color: UInt(color.rawValue) | 0xFF000000)
+            let centerStart = transform.p
+            let centerEnd = centerStart + B2Vec2(x: 1, y: 0).rotated(by: transform.q) * radius
+            
+            demoScene.drawCircle(center: transform.p, radius: radius, color: color.toUInt)
+            demoScene.drawLine(from: centerStart, to: centerEnd, color: invertColor(color.toUInt))
         }
+        // Polygons
         debugDraw.DrawPolygonFcn = { (vertices: UnsafePointer<B2Vec2>?, vertexCount: Int32, color, ptr) in
             let buffer = UnsafeBufferPointer(start: vertices!, count: Int(vertexCount))
             let demoScene = Unmanaged<DemoScene>.fromOpaque(ptr!).takeUnretainedValue()
             
-            demoScene.drawPolyOutline(Array(buffer), color: UInt(color.rawValue) | 0xFF000000, width: 1)
+            demoScene.drawPolyOutline(Array(buffer), color: color.toUInt, width: 1)
         }
+        // Solid polygons
         debugDraw.DrawSolidPolygonFcn = { (transform, vertices, vertexCount, radius, color, ptr) in
             let buffer = UnsafeBufferPointer(start: vertices!, count: Int(vertexCount))
             let demoScene = Unmanaged<DemoScene>.fromOpaque(ptr!).takeUnretainedValue()
@@ -460,17 +483,28 @@ extension DemoScene {
             
             demoScene.drawPolyFilled(transformed, color: UInt(color.rawValue) | 0xFF000000)
         }
+        // Lines
         debugDraw.DrawLineFcn = { (p1, p2, color, ptr) in
             let demoScene = Unmanaged<DemoScene>.fromOpaque(ptr!).takeUnretainedValue()
             
             demoScene.drawLine(from: p1, to: p2, color: UInt(color.rawValue) | 0xFF000000)
         }
+        // Point
+        debugDraw.DrawPointFcn = { (p, size, color, ptr) in
+            let demoScene = Unmanaged<DemoScene>.fromOpaque(ptr!).takeUnretainedValue()
+            
+            demoScene.drawCircle(center: p, radius: size * 0.01, sides: 6, color: color.toUInt)
+        }
+        // Transforms
         debugDraw.DrawTransformFcn = { (transform, ptr) in
             let demoScene = Unmanaged<DemoScene>.fromOpaque(ptr!).takeUnretainedValue()
             
             let origin = b2TransformPoint(transform, B2Vec2.zero)
+            let up = B2Vec2(x: 0, y: 1).rotated(by: transform.q)
+            let right = B2Vec2(x: 1, y: 0).rotated(by: transform.q)
             
-            demoScene.drawCircle(center: origin, radius: 0.25)
+            demoScene.drawLine(from: origin, to: origin + up, color: 0xFF00FF00)
+            demoScene.drawLine(from: origin, to: origin + right, color: 0xFFFF0000)
         }
         
         debugDraw.drawBounds = true
@@ -816,11 +850,14 @@ class RayCastBody {
         let rayCount = 64
         let rayLength: Float = 4.0
         
+        let startAngle: Float = 0.0
+        let endAngle: Float = .pi * 2.0
+        
         for i in 0..<rayCount {
-            let angle = Float(i) / Float(rayCount) * Float.pi * 2.0
-            let rayDirection = B2Vec2.fromAngle(angle) * rayLength
+            let fraction = Float(i) / Float(rayCount)
+            let angle = startAngle + fraction * (endAngle - startAngle)
             
-            let rayJoint = RayJointPair(body: body, rayDirection: rayDirection)
+            let rayJoint = RayJointPair(body: body, rayLength: rayLength, angle: B2Rot(fromRadians: angle))
             rayJoints.append(rayJoint)
         }
     }
@@ -885,4 +922,23 @@ class RayCastBody {
             demoScene.drawLine(from: latestRayCast.origin, to: latestRayCast.point, color: 0xFFFF0000, width: 1.0)
         }
     }
+}
+
+private extension B2HexColor {
+    var toUInt: UInt {
+        UInt(rawValue) | 0xFF000000
+    }
+}
+
+private func invertColor(_ color: UInt) -> UInt {
+    let a = (color >> 24) & 0xFF
+    var r = (color >> 16) & 0xFF
+    var g = (color >> 8) & 0xFF
+    var b = (color) & 0xFF
+    
+    r = 255 - r
+    g = 255 - g
+    b = 255 - b
+    
+    return (a << 24) | (r << 16) | (g << 8) | b
 }
