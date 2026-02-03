@@ -84,7 +84,7 @@ class Renderer: NSObject, MTKViewDelegate {
     
     private func updateGameState() {
         /// Update any game state before rendering
-        demoScene.update(timeSinceLastFrame: 1000.0 / 60.0)
+        demoScene.update(timeSinceLastFrame: 1.0 / 60.0)
     }
     
     func draw(in view: MTKView) {
