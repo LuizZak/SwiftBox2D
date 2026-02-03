@@ -281,6 +281,7 @@ extension DemoScene {
         
         createSideBoxes()
         createConnectedBalls()
+        createTumblerCircle()
     }
     
     func createSideBoxes() {
@@ -306,7 +307,7 @@ extension DemoScene {
     func createCenterCircle() -> B2Body {
         var bodyDef = b2BodyDef.default()
         bodyDef.type = .b2DynamicBody
-        bodyDef.position = (sizeAsPoint / 2.0).inWorldCoords
+        bodyDef.position = (sizeAsPoint / 3.0).inWorldCoords
         
         let circle = B2Circle(center: .zero, radius: 3.0)
         
@@ -335,6 +336,37 @@ extension DemoScene {
         jointDef.base.bodyIdB = body2.id
         jointDef.length = body1.getPosition().distance(to: body2.getPosition())
         world.createJoint(jointDef)
+    }
+    
+    func createTumblerCircle() {
+        var bodyDef = b2BodyDef.default()
+        bodyDef.type = .b2DynamicBody
+        bodyDef.position = (sizeAsPoint * B2Vec2(x: 0.5, y: 0.5)).inWorldCoords
+        
+        var pinBodyDef = b2BodyDef.default()
+        pinBodyDef.position = bodyDef.position
+        
+        let circle = B2Circle(center: .zero, radius: 3.0)
+        
+        let pinBody = world.createBody(pinBodyDef)
+        pinBody.createShape(B2Circle(center: .zero, radius: 0.1), shapeDef: .default())
+        
+        let circleBody = world.createBody(bodyDef)
+        circleBody.createShape(circle, shapeDef: .default())
+        
+        var pinJointDef = b2RevoluteJointDef.default()
+        pinJointDef.base.bodyIdA = circleBody.id
+        pinJointDef.base.bodyIdB = pinBody.id
+        
+        var wheelJointDef = b2WheelJointDef.default()
+        wheelJointDef.base.bodyIdA = circleBody.id
+        wheelJointDef.base.bodyIdB = pinBody.id
+        wheelJointDef.motorSpeed = 16.0
+        wheelJointDef.maxMotorTorque = 8000.0
+        wheelJointDef.enableMotor = true
+        
+        world.createJoint(pinJointDef)
+        world.createJoint(wheelJointDef)
     }
     
     @discardableResult

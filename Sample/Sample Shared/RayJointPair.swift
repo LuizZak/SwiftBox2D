@@ -83,7 +83,7 @@ class RayJointPair {
                 jointDef.base.localFrameA = .identity
                 jointDef.base.localFrameB = .init(p: result.body.getLocalPoint(result.point), q: .identity)
                 jointDef.length = rayTranslation.length * 0.95
-                jointDef.maxLength = jointDef.length * 1.2
+                jointDef.maxLength = jointDef.length * 1.3
                 jointDef.enableSpring = true
                 jointDef.hertz = 2.0
                 jointDef.dampingRatio = 0.3
