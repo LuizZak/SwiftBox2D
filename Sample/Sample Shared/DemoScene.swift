@@ -84,8 +84,8 @@ class DemoScene {
         let time = sw.stop() * 1000
         
         intervals.append(time)
-        if intervals.count > 200 {
-            intervals = Array(intervals.dropFirst(intervals.count - 200))
+        while intervals.count > 200 {
+            intervals.removeFirst()
         }
         
         if let duration = updateLabelStopwatch.duration, duration > labelUpdateInterval {
@@ -542,24 +542,19 @@ extension DemoScene {
             vertexBuffer.currentColor = prevColor
         }
         
-        var vertices: [B2Vec2] = []
-        for i in 0..<sides {
-            let angle = (Float(i) / Float(sides)) * (Float.pi * 2.0)
-            let vertex = point + B2Vec2(x: cos(angle), y: sin(angle)) * radius
-            
-            vertices.append(vertex)
-        }
-        
         // Add triangles that connect the edges to a center vertex to form the
         // circle
         let center = vertexBuffer.addVertex(point)
         
-        for vert in vertices {
-            vertexBuffer.addVertex(x: vert.x, y: vert.y)
+        for i in 0..<sides {
+            let angle = (Float(i) / Float(sides)) * (Float.pi * 2.0)
+            let vertex = point + B2Vec2(x: cos(angle), y: sin(angle)) * radius
+            
+            vertexBuffer.addVertex(x: vertex.x, y: vertex.y)
         }
         
-        for vert in 0..<vertices.count {
-            let next = (vert + 1) % vertices.count
+        for vert in 0..<sides {
+            let next = (vert + 1) % sides
             
             vertexBuffer.addTriangleWithIndices(center + UInt32(vert) + 1,
                                                 center + UInt32(next) + 1,

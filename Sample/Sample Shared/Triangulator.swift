@@ -38,7 +38,6 @@ class Triangulate {
     ///
     /// Returns nil, if the operation failed.
     public static func processIndices(polygon: [B2Vec2]) -> [Int]? {
-        
         let pointCount = polygon.count
         if pointCount < 3 {
             return nil
