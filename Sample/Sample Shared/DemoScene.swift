@@ -400,16 +400,11 @@ extension DemoScene {
         var pinJointDef = b2RevoluteJointDef.default()
         pinJointDef.base.bodyIdA = circleBody.id
         pinJointDef.base.bodyIdB = pinBody.id
-        
-        var wheelJointDef = b2WheelJointDef.default()
-        wheelJointDef.base.bodyIdA = circleBody.id
-        wheelJointDef.base.bodyIdB = pinBody.id
-        wheelJointDef.motorSpeed = 16.0
-        wheelJointDef.maxMotorTorque = 8000.0
-        wheelJointDef.enableMotor = true
+        pinJointDef.motorSpeed = 16.0
+        pinJointDef.maxMotorTorque = 8000.0
+        pinJointDef.enableMotor = true
         
         world.createJoint(pinJointDef)
-        world.createJoint(wheelJointDef)
     }
     
     @discardableResult
@@ -481,13 +476,13 @@ extension DemoScene {
                 transformed.append(modified)
             }
             
-            demoScene.drawPolyFilled(transformed, color: UInt(color.rawValue) | 0xFF000000)
+            demoScene.drawPolyFilled(transformed, color: color.toUInt)
         }
         // Lines
         debugDraw.DrawLineFcn = { (p1, p2, color, ptr) in
             let demoScene = Unmanaged<DemoScene>.fromOpaque(ptr!).takeUnretainedValue()
             
-            demoScene.drawLine(from: p1, to: p2, color: UInt(color.rawValue) | 0xFF000000)
+            demoScene.drawLine(from: p1, to: p2, color: color.toUInt)
         }
         // Point
         debugDraw.DrawPointFcn = { (p, size, color, ptr) in
