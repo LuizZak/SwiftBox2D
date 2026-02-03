@@ -1,8 +1,27 @@
 import box2d
 
 extension b2Vec2 {
+    @inlinable
     public static var zero: Self {
         b2Vec2_zero
+    }
+    
+    /// Component-wise minimum vector
+    @inlinable
+    public static func min(_ a: Self, _ b: Self) -> Self {
+        return b2Min(a, b)
+    }
+    
+    /// Component-wise maximum vector
+    @inlinable
+    public static func max(_ a: Self, _ b: Self) -> Self {
+        return b2Max(a, b)
+    }
+    
+    /// Component-wise clamp vector v into the range [a, b]
+    @inlinable
+    public static func clamp(_ value: Self, min a: Self, max b: Self) -> Self {
+        return b2Clamp(value, a, b)
     }
 }
 
