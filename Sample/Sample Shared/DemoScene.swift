@@ -50,6 +50,8 @@ class DemoScene {
     
     var inputMode = InputMode.dragBody
     
+    var timeSinceLastJump: Double = .infinity
+    
     // The location of the user's finger, in physics world coordinates
     var pointerLocation = B2Vec2.zero
     var keyMap: KeyMap = .init()
@@ -140,41 +142,67 @@ class DemoScene {
     }
     
     func updateWithTimeSinceLastUpdate(_ timeSinceLast: CFTimeInterval) {
+        timeSinceLastJump += timeSinceLast
+        
         if let dragInfo {
             dragInfo.mouseDragBody.setTargetTransform(.init(p: pointerLocation, q: .identity), 1 / 60.0, true)
         }
         
-        let moveForce: Float = 1200.0
-        var moveVector: B2Vec2 = .zero
-        if keyMap.isKeyDown(.a) {
-            rayCastBody?.body.applyForceToCenter(B2Vec2(x: -moveForce, y: 0), true)
+        if let rayCastBody {
+            let moveForce: Float = 400.0
+            var moveVector: B2Vec2 = .zero
+            if keyMap.isKeyDown(.a) {
+                moveVector.x += -1
+            }
+            if keyMap.isKeyDown(.d) {
+                moveVector.x += 1
+            }
+            if keyMap.isKeyDown(.w) {
+                moveVector.y += 1
+            }
+            if keyMap.isKeyDown(.s) {
+                moveVector.y += -1
+            }
             
-            moveVector.x += -1
-        }
-        if keyMap.isKeyDown(.d) {
-            rayCastBody?.body.applyForceToCenter(B2Vec2(x: moveForce, y: 0), true)
+            rayCastBody.update(world: world, timeStep: 1 / 60.0)
             
-            moveVector.x += 1
-        }
-        if keyMap.isKeyDown(.w) {
-            rayCastBody?.body.applyForceToCenter(B2Vec2(x: 0, y: moveForce), true)
+            if moveVector != .zero {
+                rayCastBody.cullJoints(headingVector: moveVector)
+            }
             
-            moveVector.y += 1
-        }
-        if keyMap.isKeyDown(.s) {
-            rayCastBody?.body.applyForceToCenter(B2Vec2(x: 0, y: -moveForce), true)
+            if keyMap.isKeyDown(.a) {
+                rayCastBody.body.applyForceToCenter(B2Vec2(x: -moveForce, y: 0), true)
+            }
+            if keyMap.isKeyDown(.d) {
+                rayCastBody.body.applyForceToCenter(B2Vec2(x: moveForce, y: 0), true)
+            }
+            if keyMap.isKeyDown(.w) && rayCastBody.jointCount() > 2 {
+                rayCastBody.body.applyForceToCenter(B2Vec2(x: 0, y: moveForce), true)
+            }
+            if keyMap.isKeyDown(.s) && rayCastBody.jointCount() > 2 {
+                rayCastBody.body.applyForceToCenter(B2Vec2(x: 0, y: -moveForce), true)
+            }
             
-            moveVector.y += -1
-        }
-        
-        rayCastBody?.update(world: world, timeStep: 1 / 60.0)
-        
-        if moveVector != .zero {
-            rayCastBody?.cullJoints(headingVector: moveVector)
+            if let time = keyMap.keyHeldTime(.space), time == 0.0 {
+                if timeSinceLastJump > 0.016 && rayCastBody.jointCount() >= 3 {
+                    let angleVec = B2Vec2.fromAngle(rayCastBody.averageAngle())
+                    
+                    timeSinceLastJump = 0.0
+                    
+                    let jumpForce: Float = 100.0
+                    rayCastBody.body.applyLinearImpulseToCenter(-angleVec * jumpForce, true)
+                }
+            }
+            
+            if timeSinceLastJump <= 0.1 {
+                rayCastBody.cullAllJoints()
+            }
         }
         
         // Update the physics world
         world.step(1 / 60.0, 4)
+        
+        keyMap.update(deltaTime: timeSinceLast)
     }
     
     /// Enum used to modify the input mode of the test simulation
@@ -309,7 +337,7 @@ extension DemoScene {
         bodyDef.type = .b2DynamicBody
         bodyDef.position = (sizeAsPoint / 3.0).inWorldCoords
         
-        let circle = B2Circle(center: .zero, radius: 3.0)
+        let circle = B2Circle(center: .zero, radius: 1.5)
         
         let body = world.createBody(bodyDef)
         body.createShape(circle, shapeDef: .default())
@@ -786,7 +814,7 @@ class RayCastBody {
         rayJoints = []
         
         let rayCount = 64
-        let rayLength: Float = 7.0
+        let rayLength: Float = 4.0
         
         for i in 0..<rayCount {
             let angle = Float(i) / Float(rayCount) * Float.pi * 2.0
@@ -809,6 +837,12 @@ class RayCastBody {
         }
     }
     
+    func cullAllJoints() {
+        for rayJoint in rayJoints {
+            rayJoint.detachJoint()
+        }
+    }
+    
     func cullJoints(headingVector: B2Vec2) {
         guard headingVector.length >= 0.001 else {
             return
@@ -820,6 +854,30 @@ class RayCastBody {
                 rayJoint.detachJoint()
             }
         }
+    }
+    
+    func jointCount() -> Int {
+        var result = 0
+        
+        for rayJoint in rayJoints {
+            if rayJoint.isAttached() {
+                result += 1
+            }
+        }
+        
+        return result
+    }
+    
+    func averageAngle() -> Float {
+        var sum: B2Vec2 = .zero
+        
+        for rayJoint in rayJoints {
+            if rayJoint.isAttached() {
+                sum += rayJoint.rayTranslation.normalized
+            }
+        }
+        
+        return sum.angle
     }
     
     func draw(in demoScene: DemoScene) {

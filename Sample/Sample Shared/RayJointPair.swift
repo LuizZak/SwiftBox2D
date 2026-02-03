@@ -45,7 +45,7 @@ class RayJointPair {
         return latest
     }
     
-    func hasJoint() -> Bool {
+    func isAttached() -> Bool {
         return joint != nil
     }
     
@@ -82,10 +82,12 @@ class RayJointPair {
                 jointDef.base.bodyIdB = result.body.id
                 jointDef.base.localFrameA = .identity
                 jointDef.base.localFrameB = .init(p: result.body.getLocalPoint(result.point), q: .identity)
+                jointDef.base.collideConnected = true
                 jointDef.length = rayTranslation.length * 0.95
                 jointDef.maxLength = jointDef.length * 1.3
                 jointDef.enableSpring = true
                 jointDef.hertz = 2.0
+                jointDef.upperSpringForce = 200.0
                 jointDef.dampingRatio = 0.3
                 
                 self.joint = world.createJoint(jointDef)

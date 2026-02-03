@@ -7,17 +7,39 @@
 //
 
 class KeyMap {
-    var _keys: Set<KeyCode> = []
+    var _keys: Dictionary<KeyCode, Double> = [:]
+    
+    func update(deltaTime: Double) {
+        _keys = _keys.mapValues { t in
+            if t >= 0.0 {
+                return t + deltaTime
+            }
+            
+            return t
+        }
+    }
     
     func setKeyDown(_ key: KeyCode) {
-        _keys.insert(key)
+        guard _keys[key] == nil else {
+            return
+        }
+        
+        _keys[key] = 0.0
     }
     
     func setKeyUp(_ key: KeyCode) {
-        _keys.remove(key)
+        _keys.removeValue(forKey: key)
     }
     
     func isKeyDown(_ key: KeyCode) -> Bool {
-        return _keys.contains(key)
+        if let time = _keys[key] {
+            return time >= 0.0
+        }
+        
+        return false
+    }
+    
+    func keyHeldTime(_ key: KeyCode) -> Double? {
+        return _keys[key]
     }
 }
