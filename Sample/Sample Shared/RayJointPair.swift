@@ -84,8 +84,8 @@ class RayJointPair {
             
             if let result {
                 var jointDef = b2DistanceJointDef.default()
-                jointDef.base.bodyIdA = body.id
-                jointDef.base.bodyIdB = result.body.id
+                jointDef.bodyA = body
+                jointDef.bodyB = result.body
                 jointDef.base.localFrameA = .identity
                 jointDef.base.localFrameB = .init(p: result.body.getLocalPoint(result.point), q: .identity)
                 jointDef.base.collideConnected = true

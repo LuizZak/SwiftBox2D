@@ -375,8 +375,8 @@ extension DemoScene {
         body2.createShape(circle, shapeDef: .default())
         
         var jointDef = b2DistanceJointDef.default()
-        jointDef.base.bodyIdA = body1.id
-        jointDef.base.bodyIdB = body2.id
+        jointDef.bodyA = body1
+        jointDef.bodyB = body2
         jointDef.length = body1.getPosition().distance(to: body2.getPosition())
         world.createJoint(jointDef)
     }
@@ -398,8 +398,8 @@ extension DemoScene {
         circleBody.createShape(circle, shapeDef: .default())
         
         var pinJointDef = b2RevoluteJointDef.default()
-        pinJointDef.base.bodyIdA = circleBody.id
-        pinJointDef.base.bodyIdB = pinBody.id
+        pinJointDef.bodyA = circleBody
+        pinJointDef.bodyB = pinBody
         pinJointDef.motorSpeed = 16.0
         pinJointDef.maxMotorTorque = 8000.0
         pinJointDef.enableMotor = true
@@ -592,209 +592,6 @@ extension DemoScene {
                                                 start + UInt32(indices[i * 3 + 2]))
         }
     }
-    
-#if false
-    
-    /// Renders the dragging shape line
-    func drawDrag() {
-        // Dragging point
-        guard let (body, index) = draggingPoint, inputMode == InputMode.dragBody else {
-            return
-        }
-        
-        // Create the path to draw
-        let lineStart = body.pointMasses[index].position
-        let lineEnd = pointerLocation
-        
-        drawLine(from: lineStart, to: lineEnd, color: 0xFF00DD00)
-    }
-    
-    func drawJoint(_ joint: BodyJoint) {
-        let start = joint.bodyLink1.position
-        let end = joint.bodyLink2.position
-        
-        var color: UInt = joint.enabled ? 0xFFEEEEEE : 0xFFCCCCCC
-        
-        // Color joint a different shade depending on how far from rest shape
-        // its bodies are (from gray at 0% off to light-red at >100% off)
-        let distance = start.distance(to: end)
-        if !joint.restDistance.inRange(value: distance) {
-            let clamped = joint.restDistance.clamp(value: distance)
-            
-            if clamped > 0 {
-                var overhead: Float
-                
-                if distance < clamped {
-                    overhead = distance / clamped
-                } else {
-                    overhead = clamped / distance
-                }
-                
-                // Normalize to 0 - 1
-                overhead = max(0, min(1, overhead))
-                // Now shift range to be 0.5 - 1 (this decreases strong red shades)
-                overhead = overhead / 2 + 0.5
-                
-                let resVector =
-                    Color4.fromUIntARGB(color).vector * Color4(r: 1, g: overhead, b: overhead, a: 1).vector
-                
-                color = Color4(vector: resVector).toUIntARGB()
-            }
-        }
-        
-        if !useDetailedRender && joint.restDistance.minimumDistance > 0.2 {
-            let springWidth = 0.2
-            let segmentCount = Int((joint.restDistance.minimumDistance / 0.1).rounded(.up))
-            
-            func positionForSegment(_ offset: Int) -> B2Vec2 {
-                if offset == 0 {
-                    return start
-                }
-                if offset == segmentCount {
-                    return end
-                }
-                
-                let segPosition = start.ratio(Float(offset) / Float(segmentCount), to: end)
-                let segPerp = (end - start).perpendicular().normalized() * Float(springWidth)
-                
-                let segmentPosition: B2Vec2
-                
-                if offset.isMultiple(of: 2) {
-                    segmentPosition = segPosition + segPerp
-                } else {
-                    segmentPosition = segPosition - segPerp
-                }
-                
-                return segmentPosition
-            }
-            
-            for seg in 1...segmentCount {
-                let start = positionForSegment(seg - 1)
-                let end = positionForSegment(seg)
-                
-                drawLine(from: start, to: end, color: color)
-            }
-        } else {
-            if joint.bodyLink1.linkType == .edge {
-                drawCircle(center: start, radius: 0.15, color: color)
-            }
-            if joint.bodyLink2.linkType == .edge {
-                drawCircle(center: end, radius: 0.15, color: color)
-            }
-            
-            // Draw active range for joint
-            switch joint.restDistance {
-            case .fixed:
-                drawLine(from: start, to: end, color: color)
-                
-            case let .ranged(min, max):
-                let length: Float = 0.3
-                let dir = (end - start).normalized()
-                var startRange = start + dir * min
-                var endRange = start + dir * max
-                
-                if start.distanceSquared(to: end) < (min * min) {
-                    startRange = end
-                }
-                if start.distanceSquared(to: end) > (max * max) {
-                    endRange = end
-                }
-                
-                let perp = dir.perpendicular()
-                
-                drawLine(from: startRange + perp * -length,
-                         to: startRange + perp * length,
-                         color: color)
-                
-                drawLine(from: endRange + perp * -length,
-                         to: endRange + perp * length,
-                         color: color)
-                
-                drawLine(from: start, to: end, color: color)
-                drawLine(from: startRange, to: endRange, color: color)
-            }
-        }
-    }
-    
-    func drawBody(_ body: Body) {
-        var bodyColor: UInt = 0x7DFFFFFF
-        if let color = body.objectTag as? UInt {
-            bodyColor = color
-        } else if let color = body.objectTag as? Color4 {
-            bodyColor = color.toUIntARGB()
-        } else if let color = body.objectTag as? Color {
-            bodyColor = Color4.fromUIColor(color).toUIntARGB()
-        }
-        
-        // Helper lazy body fill drawing inner function
-        func drawBodyFill() {
-            // Triangulate body's polygon
-            guard let (vertices, indices) = LibTessTriangulate.process(polygon: body.vertices) else {
-                return
-            }
-            
-            let start = UInt32(vertexBuffer.vertices.count)
-            
-            let prev = vertexBuffer.currentColor
-            vertexBuffer.currentColor = bodyColor
-            
-            for vert in vertices {
-                vertexBuffer.addVertex(x: vert.x, y: vert.y)
-            }
-            
-            vertexBuffer.currentColor = prev
-            
-            // Add vertex index triplets
-            for i in 0..<indices.count / 3 {
-                vertexBuffer.addTriangleWithIndices(start + UInt32(indices[i * 3]),
-                                                    start + UInt32(indices[i * 3 + 1]),
-                                                    start + UInt32(indices[i * 3 + 2]))
-            }
-        }
-        
-        let shapePoints = body.vertices
-        
-        if !useDetailedRender {
-            // Don't do any other rendering other than the body's buffer
-            drawBodyFill()
-            let lineColorVec = (Color4.fromUIntARGB(bodyColor).vector * Color4(r: 0.7, g: 0.6, b: 0.8, a: 1).vector)
-            drawPolyOutline(shapePoints, color: Color4(vector: lineColorVec).toUIntARGB(), width: 1)
-            return
-        }
-        
-        // Draw normals, for pressure bodies
-        if body.component(ofType: PressureComponent.self) != nil {
-            for point in body.pointMasses {
-                drawLine(from: point.position, to: point.position + point.normal / 3, color: 0xFFEC33EC)
-            }
-        }
-        
-        // Draw the body's global shape
-        drawPolyOutline(body.globalShape, color: 0xFF777777)
-        
-        // Draw lines going from the body's outer points to the global shape indices
-        for (globalShape, p) in zip(body.globalShape, body.pointMasses) {
-            let start = p.position
-            let end = globalShape
-            
-            drawLine(from: start, to: end, color: 0xFF449944)
-        }
-        
-        // Draw the body now
-        drawBodyFill()
-        drawPolyOutline(shapePoints, color: 0xFF000000)
-        
-        // Draw the body axis
-        let axisUp    = [body.derivedPos, body.derivedPos + B2Vec2(x: 0, y: 0.6).rotated(by: body.derivedAngle)]
-        let axisRight = [body.derivedPos, body.derivedPos + B2Vec2(x: 0.6, y: 0).rotated(by: body.derivedAngle)]
-        
-        // Rep Up vector
-        drawLine(from: axisUp[0], to: axisUp[1], color: 0xFFED0000)
-        // Green Right vector
-        drawLine(from: axisRight[0], to: axisRight[1], color: 0xFF00ED00)
-    }
-    
-#endif // false
 }
 
 extension B2Vec2.NativeMatrixType {
