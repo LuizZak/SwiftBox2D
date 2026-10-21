@@ -14,26 +14,25 @@ public extension B2Chain {
         b2Chain_GetSegmentCount(id)
     }
     
-    /// Fill a user array with chain segment shape ids up to the specified capacity. Returns
-    /// the actual number of segments returned.
+    /// Fill a user array with chain segment shape ids up to the specified capacity. Returns the actual
+    /// number of segments returned.
     func getSegments(_ segmentArray: UnsafeMutablePointer<b2ShapeId>?, _ capacity: Int32) -> Int32 {
         b2Chain_GetSegments(id, segmentArray, capacity)
     }
     
-    /// Get the number of materials used on this chain. Must be 1 or the number of segments.
-    func getSurfaceMaterialCount() -> Int32 {
-        b2Chain_GetSurfaceMaterialCount(id)
+    /// Set the chain material on all segments.
+    func setAllSurfaceMaterials(_ material: UnsafeMutablePointer<b2SurfaceMaterial>?) {
+        b2Chain_SetAllSurfaceMaterials(id, material)
     }
     
-    /// Set a chain material. If the chain has only one material, this material is applied to all
-    /// segments. Otherwise it is applied to a single segment.
-    func setSurfaceMaterial(_ material: UnsafeMutablePointer<b2SurfaceMaterial>?, _ materialIndex: Int32) {
-        b2Chain_SetSurfaceMaterial(id, material, materialIndex)
+    /// Set a chain material by segment index.
+    func setSurfaceMaterial(_ material: UnsafeMutablePointer<b2SurfaceMaterial>?, _ segmentIndex: Int32) {
+        b2Chain_SetSurfaceMaterial(id, material, segmentIndex)
     }
     
-    /// Get a chain material by index.
-    func getSurfaceMaterial(_ materialIndex: Int32) -> b2SurfaceMaterial {
-        b2Chain_GetSurfaceMaterial(id, materialIndex)
+    /// Get a chain material by segment index.
+    func getSurfaceMaterial(_ segmentIndex: Int32) -> b2SurfaceMaterial {
+        b2Chain_GetSurfaceMaterial(id, segmentIndex)
     }
     
     /// Chain identifier validation. Provides validation for up to 64K allocations.

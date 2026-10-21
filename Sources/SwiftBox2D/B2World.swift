@@ -65,6 +65,7 @@ public class B2World {
     /// Overlap test for all shapes that *potentially* overlap the provided AABB.
     @discardableResult
     public func overlapAABB(
+        origin: B2Vec2,
         _ aabb: B2AABB,
         filter: B2QueryFilter,
         callback: OverlapResultCallback
@@ -72,6 +73,7 @@ public class B2World {
         withoutActuallyEscaping(callback) { callback in
             withUnsafePointer(to: callback) { callback in
                 overlapAABB(
+                    origin,
                     aabb,
                     filter,
                     { (shapeId, ptr) in
@@ -88,6 +90,7 @@ public class B2World {
     /// Overlap test for all shapes that overlap the provided shape proxy.
     @discardableResult
     public func overlapShape(
+        origin: B2Vec2,
         _ shape: b2ShapeProxy,
         filter: B2QueryFilter,
         callback: OverlapResultCallback
@@ -96,6 +99,7 @@ public class B2World {
         return withoutActuallyEscaping(callback) { callback in
             withUnsafePointer(to: callback) { callback in
                 overlapShape(
+                    origin,
                     &shape,
                     filter,
                     { (shapeId, ptr) in
@@ -162,6 +166,7 @@ public class B2World {
     /// @see b2World_CastRay
     @discardableResult
     public func castShape(
+        origin: B2Vec2,
         _ proxy: b2ShapeProxy,
         translation: B2Vec2,
         filter: B2QueryFilter,
@@ -171,6 +176,7 @@ public class B2World {
         return withoutActuallyEscaping(callback) { callback in
             withUnsafePointer(to: callback) { callback in
                 castShape(
+                    origin,
                     &proxy,
                     translation,
                     filter,
@@ -259,8 +265,8 @@ public class B2World {
     }
 }
 
-private func _enqueueTask(_ task: (@convention(c) (Int32, Int32, UInt32, UnsafeMutableRawPointer?) -> Void)?, itemCount: Int32, minRange: Int32, taskContext: UnsafeMutableRawPointer?, userContext: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
-    task?(0, itemCount, 0, taskContext)
+private func _enqueueTask(_ task: (@convention(c) (UnsafeMutableRawPointer?) -> Void)?, taskContext: UnsafeMutableRawPointer?, userContext: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+    task?(taskContext)
 
     return nil
 }

@@ -3,9 +3,9 @@
 
 import box2d
 
-/// The query filter is used to filter collisions between queries and shapes. For example,
-/// you may want a ray-cast representing a projectile to hit players and the static environment
-/// but not debris.
+/// The query filter is used to filter collisions between queries and shapes. For example, you may
+/// want a ray-cast representing a projectile to hit players and the static environment but not
+/// debris.
 ///  shape
 public typealias B2QueryFilter = b2QueryFilter
 

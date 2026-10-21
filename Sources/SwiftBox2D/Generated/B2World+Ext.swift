@@ -8,52 +8,66 @@ public extension B2World {
     func isValid() -> Bool {
         b2World_IsValid(id)
     }
-    
-    /// Simulate a world for one time step. This performs collision detection, integration, and constraint solution.
+
+    /// Simulate a world for one time step. This performs collision detection, integration, and
+    /// constraint solution.
     /// - param worldId: The world to simulate
     /// - param timeStep: The amount of time to simulate, this should be a fixed number. Usually 1/60.
-    /// - param subStepCount: The number of sub-steps, increasing the sub-step count can increase accuracy. Usually 4.
+    /// - param subStepCount: The number of sub-steps, increasing the sub-step count can increase
+    /// accuracy. Usually 4.
     func step(_ timeStep: Float, _ subStepCount: Int32) {
         b2World_Step(id, timeStep, subStepCount)
     }
-    
+
     /// Call this to draw shapes and other debug draw data
     func draw(_ draw: UnsafeMutablePointer<b2DebugDraw>?) {
         b2World_Draw(id, draw)
     }
-    
-    /// Get the body events for the current time step. The event data is transient. Do not store a reference to this data.
+
+    /// Call this to get the world bounds based on the union of all shape bounds.
+    func getBounds() -> B2AABB {
+        b2World_GetBounds(id)
+    }
+
+    /// Get the body events for the current time step. The event data is transient. Do not store a
+    /// reference to this data.
     func getBodyEvents() -> b2BodyEvents {
         b2World_GetBodyEvents(id)
     }
-    
-    /// Get sensor events for the current time step. The event data is transient. Do not store a reference to this data.
+
+    /// Get sensor events for the current time step. The event data is transient. Do not store a
+    /// reference to this data.
     func getSensorEvents() -> b2SensorEvents {
         b2World_GetSensorEvents(id)
     }
-    
-    /// Get contact events for this current time step. The event data is transient. Do not store a reference to this data.
+
+    /// Get contact events for the current time step. The event data is transient. Do not store a
+    /// reference to this data.
     func getContactEvents() -> b2ContactEvents {
         b2World_GetContactEvents(id)
     }
-    
-    /// Get the joint events for the current time step. The event data is transient. Do not store a reference to this data.
+
+    /// Get the joint events for the current time step. The event data is transient. Do not store a
+    /// reference to this data.
     func getJointEvents() -> b2JointEvents {
         b2World_GetJointEvents(id)
     }
-    
-    /// Overlap test for all shapes that *potentially* overlap the provided AABB
-    func overlapAABB(_ aabb: B2AABB, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
-        b2World_OverlapAABB(id, aabb, filter, fcn, context)
+
+    /// Overlap test for all shapes that *potentially* overlap the provided AABB. The AABB is relative
+    /// to the origin, which keeps the test precise far from the world origin in large world mode. Near
+    /// the origin pass b2Pos_zero and a world AABB.
+    func overlapAABB(_ origin: B2Vec2, _ aabb: B2AABB, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
+        b2World_OverlapAABB(id, origin, aabb, filter, fcn, context)
     }
-    
-    /// Overlap test for all shapes that overlap the provided shape proxy.
-    func overlapShape(_ proxy: UnsafeMutablePointer<b2ShapeProxy>?, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
-        b2World_OverlapShape(id, proxy, filter, fcn, context)
+
+    /// Overlap test for all shapes that overlap the provided shape proxy. The proxy points are relative
+    /// to the origin. Near the origin pass b2Pos_zero and world points.
+    func overlapShape(_ origin: B2Vec2, _ proxy: UnsafeMutablePointer<b2ShapeProxy>?, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
+        b2World_OverlapShape(id, origin, proxy, filter, fcn, context)
     }
-    
-    /// Cast a ray into the world to collect shapes in the path of the ray.
-    /// Your callback function controls whether you get the closest point, any point, or n-points.
+
+    /// Cast a ray into the world to collect shapes in the path of the ray. Your callback function
+    /// controls whether you get the closest point, any point, or n-points.
     /// - note: The callback function may receive shapes in any order
     /// - param worldId: The world to cast the ray against
     /// - param origin: The start point of the ray
@@ -65,73 +79,88 @@ public extension B2World {
     func castRay(_ origin: B2Vec2, _ translation: B2Vec2, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
         b2World_CastRay(id, origin, translation, filter, fcn, context)
     }
-    
-    /// Cast a ray into the world to collect the closest hit. This is a convenience function. Ignores initial overlap.
-    /// This is less general than b2World_CastRay() and does not allow for custom filtering.
+
+    /// Cast a ray into the world to collect the closest hit. This is a convenience function. Ignores
+    /// initial overlap. This is less general than b2World_CastRay() and does not allow for custom
+    /// filtering.
     func castRayClosest(_ origin: B2Vec2, _ translation: B2Vec2, _ filter: B2QueryFilter) -> b2RayResult {
         b2World_CastRayClosest(id, origin, translation, filter)
     }
-    
-    /// Cast a shape through the world. Similar to a cast ray except that a shape is cast instead of a point.
+
+    /// Cast a shape through the world. Similar to a ray cast except that a shape is cast instead of a
+    /// point. The proxy points are relative to the origin. Callback points are world positions.
     /// @see b2World_CastRay
-    func castShape(_ proxy: UnsafeMutablePointer<b2ShapeProxy>?, _ translation: B2Vec2, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
-        b2World_CastShape(id, proxy, translation, filter, fcn, context)
+    func castShape(_ origin: B2Vec2, _ proxy: UnsafeMutablePointer<b2ShapeProxy>?, _ translation: B2Vec2, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, b2Vec2, b2Vec2, Float, UnsafeMutableRawPointer?) -> Float, _ context: UnsafeMutableRawPointer?) -> b2TreeStats {
+        b2World_CastShape(id, origin, proxy, translation, filter, fcn, context)
     }
-    
-    /// Cast a capsule mover through the world. This is a special shape cast that handles sliding along other shapes while reducing
-    /// clipping.
-    func castMover(_ mover: UnsafeMutablePointer<b2Capsule>?, _ translation: B2Vec2, _ filter: B2QueryFilter) -> Float {
-        b2World_CastMover(id, mover, translation, filter)
+
+    /// Cast a capsule mover through the world. This is a special shape cast that handles sliding along
+    /// other shapes while reducing clipping. The mover capsule is relative to the origin. Near the
+    /// origin pass b2Pos_zero and a world capsule. Returns the translation fraction at the first hit.
+    func castMover(_ origin: B2Vec2, _ mover: UnsafeMutablePointer<b2Capsule>?, _ translation: B2Vec2, _ filter: B2QueryFilter) -> Float {
+        b2World_CastMover(id, origin, mover, translation, filter)
     }
-    
-    /// Collide a capsule mover with the world, gathering collision planes that can be fed to b2SolvePlanes. Useful for
-    /// kinematic character movement.
-    func collideMover(_ mover: UnsafeMutablePointer<b2Capsule>?, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafePointer<b2PlaneResult>?, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
-        b2World_CollideMover(id, mover, filter, fcn, context)
+
+    /// Collide a capsule mover with the world, gathering collision planes that can be fed to
+    /// b2SolvePlanes. Useful for kinematic character movement. The mover capsule and the resulting
+    /// planes are relative to the origin.
+    func collideMover(_ origin: B2Vec2, _ mover: UnsafeMutablePointer<b2Capsule>?, _ filter: B2QueryFilter, _ fcn: @convention(c) (b2ShapeId, UnsafePointer<b2PlaneResult>?, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
+        b2World_CollideMover(id, origin, mover, filter, fcn, context)
     }
-    
+
     /// Enable/disable sleep. If your application does not need sleeping, you can gain some performance
     /// by disabling sleep completely at the world level.
     /// @see b2WorldDef
     func enableSleeping(_ flag: Bool) {
         b2World_EnableSleeping(id, flag)
     }
-    
+
     /// Is body sleeping enabled?
     func isSleepingEnabled() -> Bool {
         b2World_IsSleepingEnabled(id)
     }
-    
-    /// Enable/disable continuous collision between dynamic and static bodies. Generally you should keep continuous
-    /// collision enabled to prevent fast moving objects from going through static objects. The performance gain from
-    /// disabling continuous collision is minor.
+
+    /// Enable/disable continuous collision between dynamic and static bodies. Generally you should keep
+    /// continuous collision enabled to prevent fast moving objects from going through static objects.
+    /// The performance gain from disabling continuous collision is minor.
     /// @see b2WorldDef
     func enableContinuous(_ flag: Bool) {
         b2World_EnableContinuous(id, flag)
     }
-    
+
     /// Is continuous collision enabled?
     func isContinuousEnabled() -> Bool {
         b2World_IsContinuousEnabled(id)
     }
-    
+
+    /// Enable/disable restitution propagation.
+    /// @see b2WorldDef::enableRestitutionPropagation
+    func enableRestitutionPropagation(_ flag: Bool) {
+        b2World_EnableRestitutionPropagation(id, flag)
+    }
+
+    /// Is restitution propagation enabled?
+    func isRestitutionPropagationEnabled() -> Bool {
+        b2World_IsRestitutionPropagationEnabled(id)
+    }
+
     /// Register the custom filter callback. This is optional.
     func setCustomFilterCallback(_ fcn: @convention(c) (b2ShapeId, b2ShapeId, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
         b2World_SetCustomFilterCallback(id, fcn, context)
     }
-    
-    /// Register the pre-solve callback. This is optional.
-    func setPreSolveCallback(_ fcn: @convention(c) (b2ShapeId, b2ShapeId, b2Vec2, b2Vec2, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
-        b2World_SetPreSolveCallback(id, fcn, context)
+
+    /// Register the pre-solve and pre-continuous callbacks. This is optional.
+    func setPreSolveCallback(_ preSolveFcn: @convention(c) (b2ShapeId, b2ShapeId, UnsafeMutablePointer<b2Manifold>?, UnsafeMutableRawPointer?) -> Void, _ preContinuousFcn: @convention(c) (b2ShapeId, b2ShapeId, b2Vec2, b2Vec2, UnsafeMutableRawPointer?) -> Bool, _ context: UnsafeMutableRawPointer?) {
+        b2World_SetPreSolveCallback(id, preSolveFcn, preContinuousFcn, context)
     }
-    
+
     /// Apply a radial explosion
     /// - param worldId: The world id
     /// - param explosionDef: The explosion definition
     func explode(_ explosionDef: UnsafeMutablePointer<b2ExplosionDef>?) {
         b2World_Explode(id, explosionDef)
     }
-    
+
     /// Adjust contact tuning parameters
     /// - param worldId: The world id
     /// - param hertz: The contact stiffness (cycles per second)
@@ -141,66 +170,123 @@ public extension B2World {
     func setContactTuning(_ hertz: Float, _ dampingRatio: Float, _ pushSpeed: Float) {
         b2World_SetContactTuning(id, hertz, dampingRatio, pushSpeed)
     }
-    
-    /// Enable/disable constraint warm starting. Advanced feature for testing. Disabling
-    /// warm starting greatly reduces stability and provides no performance gain.
+
+    /// Get the contact tuning.
+    func getContactTuning(_ hertz: UnsafeMutablePointer<Float>?, _ dampingRatio: UnsafeMutablePointer<Float>?, _ pushSpeed: UnsafeMutablePointer<Float>?) {
+        b2World_GetContactTuning(id, hertz, dampingRatio, pushSpeed)
+    }
+
+    /// Enable/disable constraint warm starting. Advanced feature for testing. Disabling warm starting
+    /// greatly reduces stability and provides no performance gain.
     func enableWarmStarting(_ flag: Bool) {
         b2World_EnableWarmStarting(id, flag)
     }
-    
+
     /// Is constraint warm starting enabled?
     func isWarmStartingEnabled() -> Bool {
         b2World_IsWarmStartingEnabled(id)
     }
-    
+
+    /// Force SSE2 to be used even when AVX2 is available. This is for testing.
+    func enableSse2Fallback(_ flag: Bool) {
+        b2World_EnableSSE2Fallback(id, flag)
+    }
+
     /// Get the number of awake bodies.
     func getAwakeBodyCount() -> Int32 {
         b2World_GetAwakeBodyCount(id)
     }
-    
+
     /// Get the current world performance profile
     func getProfile() -> b2Profile {
         b2World_GetProfile(id)
     }
-    
+
     /// Get world counters and sizes
     func getCounters() -> b2Counters {
         b2World_GetCounters(id)
     }
-    
+
+    /// Get max capacity. This can be used with b2WorldDef to avoid run-time allocations and copies
+    func getMaxCapacity() -> b2Capacity {
+        b2World_GetMaxCapacity(id)
+    }
+
     /// Set the user data pointer.
     func setUserData(_ userData: UnsafeMutableRawPointer?) {
         b2World_SetUserData(id, userData)
     }
-    
+
     /// Set the friction callback. Passing NULL resets to default.
     func setFrictionCallback(_ callback: @convention(c) (Float, UInt64, Float, UInt64) -> Float) {
         b2World_SetFrictionCallback(id, callback)
     }
-    
+
     /// Set the restitution callback. Passing NULL resets to default.
     func setRestitutionCallback(_ callback: @convention(c) (Float, UInt64, Float, UInt64) -> Float) {
         b2World_SetRestitutionCallback(id, callback)
     }
-    
+
     /// Dump memory stats to box2d_memory.txt
     func dumpMemoryStats() {
         b2World_DumpMemoryStats(id)
     }
-    
+
     /// This is for internal testing
     func rebuildStaticTree() {
         b2World_RebuildStaticTree(id)
     }
-    
-    /// This is for internal testing
-    func enableSpeculative(_ flag: Bool) {
-        b2World_EnableSpeculative(id, flag)
+
+    /// Compute a hash of the simulation state. Use this to detect desyncs, for example in rollback
+    /// resimulation.
+    func getStateHash() -> UInt64 {
+        b2World_GetStateHash(id)
     }
-    
-    ///  Get the the restitution speed threshold. Usually in meters per second.
-    /// Adjust the restitution threshold. It is recommended not to make this value very small
-    /// because it will prevent bodies from sleeping. Usually in meters per second.
+
+    /// Begin recording the world into @p recording. Serializes a snapshot of the current world as the
+    /// seed, then logs every mutating call. Call at a step boundary, before or after creating bodies.
+    /// Start before the first step to capture the whole session. No effect if already recording or if
+    /// the world is locked.
+    /// - param worldId: The world to record
+    /// - param recording: A recording buffer from b2CreateRecording
+    func startRecording(_ recording: OpaquePointer?) {
+        b2World_StartRecording(id, recording)
+    }
+
+    /// Stop recording. The recording buffer keeps its bytes. Save and destroy it yourself.
+    /// - param worldId: The world being recorded
+    func stopRecording() {
+        b2World_StopRecording(id)
+    }
+
+    /// Write a snapshot of the world's simulation state into a caller-owned buffer. Call once with
+    /// image == NULL to get the required size, then again with a buffer of at least that size. Must be
+    /// called at a step boundary.
+    /// - param worldId: The world to snapshot
+    /// - param image: Destination buffer, or NULL to query the size
+    /// - param capacity: Size of image in bytes, ignored when querying
+    /// - returns: The number of bytes the snapshot needs. If it exceeds capacity nothing is written.
+    ///         Returns 0 if the world is mid-step.
+    func getSnapshot(_ image: UnsafeMutablePointer<UInt8>?, _ capacity: Int32) -> Int32 {
+        b2World_GetSnapshot(id, image, capacity)
+    }
+
+    /// Restore a world's simulation state from a snapshot image. The b2WorldId and ids held from this
+    /// same world stay valid for objects that existed at the snapshot instant. Callbacks and threading
+    /// configuration are preserved. User data on shapes, bodies, and joints is nulled.
+    /// - param worldId: The world to restore into
+    /// - param image: A snapshot image produced by b2World_GetSnapshot
+    /// - param size: Size of image in bytes
+    /// - returns: true on success. On a rejected image (bad magic, version, or layout) the world is left
+    ///         unchanged. A corrupt payload detected after the rebuild begins returns false and leaves
+    ///         the world unusable, so the caller must destroy it.
+    func restoreFromSnapshot(_ image: UnsafeMutablePointer<UInt8>?, _ size: Int32) -> Bool {
+        b2World_RestoreFromSnapshot(id, image, size)
+    }
+
+    ///  Get the restitution speed threshold. Usually in meters per second.
+    /// Adjust the restitution threshold. It is recommended not to make this value very small because it
+    /// will prevent bodies from sleeping. Usually in meters per second.
     /// @see b2WorldDef
     var restitutionThreshold: Float {
         get {
@@ -210,10 +296,22 @@ public extension B2World {
             b2World_SetRestitutionThreshold(id, value)
         }
     }
-    
-    ///  Get the the hit event speed threshold. Usually in meters per second.
-    /// Adjust the hit event threshold. This controls the collision speed needed to generate a b2ContactHitEvent.
-    /// Usually in meters per second.
+
+    ///  Get the number of iterations used by the restitution solver.
+    /// Set the number of iterations used by the restitution solver.
+    /// @see B2_MAX_RESTITUTION_ITERATIONS
+    var restitutionIterations: Int32 {
+        get {
+            b2World_GetRestitutionIterations(id)
+        }
+        set(iterations) {
+            b2World_SetRestitutionIterations(id, iterations)
+        }
+    }
+
+    ///  Get the hit event speed threshold. Usually in meters per second.
+    /// Adjust the hit event threshold. This controls the collision speed needed to generate a
+    /// b2ContactHitEvent. Usually in meters per second.
     /// @see b2WorldDef::hitEventThreshold
     var hitEventThreshold: Float {
         get {
@@ -223,10 +321,10 @@ public extension B2World {
             b2World_SetHitEventThreshold(id, value)
         }
     }
-    
+
     ///  Get the gravity vector
-    /// Set the gravity vector for the entire world. Box2D has no concept of an up direction and this
-    /// is left as a decision for the application. Usually in m/s^2.
+    /// Set the gravity vector for the entire world. Box2D has no concept of an up direction and this is
+    /// left as a decision for the application. Usually in m/s^2.
     /// @see b2WorldDef
     var gravity: B2Vec2 {
         get {
@@ -236,15 +334,38 @@ public extension B2World {
             b2World_SetGravity(id, gravity)
         }
     }
-    
+
+    ///  Get the contact point recycling distance. Usually in meters.
+    /// Set the contact point recycling distance. Setting this to zero disables contact point recycling.
+    /// Usually in meters.
+    var contactRecycleDistance: Float {
+        get {
+            b2World_GetContactRecycleDistance(id)
+        }
+        set(recycleDistance) {
+            b2World_SetContactRecycleDistance(id, recycleDistance)
+        }
+    }
+
     /// Get the maximum linear speed. Usually in m/s.
     /// Set the maximum linear speed. Usually in m/s.
-    var maximumLinearSpeed: Float {
+    var maxLinearSpeed: Float {
         get {
-            b2World_GetMaximumLinearSpeed(id)
+            b2World_GetMaxLinearSpeed(id)
         }
         set(maximumLinearSpeed) {
-            b2World_SetMaximumLinearSpeed(id, maximumLinearSpeed)
+            b2World_SetMaxLinearSpeed(id, maximumLinearSpeed)
+        }
+    }
+
+    /// Get the worker count.
+    /// Set the worker count. Must be in the range [1, B2_MAX_WORKERS]
+    var workerCount: Int32 {
+        get {
+            b2World_GetWorkerCount(id)
+        }
+        set(count) {
+            b2World_SetWorkerCount(id, count)
         }
     }
 }

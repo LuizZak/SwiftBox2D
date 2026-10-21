@@ -50,8 +50,8 @@ public extension B2WheelJoint {
     }
     
     /// Get the wheel joint current motor torque, usually in newton-meters
-    func getMotorTorque() -> Float {
-        b2WheelJoint_GetMotorTorque(id)
+    func getCurrentMotorTorque() -> Float {
+        b2WheelJoint_GetCurrentMotorTorque(id)
     }
     
     /// Get the wheel joint stiffness in Hertz
@@ -78,12 +78,12 @@ public extension B2WheelJoint {
     
     /// Get the wheel joint motor speed in radians per second
     /// Set the wheel joint motor speed in radians per second
-    var motorSpeed: Float {
+    var targetMotorSpeed: Float {
         get {
-            b2WheelJoint_GetMotorSpeed(id)
+            b2WheelJoint_GetTargetMotorSpeed(id)
         }
         set(motorSpeed) {
-            b2WheelJoint_SetMotorSpeed(id, motorSpeed)
+            b2WheelJoint_SetTargetMotorSpeed(id, motorSpeed)
         }
     }
     

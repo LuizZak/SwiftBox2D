@@ -49,25 +49,25 @@ public extension B2PrismaticJoint {
         b2PrismaticJoint_IsMotorEnabled(id)
     }
     
-    /// Get the prismatic joint current motor force, usually in newtons
-    func getMotorForce() -> Float {
-        b2PrismaticJoint_GetMotorForce(id)
-    }
-    
     /// Get the current joint translation, usually in meters.
-    func getTranslation() -> Float {
-        b2PrismaticJoint_GetTranslation(id)
+    func getCurrentTranslation() -> Float {
+        b2PrismaticJoint_GetCurrentTranslation(id)
     }
     
-    /// Get the current joint translation speed, usually in meters per second.
-    func getSpeed() -> Float {
-        b2PrismaticJoint_GetSpeed(id)
+    /// Get the current joint translation velocity, usually in meters per second.
+    func getCurrentSpeed() -> Float {
+        b2PrismaticJoint_GetCurrentSpeed(id)
+    }
+    
+    /// Get the prismatic joint current motor force, usually in newtons
+    func getCurrentMotorForce() -> Float {
+        b2PrismaticJoint_GetCurrentMotorForce(id)
     }
     
     ///  Get the prismatic joint stiffness in Hertz
-    /// Set the prismatic joint stiffness in Hertz.
-    /// This should usually be less than a quarter of the simulation rate. For example, if the simulation
-    /// runs at 60Hz then the joint stiffness should be 15Hz or less.
+    /// Set the prismatic joint stiffness in Hertz. This should usually be less than a quarter of the
+    /// simulation rate. For example, if the simulation runs at 60Hz then the joint stiffness should be
+    /// 15Hz or less.
     var springHertz: Float {
         get {
             b2PrismaticJoint_GetSpringHertz(id)
@@ -89,7 +89,7 @@ public extension B2PrismaticJoint {
     }
     
     /// Get the prismatic joint spring target translation, usually in meters
-    /// Set the prismatic joint spring target angle, usually in meters
+    /// Set the prismatic joint spring target translation, usually in meters
     var targetTranslation: Float {
         get {
             b2PrismaticJoint_GetTargetTranslation(id)
@@ -101,12 +101,12 @@ public extension B2PrismaticJoint {
     
     /// Get the prismatic joint motor speed, usually in meters per second
     /// Set the prismatic joint motor speed, usually in meters per second
-    var motorSpeed: Float {
+    var targetMotorSpeed: Float {
         get {
-            b2PrismaticJoint_GetMotorSpeed(id)
+            b2PrismaticJoint_GetTargetMotorSpeed(id)
         }
         set(motorSpeed) {
-            b2PrismaticJoint_SetMotorSpeed(id, motorSpeed)
+            b2PrismaticJoint_SetTargetMotorSpeed(id, motorSpeed)
         }
     }
     

@@ -3,8 +3,7 @@
 
 import box2d
 
-/// 2D vector
-/// This can be used to represent a point or free vector
+/// 2D vector This can be used to represent a point or free vector
 public typealias B2Vec2 = b2Vec2
 
 extension B2Vec2: @retroactive CustomStringConvertible, @retroactive Equatable, @retroactive Hashable { }

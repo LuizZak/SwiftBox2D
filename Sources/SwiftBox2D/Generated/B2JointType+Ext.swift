@@ -5,23 +5,36 @@ import box2d
 
 /// Joint type enumeration
 /// 
-/// This is useful because all joint types use b2JointId and sometimes you
-/// want to get the type of a joint.
+/// This is useful because all joint types use b2JointId and sometimes you want to get the type of a
+/// joint.
 ///  joint
 public typealias B2JointType = b2JointType
 
 public extension B2JointType {
+    /// < constrain the distance between two points
     static let b2DistanceJoint = b2_distanceJoint
     
+    /// < filter collision between two bodies
     static let b2FilterJoint = b2_filterJoint
     
+    /// < fully control the movement of a body
     static let b2MotorJoint = b2_motorJoint
     
+    /// < control the movement of the dynamic character mover
+    static let b2MoverJoint = b2_moverJoint
+    
+    /// < ground interaction for the dynamic character mover
+    static let b2PogoJoint = b2_pogoJoint
+    
+    /// < slide along an axis
     static let b2PrismaticJoint = b2_prismaticJoint
     
+    /// < rotate around a pivot
     static let b2RevoluteJoint = b2_revoluteJoint
     
+    /// < bring two bodies together with some flex
     static let b2WeldJoint = b2_weldJoint
     
+    /// < wheel spins with shock absorber
     static let b2WheelJoint = b2_wheelJoint
 }

@@ -34,7 +34,7 @@ public extension B2Joint {
         b2Joint_SetUserData(id, userData)
     }
     
-    /// Wake the bodies connect to this joint
+    /// Wake the bodies connected to this joint
     func wakeBodies() {
         b2Joint_WakeBodies(id)
     }
@@ -49,12 +49,14 @@ public extension B2Joint {
         b2Joint_GetConstraintTorque(id)
     }
     
-    /// Get the current linear separation error for this joint. Does not consider admissible movement. Usually in meters.
+    /// Get the current linear separation error for this joint. Does not consider admissible movement.
+    /// Usually in meters.
     func getLinearSeparation() -> Float {
         b2Joint_GetLinearSeparation(id)
     }
     
-    /// Get the current angular separation error for this joint. Does not consider admissible movement. Usually in meters.
+    /// Get the current angular separation error for this joint. Does not consider admissible movement.
+    /// Radians.
     func getAngularSeparation() -> Float {
         b2Joint_GetAngularSeparation(id)
     }

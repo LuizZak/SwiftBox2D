@@ -4,13 +4,13 @@
 import box2d
 
 public extension B2Body {
-    /// Body identifier validation. A valid body exists in a world and is non-null.
-    /// This can be used to detect orphaned ids. Provides validation for up to 64K allocations.
+    /// Body identifier validation. A valid body exists in a world and is non-null. This can be used to
+    /// detect orphaned ids. Provides validation for up to 64K allocations.
     func isValid() -> Bool {
         b2Body_IsValid(id)
     }
     
-    /// Set the body name. Up to 31 characters excluding 0 termination.
+    /// Set the body name. See B2_NAME_LENGTH.
     func setName(_ name: UnsafeMutablePointer<CChar>?) {
         b2Body_SetName(id, name)
     }
@@ -36,7 +36,7 @@ public extension B2Body {
     }
     
     /// Set the world transform of a body. This acts as a teleport and is fairly expensive.
-    /// - note: Generally you should create a body with then intended transform.
+    /// - note: Generally you should create a body with the intended transform.
     /// @see b2BodyDef::position and b2BodyDef::rotation
     func setTransform(_ position: B2Vec2, _ rotation: B2Rot) {
         b2Body_SetTransform(id, position, rotation)
@@ -62,10 +62,9 @@ public extension B2Body {
         b2Body_GetWorldVector(id, localVector)
     }
     
-    /// Set the velocity to reach the given transform after a given time step.
-    /// The result will be close but maybe not exact. This is meant for kinematic bodies.
-    /// The target is not applied if the velocity would be below the sleep threshold and
-    /// the body is currently asleep.
+    /// Set the velocity to reach the given transform after a given time step. The result will be close
+    /// but may not be exact. This is meant for kinematic bodies. The target is not applied if the
+    /// velocity would be below the sleep threshold and the body is currently asleep.
     /// - param bodyId: The body id
     /// - param target: The target transform for the body
     /// - param timeStep: The time step of the next call to b2World_Step
@@ -84,9 +83,9 @@ public extension B2Body {
         b2Body_GetWorldPointVelocity(id, worldPoint)
     }
     
-    /// Apply a force at a world point. If the force is not applied at the center of mass,
-    /// it will generate a torque and affect the angular velocity. This optionally wakes up the body.
-    /// The force is ignored if the body is not awake.
+    /// Apply a force at a world point. If the force is not applied at the center of mass, it will
+    /// generate a torque and affect the angular velocity. This optionally wakes up the body. The force
+    /// is ignored if the body is not awake.
     /// - param bodyId: The body id
     /// - param force: The world force vector, usually in newtons (N)
     /// - param point: The world position of the point of application
@@ -95,8 +94,8 @@ public extension B2Body {
         b2Body_ApplyForce(id, force, point, wake)
     }
     
-    /// Apply a force to the center of mass. This optionally wakes up the body.
-    /// The force is ignored if the body is not awake.
+    /// Apply a force to the center of mass. This optionally wakes up the body. The force is ignored if
+    /// the body is not awake.
     /// - param bodyId: The body id
     /// - param force: the world force vector, usually in newtons (N).
     /// - param wake: also wake up the body
@@ -104,8 +103,8 @@ public extension B2Body {
         b2Body_ApplyForceToCenter(id, force, wake)
     }
     
-    /// Apply a torque. This affects the angular velocity without affecting the linear velocity.
-    /// This optionally wakes the body. The torque is ignored if the body is not awake.
+    /// Apply a torque. This affects the angular velocity without affecting the linear velocity. This
+    /// optionally wakes the body. The torque is ignored if the body is not awake.
     /// - param bodyId: The body id
     /// - param torque: about the z-axis (out of the screen), usually in N*m.
     /// - param wake: also wake up the body
@@ -113,46 +112,45 @@ public extension B2Body {
         b2Body_ApplyTorque(id, torque, wake)
     }
     
-    /// Clear the force and torque on this body. Forces and torques are automatically cleared after each world
-    /// step. So this only needs to be called if the application wants to remove the effect of previous
-    /// calls to apply forces and torques before the world step is called.
+    /// Clear the force and torque on this body. Forces and torques are automatically cleared after each
+    /// world step. So this only needs to be called if the application wants to remove the effect of
+    /// previous calls to apply forces and torques before the world step is called.
     /// - param bodyId: The body id
     func clearForces() {
         b2Body_ClearForces(id)
     }
     
-    /// Apply an impulse at a point. This immediately modifies the velocity.
-    /// It also modifies the angular velocity if the point of application
-    /// is not at the center of mass. This optionally wakes the body.
-    /// The impulse is ignored if the body is not awake.
+    /// Apply an impulse at a point. This immediately modifies the velocity. It also modifies the
+    /// angular velocity if the point of application is not at the center of mass. This optionally wakes
+    /// the body. The impulse is ignored if the body is not awake.
     /// - param bodyId: The body id
     /// - param impulse: the world impulse vector, usually in N*s or kg*m/s.
     /// - param point: the world position of the point of application.
     /// - param wake: also wake up the body
-    /// @warning This should be used for one-shot impulses. If you need a steady force,
-    /// use a force instead, which will work better with the sub-stepping solver.
+    /// @warning This should be used for one-shot impulses. If you need a steady force, use a force
+    /// instead, which will work better with the sub-stepping solver.
     func applyLinearImpulse(_ impulse: B2Vec2, _ point: B2Vec2, _ wake: Bool) {
         b2Body_ApplyLinearImpulse(id, impulse, point, wake)
     }
     
-    /// Apply an impulse to the center of mass. This immediately modifies the velocity.
-    /// The impulse is ignored if the body is not awake. This optionally wakes the body.
+    /// Apply an impulse to the center of mass. This immediately modifies the velocity. The impulse is
+    /// ignored if the body is not awake. This optionally wakes the body.
     /// - param bodyId: The body id
     /// - param impulse: the world impulse vector, usually in N*s or kg*m/s.
     /// - param wake: also wake up the body
-    /// @warning This should be used for one-shot impulses. If you need a steady force,
-    /// use a force instead, which will work better with the sub-stepping solver.
+    /// @warning This should be used for one-shot impulses. If you need a steady force, use a force
+    /// instead, which will work better with the sub-stepping solver.
     func applyLinearImpulseToCenter(_ impulse: B2Vec2, _ wake: Bool) {
         b2Body_ApplyLinearImpulseToCenter(id, impulse, wake)
     }
     
-    /// Apply an angular impulse. The impulse is ignored if the body is not awake.
-    /// This optionally wakes the body.
+    /// Apply an angular impulse. The impulse is ignored if the body is not awake. This optionally wakes
+    /// the body.
     /// - param bodyId: The body id
     /// - param impulse: the angular impulse, usually in units of kg*m*m/s
     /// - param wake: also wake up the body
-    /// @warning This should be used for one-shot impulses. If you need a steady torque,
-    /// use a torque instead, which will work better with the sub-stepping solver.
+    /// @warning This should be used for one-shot impulses. If you need a steady torque, use a torque
+    /// instead, which will work better with the sub-stepping solver.
     func applyAngularImpulse(_ impulse: Float, _ wake: Bool) {
         b2Body_ApplyAngularImpulse(id, impulse, wake)
     }
@@ -167,24 +165,22 @@ public extension B2Body {
         b2Body_GetRotationalInertia(id)
     }
     
-    /// Get the center of mass position of the body in local space
-    func getLocalCenterOfMass() -> B2Vec2 {
-        b2Body_GetLocalCenterOfMass(id)
+    /// Get the center of mass position of the body in local space.
+    func getLocalCenter() -> B2Vec2 {
+        b2Body_GetLocalCenter(id)
     }
     
-    /// Get the center of mass position of the body in world space
-    func getWorldCenterOfMass() -> B2Vec2 {
-        b2Body_GetWorldCenterOfMass(id)
+    /// Get the center of mass position of the body in world space.
+    func getWorldCenter() -> B2Vec2 {
+        b2Body_GetWorldCenter(id)
     }
     
-    /// This updates the mass properties to the sum of the mass properties of the shapes.
-    /// This normally does not need to be called unless you called SetMassData to override
-    /// the mass and you later want to reset the mass.
-    /// You may also use this when automatic mass computation has been disabled.
-    /// You should call this regardless of body type.
-    /// Note that sensor shapes may have mass.
-    func applyMassFromShapes() {
-        b2Body_ApplyMassFromShapes(id)
+    /// This updates the mass properties to the sum of the mass properties of the shapes. This normally
+    /// does not need to be called unless you called b2Body_SetMassData to override the mass and you
+    /// later want to reset the mass. You may also use this when automatic mass computation has been
+    /// disabled. You should call this regardless of body type. Note that sensor shapes may have mass.
+    func updateMassFromShapes() {
+        b2Body_UpdateMassFromShapes(id)
     }
     
     /// - returns: true if this body is awake
@@ -193,8 +189,8 @@ public extension B2Body {
     }
     
     /// Wake a body from sleep. This wakes the entire island the body is touching.
-    /// @warning Putting a body to sleep will put the entire island of bodies touching this body to sleep,
-    /// which can be expensive and possibly unintuitive.
+    /// @warning Putting a body to sleep will put the entire island of bodies touching this body to
+    /// sleep, which can be expensive and possibly unintuitive.
     func setAwake(_ awake: Bool) {
         b2Body_SetAwake(id, awake)
     }
@@ -204,14 +200,15 @@ public extension B2Body {
         b2Body_WakeTouching(id)
     }
     
-    /// Enable or disable sleeping for this body. If sleeping is disabled the body will wake.
-    func enableSleep(_ enableSleep: Bool) {
-        b2Body_EnableSleep(id, enableSleep)
+    /// Enable or disable sleeping for this body. If sleeping is disabled the body will wake (and the
+    /// entire island).
+    func enableSleeping(_ enableSleep: Bool) {
+        b2Body_EnableSleeping(id, enableSleep)
     }
     
     /// Returns true if sleeping is enabled for this body
-    func isSleepEnabled() -> Bool {
-        b2Body_IsSleepEnabled(id)
+    func isSleepingEnabled() -> Bool {
+        b2Body_IsSleepingEnabled(id)
     }
     
     /// Returns true if this body is enabled
@@ -229,8 +226,8 @@ public extension B2Body {
         b2Body_Enable(id)
     }
     
-    /// Set this body to be a bullet. A bullet does continuous collision detection
-    /// against dynamic bodies (but not other bullets).
+    /// Set this body to be a bullet. A bullet does continuous collision detection against dynamic
+    /// and kinematic bodies (but not other bullets). This only works on dynamic bodies.
     func setBullet(_ flag: Bool) {
         b2Body_SetBullet(id, flag)
     }
@@ -238,6 +235,21 @@ public extension B2Body {
     /// Is this body a bullet?
     func isBullet() -> Bool {
         b2Body_IsBullet(id)
+    }
+    
+    /// Enable or disable contact recycling for this body. Contact recycling is a performance
+    /// optimization that reuses contact manifolds when bodies move slightly. Disabling it can avoid
+    /// ghost collisions
+    /// on characters at the cost of higher per-step work. Existing contacts retain their prior setting;
+    /// only contacts created after this call see the new value.
+    /// @see b2BodyDef::enableContactRecycling
+    func enableContactRecycling(_ flag: Bool) {
+        b2Body_EnableContactRecycling(id, flag)
+    }
+    
+    /// Is contact recycling enabled on this body?
+    func isContactRecyclingEnabled() -> Bool {
+        b2Body_IsContactRecyclingEnabled(id)
     }
     
     /// Enable/disable contact events on all shapes.
@@ -293,10 +305,26 @@ public extension B2Body {
         b2Body_GetContactData(id, contactData, capacity)
     }
     
-    /// Get the current world AABB that contains all the attached shapes. Note that this may not encompass the body origin.
-    /// If there are no shapes attached then the returned AABB is empty and centered on the body origin.
-    func computeAABB() -> B2AABB {
-        b2Body_ComputeAABB(id)
+    /// Get the current world AABB that contains all the attached shapes. Note that this may not
+    /// encompass the body origin. If there are no shapes attached then the returned AABB is empty and
+    /// centered on the body origin.
+    func computeBounds() -> B2AABB {
+        b2Body_ComputeBounds(id)
+    }
+    
+    /// The minimum distance from any point on the body shapes to the center of mass.
+    func getMinExtent() -> Float {
+        b2Body_GetMinExtent(id)
+    }
+    
+    /// The maximum distance from any point on the body shapes to the center of mass.
+    func getMaxExtent() -> Float {
+        b2Body_GetMaxExtent(id)
+    }
+    
+    /// The maximum distance from any point on the body shapes to the body origin. Conservative.
+    func getMaxExtentFromOrigin() -> Float {
+        b2Body_GetMaxExtentFromOrigin(id)
     }
     
     ///  Get the body type: static, kinematic, or dynamic
@@ -334,9 +362,10 @@ public extension B2Body {
     }
     
     ///  Get the mass data for a body
-    /// Override the body's mass properties. Normally this is computed automatically using the
-    /// shape geometry and density. This information is lost if a shape is added or removed or if the
-    /// body type changes.
+    /// Override the body's mass properties. Normally this is computed automatically using the shape
+    /// geometry and density. This information is lost if a shape is added or removed or if the body
+    /// type changes. If motion locks are used to fix rotation then the rotational inertia value is
+    /// ignored and rotational inertia remains fixed at zero.
     var massData: b2MassData {
         get {
             b2Body_GetMassData(id)
@@ -391,8 +420,21 @@ public extension B2Body {
         }
     }
     
-    /// Get the motion locks for this body.
-    /// Set the motion locks on this body.
+    ///  Get the continuous collision safety factor. Non-dimensional.
+    /// Set the continuous collision safety factor. Smaller is safer but can lead to hitching.
+    /// Recommended range [0.01, 0.5]. Non-dimensional.
+    var safetyFactor: Float {
+        get {
+            b2Body_GetSafetyFactor(id)
+        }
+        set(safetyFactor) {
+            b2Body_SetSafetyFactor(id, safetyFactor)
+        }
+    }
+    
+    ///  Get the motion locks for this body.
+    /// Set the motion locks on this body. This causes mass properties to be recomputed because fixed
+    /// rotation sets the rotational inertia to zero.
     var motionLocks: b2MotionLocks {
         get {
             b2Body_GetMotionLocks(id)

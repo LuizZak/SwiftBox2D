@@ -3,7 +3,7 @@
 
 import box2d
 
-/// Chain id references a chain instances. This should be treated as an opaque handle.
+/// Chain id references a chain instance. This should be treated as an opaque handle.
 public typealias B2ChainId = b2ChainId
 
 extension B2ChainId: @retroactive Equatable, @retroactive Hashable { }

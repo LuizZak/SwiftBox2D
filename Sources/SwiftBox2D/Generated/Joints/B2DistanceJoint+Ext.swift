@@ -24,8 +24,13 @@ public extension B2DistanceJoint {
         b2DistanceJoint_GetSpringForceRange(id, lowerForce, upperForce)
     }
     
-    /// Enable joint limit. The limit only works if the joint spring is enabled. Otherwise the joint is rigid
-    /// and the limit has no effect.
+    /// Get the current spring force.
+    func getSpringForce() -> Float {
+        b2DistanceJoint_GetSpringForce(id)
+    }
+    
+    /// Enable joint limit. The limit only works if the joint spring is enabled. Otherwise the joint is
+    /// rigid and the limit has no effect.
     func enableLimit(_ enableLimit: Bool) {
         b2DistanceJoint_EnableLimit(id, enableLimit)
     }
@@ -36,18 +41,18 @@ public extension B2DistanceJoint {
     }
     
     /// Set the minimum and maximum length parameters of a distance joint
-    func setLengthRange(_ minLength: Float, _ maxLength: Float) {
-        b2DistanceJoint_SetLengthRange(id, minLength, maxLength)
+    func setLimits(_ minLength: Float, _ maxLength: Float) {
+        b2DistanceJoint_SetLimits(id, minLength, maxLength)
     }
     
     /// Get the distance joint minimum length
-    func getMinLength() -> Float {
-        b2DistanceJoint_GetMinLength(id)
+    func getLowerLimit() -> Float {
+        b2DistanceJoint_GetLowerLimit(id)
     }
     
     /// Get the distance joint maximum length
-    func getMaxLength() -> Float {
-        b2DistanceJoint_GetMaxLength(id)
+    func getUpperLimit() -> Float {
+        b2DistanceJoint_GetUpperLimit(id)
     }
     
     /// Get the current length of a distance joint
@@ -66,20 +71,20 @@ public extension B2DistanceJoint {
     }
     
     /// Get the distance joint current motor force, usually in newtons
-    func getMotorForce() -> Float {
-        b2DistanceJoint_GetMotorForce(id)
+    func getCurrentMotorForce() -> Float {
+        b2DistanceJoint_GetCurrentMotorForce(id)
     }
     
     ///  Get the rest length of a distance joint
     /// Set the rest length of a distance joint
     /// - param jointId: The id for a distance joint
     /// - param length: The new distance joint length
-    var length: Float {
+    var restLength: Float {
         get {
-            b2DistanceJoint_GetLength(id)
+            b2DistanceJoint_GetRestLength(id)
         }
         set(length) {
-            b2DistanceJoint_SetLength(id, length)
+            b2DistanceJoint_SetRestLength(id, length)
         }
     }
     
@@ -107,12 +112,12 @@ public extension B2DistanceJoint {
     
     /// Get the distance joint motor speed, usually in meters per second
     /// Set the distance joint motor speed, usually in meters per second
-    var motorSpeed: Float {
+    var targetMotorSpeed: Float {
         get {
-            b2DistanceJoint_GetMotorSpeed(id)
+            b2DistanceJoint_GetTargetMotorSpeed(id)
         }
         set(motorSpeed) {
-            b2DistanceJoint_SetMotorSpeed(id, motorSpeed)
+            b2DistanceJoint_SetTargetMotorSpeed(id, motorSpeed)
         }
     }
     

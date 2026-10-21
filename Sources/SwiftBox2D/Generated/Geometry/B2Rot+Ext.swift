@@ -3,8 +3,7 @@
 
 import box2d
 
-/// 2D rotation
-/// This is similar to using a complex number for rotation
+/// 2D rotation This is similar to using a complex number for rotation
 public typealias B2Rot = b2Rot
 
 extension B2Rot: @retroactive CustomStringConvertible, @retroactive Equatable, @retroactive Hashable { }

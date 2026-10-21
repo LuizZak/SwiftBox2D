@@ -24,9 +24,8 @@ public extension B2Shape {
         b2Shape_GetWorld(id)
     }
     
-    /// Returns true if the shape is a sensor. It is not possible to change a shape
-    /// from sensor to solid dynamically because this breaks the contract for
-    /// sensor events.
+    /// Returns true if the shape is a sensor. It is not possible to change a shape from sensor to solid
+    /// dynamically because this breaks the contract for sensor events.
     func isSensor() -> Bool {
         b2Shape_IsSensor(id)
     }
@@ -36,9 +35,9 @@ public extension B2Shape {
         b2Shape_SetUserData(id, userData)
     }
     
-    /// Set the mass density of a shape, usually in kg/m^2.
-    /// This will optionally update the mass properties on the parent body.
-    /// @see b2ShapeDef::density, b2Body_ApplyMassFromShapes
+    /// Set the mass density of a shape, usually in kg/m^2. This will optionally update the mass
+    /// properties on the parent body.
+    /// @see b2ShapeDef::density, b2Body_UpdateMassFromShapes
     func setDensity(_ density: Float, _ updateBodyMass: Bool) {
         b2Shape_SetDensity(id, density, updateBodyMass)
     }
@@ -69,7 +68,8 @@ public extension B2Shape {
         b2Shape_AreSensorEventsEnabled(id)
     }
     
-    /// Enable contact events for this shape. Only applies to kinematic and dynamic bodies. Ignored for sensors.
+    /// Enable contact events for this shape. Only applies to kinematic and dynamic bodies. Ignored for
+    /// sensors.
     /// @see b2ShapeDef::enableContactEvents
     /// @warning changing this at run-time may lead to lost begin/end events
     func enableContactEvents(_ flag: Bool) {
@@ -81,9 +81,9 @@ public extension B2Shape {
         b2Shape_AreContactEventsEnabled(id)
     }
     
-    /// Enable pre-solve contact events for this shape. Only applies to dynamic bodies. These are expensive
-    /// and must be carefully handled due to multithreading. Ignored for sensors.
-    /// @see b2PreSolveFcn
+    /// Enable pre-solve contact events for this shape. Only applies to dynamic bodies. These are
+    /// expensive and must be carefully handled due to multithreading. Ignored for sensors.
+    /// @see b2PreSolveCallbackFcn
     func enablePreSolveEvents(_ flag: Bool) {
         b2Shape_EnablePreSolveEvents(id, flag)
     }
@@ -94,7 +94,7 @@ public extension B2Shape {
     }
     
     /// Enable contact hit events for this shape. Ignored for sensors.
-    /// @see b2WorldDef.hitEventThreshold
+    /// @see b2WorldDef::hitEventThreshold
     func enableHitEvents(_ flag: Bool) {
         b2Shape_EnableHitEvents(id, flag)
     }
@@ -104,14 +104,15 @@ public extension B2Shape {
         b2Shape_AreHitEventsEnabled(id)
     }
     
-    /// Test a point for overlap with a shape
+    /// Test a world point for overlap with a shape
     func testPoint(_ point: B2Vec2) -> Bool {
         b2Shape_TestPoint(id, point)
     }
     
-    /// Ray cast a shape directly
-    func rayCast(_ input: UnsafeMutablePointer<b2RayCastInput>?) -> b2CastOutput {
-        b2Shape_RayCast(id, input)
+    /// Ray cast a single shape. The ray starts at the origin and extends by the translation. The output
+    /// point is a world position.
+    func castRay(_ origin: B2Vec2, _ translation: B2Vec2) -> b2CastOutput {
+        b2Shape_CastRay(id, origin, translation)
     }
     
     /// Get a copy of the shape's circle. Asserts the type is correct.
@@ -124,8 +125,8 @@ public extension B2Shape {
         b2Shape_GetSegment(id)
     }
     
-    /// Get a copy of the shape's chain segment. These come from chain shapes.
-    /// Asserts the type is correct.
+    /// Get a copy of the shape's chain segment. These come from chain shapes. Asserts the type is
+    /// correct.
     func getChainSegment() -> b2ChainSegment {
         b2Shape_GetChainSegment(id)
     }
@@ -140,16 +141,16 @@ public extension B2Shape {
         b2Shape_GetPolygon(id)
     }
     
-    /// Allows you to change a shape to be a circle or update the current circle.
-    /// This does not modify the mass properties.
-    /// @see b2Body_ApplyMassFromShapes
+    /// Allows you to change a shape to be a circle or update the current circle. This does not modify
+    /// the mass properties.
+    /// @see b2Body_UpdateMassFromShapes
     func setCircle(_ circle: UnsafeMutablePointer<b2Circle>?) {
         b2Shape_SetCircle(id, circle)
     }
     
-    /// Allows you to change a shape to be a capsule or update the current capsule.
-    /// This does not modify the mass properties.
-    /// @see b2Body_ApplyMassFromShapes
+    /// Allows you to change a shape to be a capsule or update the current capsule. This does not modify
+    /// the mass properties.
+    /// @see b2Body_UpdateMassFromShapes
     func setCapsule(_ capsule: UnsafeMutablePointer<b2Capsule>?) {
         b2Shape_SetCapsule(id, capsule)
     }
@@ -159,15 +160,21 @@ public extension B2Shape {
         b2Shape_SetSegment(id, segment)
     }
     
-    /// Allows you to change a shape to be a polygon or update the current polygon.
-    /// This does not modify the mass properties.
-    /// @see b2Body_ApplyMassFromShapes
+    /// Allows you to change a shape to be a polygon or update the current polygon. This does not modify
+    /// the mass properties.
+    /// @see b2Body_UpdateMassFromShapes
     func setPolygon(_ polygon: UnsafeMutablePointer<b2Polygon>?) {
         b2Shape_SetPolygon(id, polygon)
     }
     
-    /// Get the parent chain id if the shape type is a chain segment, otherwise
-    /// returns b2_nullChainId.
+    /// Allows you to change a shape to be a loose chain segment or update the current chain segment.
+    /// The resulting shape does not belong to a chain shape. Asserts if the shape is already a chain
+    /// segment owned by a chain shape (chainId != B2_NULL_INDEX).
+    func setChainSegment(_ chainSegment: UnsafeMutablePointer<b2ChainSegment>?) {
+        b2Shape_SetChainSegment(id, chainSegment)
+    }
+    
+    /// Get the parent chain id if the shape type is a chain segment, otherwise returns b2_nullChainId.
     func getParentChain() -> B2ChainId {
         b2Shape_GetParentChain(id)
     }
@@ -177,7 +184,8 @@ public extension B2Shape {
         b2Shape_GetContactCapacity(id)
     }
     
-    /// Get the touching contact data for a shape. The provided shapeId will be either shapeIdA or shapeIdB on the contact data.
+    /// Get the touching contact data for a shape. The provided shapeId will be either shapeIdA or
+    /// shapeIdB on the contact data.
     /// - note: Box2D uses speculative collision so some contact points may be separated.
     /// - returns:s the number of elements filled in the provided array
     /// @warning do not ignore the return value, it specifies the valid number of elements
@@ -188,15 +196,15 @@ public extension B2Shape {
     /// Get the maximum capacity required for retrieving all the overlapped shapes on a sensor shape.
     /// This returns 0 if the provided shape is not a sensor.
     /// - param shapeId: the id of a sensor shape
-    /// - returns:s the required capacity to get all the overlaps in b2Shape_GetSensorOverlaps
+    /// - returns:s the required capacity to get all the overlaps in b2Shape_GetSensorData
     func getSensorCapacity() -> Int32 {
         b2Shape_GetSensorCapacity(id)
     }
     
-    /// Get the overlap data for a sensor shape.
+    /// Get the overlap data for a sensor shape computed during the previous world step.
     /// - param shapeId: the id of a sensor shape
     /// - param visitorIds: a user allocated array that is filled with the overlapping shapes (visitors)
-    /// - param capacity: the capacity of overlappedShapes
+    /// - param capacity: the capacity of visitorIds
     /// - returns:s the number of elements filled in the provided array
     /// @warning do not ignore the return value, it specifies the valid number of elements
     /// @warning overlaps may contain destroyed shapes so use b2Shape_IsValid to confirm each overlap
@@ -205,8 +213,8 @@ public extension B2Shape {
     }
     
     /// Get the current world AABB
-    func getAABB() -> B2AABB {
-        b2Shape_GetAABB(id)
+    func getBounds() -> B2AABB {
+        b2Shape_GetBounds(id)
     }
     
     /// Compute the mass data for a shape
@@ -214,15 +222,14 @@ public extension B2Shape {
         b2Shape_ComputeMassData(id)
     }
     
-    /// Get the closest point on a shape to a target point. Target and result are in world space.
-    /// todo need sample
+    /// Get the closest point on a shape to a target point. Target and result are world positions.
     func getClosestPoint(_ target: B2Vec2) -> B2Vec2 {
         b2Shape_GetClosestPoint(id, target)
     }
     
-    /// Apply a wind force to the body for this shape using the density of air. This considers
-    /// the projected area of the shape in the wind direction. This also considers
-    /// the relative velocity of the shape.
+    /// Apply a wind force to the body for this shape using the density of air. This considers the
+    /// projected area of the shape in the wind direction. This also considers the relative velocity of
+    /// the shape.
     /// - param shapeId: the shape id
     /// - param wind: the wind velocity in world space
     /// - param drag: the drag coefficient, the force that opposes the relative velocity
@@ -267,8 +274,8 @@ public extension B2Shape {
     
     ///  Get the shape filter
     /// Set the current filter. This is almost as expensive as recreating the shape. This may cause
-    /// contacts to be immediately destroyed. However contacts are not created until the next world step.
-    /// Sensor overlap state is also not updated until the next world step.
+    /// contacts to be immediately destroyed. However contacts are not created until the next world
+    /// step. Sensor overlap state is also not updated until the next world step.
     /// @see b2ShapeDef::filter
     var filter: b2Filter {
         get {

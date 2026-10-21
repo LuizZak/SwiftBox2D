@@ -3,8 +3,8 @@
 
 import box2d
 
-/// The body simulation type.
-/// Each body is one of these three types. The type determines how the body behaves in the simulation.
+/// The body simulation type. Each body is one of these three types. The type determines how the
+/// body behaves in the simulation.
 ///  body
 public typealias B2BodyType = b2BodyType
 

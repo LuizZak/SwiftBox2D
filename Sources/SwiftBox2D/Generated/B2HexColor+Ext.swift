@@ -7,6 +7,7 @@ import box2d
 /// See https://www.rapidtables.com/web/color/index.html
 /// https://johndecember.com/html/spec/colorsvg.html
 /// https://upload.wikimedia.org/wikipedia/commons/2/2b/SVG_Recognized_color_keyword_names.svg
+///  debug
 public typealias B2HexColor = b2HexColor
 
 public extension B2HexColor {

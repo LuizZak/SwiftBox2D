@@ -9,15 +9,9 @@ public extension B2RevoluteJoint {
         b2RevoluteJoint_EnableSpring(id, enableSpring)
     }
     
-    /// It the revolute angular spring enabled?
+    /// Is the revolute angular spring enabled?
     func isSpringEnabled() -> Bool {
         b2RevoluteJoint_IsSpringEnabled(id)
-    }
-    
-    /// Get the revolute joint current angle in radians relative to the reference angle
-    /// @see b2RevoluteJointDef::referenceAngle
-    func getAngle() -> Float {
-        b2RevoluteJoint_GetAngle(id)
     }
     
     /// Enable/disable the revolute joint limit
@@ -40,8 +34,8 @@ public extension B2RevoluteJoint {
         b2RevoluteJoint_GetUpperLimit(id)
     }
     
-    /// Set the revolute joint limits in radians. It is expected that lower <= upper
-    /// and that -0.99 * B2_PI <= lower && upper <= -0.99 * B2_PI.
+    /// Set the revolute joint limits in radians. It is expected that lower <= upper and that -0.99 *
+    /// B2_PI <= lower && upper <= 0.99 * B2_PI.
     func setLimits(_ lower: Float, _ upper: Float) {
         b2RevoluteJoint_SetLimits(id, lower, upper)
     }
@@ -56,9 +50,20 @@ public extension B2RevoluteJoint {
         b2RevoluteJoint_IsMotorEnabled(id)
     }
     
+    /// Get the revolute joint current angle in radians. This is the relative rotation of the joint
+    /// frames.
+    func getCurrentAngle() -> Float {
+        b2RevoluteJoint_GetCurrentAngle(id)
+    }
+    
+    /// Get the current revolute joint motor speed in radians per second
+    func getCurrentSpeed() -> Float {
+        b2RevoluteJoint_GetCurrentSpeed(id)
+    }
+    
     /// Get the revolute joint current motor torque, usually in newton-meters
-    func getMotorTorque() -> Float {
-        b2RevoluteJoint_GetMotorTorque(id)
+    func getCurrentMotorTorque() -> Float {
+        b2RevoluteJoint_GetCurrentMotorTorque(id)
     }
     
     /// Get the revolute joint spring stiffness in Hertz
@@ -96,12 +101,12 @@ public extension B2RevoluteJoint {
     
     /// Get the revolute joint motor speed in radians per second
     /// Set the revolute joint motor speed in radians per second
-    var motorSpeed: Float {
+    var targetMotorSpeed: Float {
         get {
-            b2RevoluteJoint_GetMotorSpeed(id)
+            b2RevoluteJoint_GetTargetMotorSpeed(id)
         }
         set(motorSpeed) {
-            b2RevoluteJoint_SetMotorSpeed(id, motorSpeed)
+            b2RevoluteJoint_SetTargetMotorSpeed(id, motorSpeed)
         }
     }
     
