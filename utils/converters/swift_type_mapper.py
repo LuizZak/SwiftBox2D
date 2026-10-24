@@ -256,6 +256,12 @@ class SwiftTypeMapper:
                 SwiftType.type_name(pointer_type).wrap_optional(),
                 SwiftType.type_name(pointer_type).wrap_optional(),
             )
+        # Pointer to an opaque struct should map to OpaquePointer
+        if pointee.is_typename_type() and self._is_opaque_struct(pointee.as_typename_type().name):
+            return (
+                SwiftType.type_name('OpaquePointer').wrap_optional(),
+                SwiftType.type_name('OpaquePointer').wrap_optional(),
+            )
 
         pointer_type = (
             self.__default_const_pointer_type
@@ -266,6 +272,28 @@ class SwiftTypeMapper:
             SwiftType.generic(pointer_type, [pointee]).wrap_optional(),
             SwiftType.generic(pointer_type, [unaliased]).wrap_optional(),
         )
+
+    def _is_opaque_struct(
+        self, type_name: str
+    ) -> bool:
+        if self.__cached_typedefs is None:
+            return False
+        if type_name not in self.__cached_typedefs:
+            return False
+
+        type_def = self.__cached_typedefs[type_name]
+        if not isinstance(type_def, c_ast.Typedef):
+            return False
+        
+        type_decl = type_def.type
+        if not isinstance(type_decl, c_ast.TypeDecl):
+            return False
+
+        struct_decl = type_decl.type
+        if not isinstance(struct_decl, c_ast.Struct):
+            return False
+
+        return struct_decl.decls is None
 
     def _expand_type_def(
         self, type_name: str, context: c_ast.FileAST
