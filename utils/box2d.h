@@ -29,6 +29,9 @@
 #define __extension__
 #define __asm__(x)
 
+/// Work around for Linux-GNU specific features
+#define __float128 float
+
 #if defined(__WCHAR_TYPE__)
 #undef wchar_t
 #endif // defined(__WCHAR_TYPE__)
